@@ -29,11 +29,11 @@
     $.ajax('gt-class.json', {
       success: function(data) {
         var rows = $.map(t.data(data), function(x) {
-          return $('<tr/>').append([
+          return $('<tr/>').append(
             $('<td/>').text(x.subject),
             $('<td/>').text(x.course),
             $('<td/>').text(x.name)
-          ])[0];
+          )[0];
         });
         $('<table/>').appendTo('body').append(rows);
       }

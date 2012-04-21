@@ -33,7 +33,7 @@
             $('<td/>').text(x.subject),
             $('<td/>').text(x.course),
             $('<td/>').text(x.name)
-          ]);
+          ])[0];
         });
         $('<table/>').appendTo('body').append(rows);
       }

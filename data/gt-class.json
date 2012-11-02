@@ -77,6 +77,14 @@
     [ "CS 6520", 3, "B", "Computational Complexity" ]
   ],
   "spring 2012": [
-    [ "CS 8803", 3, "?", "Mobile Applications and Services" ]
+    [ "CS 8803", 3, "A", "Mobile Applications and Services" ]
+  ],
+  "summer 2012": [
+    [ "CS 4590", 3, "A", "Computer Audio" ],
+    [ "CSE 6740", 3, "B", "Computational Data Analy" ]
+  ],
+  "fall 2012": [
+    [ "CS 6260", 3, "?", "Applied Cryptography" ],
+    [ "CS 6491", 3, "?", "Computer Graphics" ]
   ]
 }

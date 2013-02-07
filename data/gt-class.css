@@ -1,7 +1,7 @@
 table {
   margin: 50px auto;
-  width: 600px;
 }
 td {
   font-family: monospace;
+  padding: 5px 20px;
 }

@@ -27,6 +27,6 @@ ul {
   list-style-type: none;
 }
 .twitter-timeline {
-  position: absolute; top: 5%; right: 40px; bottom: 5%;
+  position: absolute; top: 5%; right: 40px; height: 90%;
   width: 300px;
 }

@@ -8,6 +8,16 @@ body>div {
 }
 article {
   width: 480px;
+  font: normal normal normal 12px/16px "Helvetica Neue",Arial,sans-serif;
+}
+header {
+  font-weight: bold;
+}
+h1 {
+  font-size: 18px;
+}
+h2 {
+  font-size: 15px;
 }
 .twitter-timeline {
   position: absolute; top: 0; right: 40px;

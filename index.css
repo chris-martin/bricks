@@ -15,8 +15,8 @@ body>div {
 }
 article {
   font: normal normal normal 12px/16px "Helvetica Neue",Arial,sans-serif;
-  margin-top: 50px;
-  width: 440px;
+  padding: 50px 25px;
+  width: 500px;
 }
 header {
   font-weight: bold;
@@ -31,6 +31,6 @@ ul {
   list-style-type: none;
 }
 .twitter-timeline {
-  position: absolute; top: 5%; right: 40px;
+  position: absolute; top: 5%; right: -1px;
   width: 300px;
 }

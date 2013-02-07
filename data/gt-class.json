@@ -84,7 +84,11 @@
     [ "CSE 6740", 3, "B", "Computational Data Analy" ]
   ],
   "fall 2012": [
-    [ "CS 6260", 3, "?", "Applied Cryptography" ],
-    [ "CS 6491", 3, "?", "Computer Graphics" ]
+    [ "CS 6260", 3, "A", "Applied Cryptography" ],
+    [ "CS 6491", 3, "A", "Computer Graphics" ]
+  ],
+  "spring 2013": [
+    [ "CS 6238", 3, "?", "Secure Computing Systems" ],
+    [ "CS 7560", 3, "?", "Theory of Cryptography" ]
   ]
 }

@@ -1,7 +1,4 @@
-body>div {
-  width: 800px;
+.container-narrow {
   margin: 0 auto;
-}
-article {
-  padding: 50px 25px;
+  max-width: 700px;
 }

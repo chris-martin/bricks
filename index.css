@@ -10,14 +10,22 @@ html, body {
 .footer {
   margin-top: 50px;
   background-color: black;
-  color: #aaa;
   padding: 20px 0;
 }
-.footer i {
-  margin-right: 6px;
+.footer a {
+  display: block;
+  margin: 0 0 10px;
+}
+.footer a i {
+  color: #aaa;
+  margin-right: 10px;
 }
 .footer a:hover {
   color: white;
+}
+.footer a:hover i {
+  color: white;
+  text-decoration: none;
 }
 .footer .links {
   margin-top: 15px;

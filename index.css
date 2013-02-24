@@ -8,9 +8,10 @@ html, body {
   padding-top: 20px;
 }
 .footer {
+  padding-top: 90px;
+  padding-bottom: 90px;
   margin-top: 50px;
   background-color: black;
-  padding: 20px 0;
 }
 .footer a {
   display: block;
@@ -39,13 +40,5 @@ html, body {
     margin-right: -20px;
     padding-left: 80px;
     padding-right: 20px;
-  }
-}
-@media (min-width: 800px) and (min-height: 800px) {
-  .footer {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    min-width: 100%;
   }
 }

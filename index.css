@@ -11,7 +11,7 @@ body>* { position: relative; z-index: 0; }
   position: relative; height: 100px; }
 .header svg { position: absolute; top: 0;
   height: 200px; width: 100%; }
-.header svg rect { fill: url(#header-pattern); opacity: 0.05; }
+.header svg rect { opacity: 0.05; }
 #header-pattern path { stroke: white; stroke-width: 2px; }
 
 h4 i { margin-right: 10px; }
@@ -39,9 +39,6 @@ h4 i { margin-right: 10px; }
 #transition-middle-footer-gradient *:nth-child(6)  { stop-color: #909090; }
 #transition-middle-footer-gradient *:nth-child(7)  { stop-color: #404040; }
 #transition-middle-footer-gradient *:nth-child(11) { stop-color: #000000; }
-.transition-middle-footer svg rect {
-  fill: url(#transition-middle-footer-gradient);
-}
 
 @media (max-width: 767px) {
   body>* {

@@ -29,7 +29,7 @@ h4 i { margin-right: 10px; }
 .footer .links li { margin: 0 0 10px; }
 
 .transition { height: 0; }
-.transition svg { position: relative; }
+.transition svg { position: relative; width: 100%; }
 
 .transition-header-middle svg { height: 40px; top: -20px; }
 .transition-header-middle svg path { fill: white; stroke: #444; stroke-width: 5px; }

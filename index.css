@@ -14,11 +14,15 @@ body>* { position: relative; z-index: 0; }
 .header svg rect { opacity: 0.05; }
 #header-pattern path { stroke: white; stroke-width: 2px; }
 
+h4 { margin-top: 50px; margin-bottom: 25px; }
 h4 i { margin-right: 10px; }
 
-.container { max-width: 724px; }
+.middle { padding-top: 40px; padding-bottom: 100px; background: white; }
 
-.middle { padding-top: 40px; padding-bottom: 75px; background: white; }
+.middle ul { list-style-type: none; margin-left: 0px; }
+.middle ul ul { margin-left: 20px; }
+.middle li { margin: 0 0 10px; }
+.middle b { display: inline-block; margin-right: 10px; }
 
 .footer { padding-top: 75px; padding-bottom: 90px; }
 .footer a i { color: #aaa; margin-right: 10px; }

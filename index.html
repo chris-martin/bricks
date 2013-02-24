@@ -49,7 +49,12 @@
       <div class="container">
         <div class="row-fluid">
           <div class="span4">
-            <img src="photo.png"/>
+            <svg viewBox="3 3 97 97">
+              <rect x="4" y="4" width="92" height="92" style="fill: #333;" rx="17"/>
+              <rect x="4" y="4" width="91" height="91" style="fill: #111;" rx="17"/>
+              <image x="5" y="5" width="90" height="90" xlink:href="photo.jpg"
+                  style="filter:url(#desaturate)" clip-path="url(#photo-clip)"/>
+            </svg>
           </div>
           <div class="span4 links">
             <ul>
@@ -102,6 +107,13 @@
           <path d="m 6 -1 l 0 14"/>
           <path d="m -1 6 l 14 0"/>
         </pattern>
+        <filter id="desaturate">
+          <feColorMatrix type="saturate" values="0.4"/>
+        </filter>
+        <rect id="photo-clip-rect" x="5" y="5" width="90" height="90" rx="15"/>
+        <clipPath id="photo-clip" clipPathUnits="userSpaceOnUse">
+          <use xlink:href="#photo-clip-rect"/>
+        </clipPath>
       </defs>
     </svg>
   </body>

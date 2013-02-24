@@ -27,6 +27,7 @@ h4 i { margin-right: 10px; }
 .footer .links { margin-top: 15px; }
 .footer .links ul { list-style-type: none; }
 .footer .links li { margin: 0 0 10px; }
+.footer svg { width: 216px; height: 216px; }
 
 .transition { height: 0; }
 .transition svg { position: relative; width: 100%; }

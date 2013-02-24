@@ -41,7 +41,7 @@ html, body {
     padding-right: 20px;
   }
 }
-@media (min-width: 767px) and (min-height: 800px) {
+@media (min-width: 800px) and (min-height: 800px) {
   .footer {
     position: absolute;
     left: 0;

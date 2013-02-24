@@ -1,5 +1,6 @@
 html, body {
   height: 100%;
+  background: black;
 }
 .masthead {
   background-color: #4F77B7;
@@ -18,12 +19,12 @@ html, body {
 }
 .middle {
   padding-top: 40px;
+  padding-bottom: 75px;
+  background: white;
 }
 .footer {
-  padding-top: 90px;
+  padding-top: 75px;
   padding-bottom: 90px;
-  margin-top: 50px;
-  background-color: black;
 }
 .footer a {
   display: block;
@@ -44,10 +45,36 @@ html, body {
   margin-top: 15px;
 }
 @media (max-width: 767px) {
-  .masthead, .footer {
+  body>* {
     margin-left: -20px;
     margin-right: -20px;
+  }
+  body>header, body>section {
     padding-left: 20px;
     padding-right: 20px;
   }
+}
+.transition {
+  height: 0;
+}
+.transition svg {
+  position: relative;
+}
+.transition-header-middle svg {
+  height: 40px;
+  top: -20px;
+}
+.transition-header-middle svg path {
+  fill: white;
+}
+.transition-middle-footer svg {
+  height: 150px;
+  top: -75px;
+}
+#transition-middle-footer-gradient *:nth-child(1)  { stop-color: #ffffff; }
+#transition-middle-footer-gradient *:nth-child(6)  { stop-color: #909090; }
+#transition-middle-footer-gradient *:nth-child(7)  { stop-color: #404040; }
+#transition-middle-footer-gradient *:nth-child(11) { stop-color: #000000; }
+.transition-middle-footer svg rect {
+  fill: url(#transition-middle-footer-gradient);
 }

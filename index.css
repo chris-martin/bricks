@@ -11,7 +11,7 @@ body>* { position: relative; }
 .header svg { position: absolute; top: 0; z-index: 0;
   height: 200px; width: 100%; }
 .header svg rect { fill: url(#header-pattern); opacity: 0.05; }
-#header-pattern path { stroke: yellow; stroke-width: 2px; }
+#header-pattern path { stroke: white; stroke-width: 2px; }
 
 h4 i { margin-right: 10px; }
 

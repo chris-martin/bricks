@@ -1,10 +1,24 @@
+@import url(http://fonts.googleapis.com/css?family=Julius+Sans+One);
+
 html, body { height: 100%; background: black; }
-.masthead { background-color: #4F77B7; }
-.masthead h1 text { fill: #fff; stroke: black; stroke-width: 1px; }
-.masthead svg { height: 2em; }
+
+body>* { position: relative; }
+
+.header h1 { color: #fff; line-height: 2em; position: absolute; z-index: 1;
+  font-family: "Julius Sans One", sans-serif; }
+.header { background-color: #4F77B7; padding-top: 20px;
+  position: relative; height: 100px; }
+.header svg { position: absolute; top: 0; z-index: 0;
+  height: 200px; width: 100%; }
+.header svg rect { fill: url(#header-pattern); opacity: 0.05; }
+#header-pattern path { stroke: yellow; stroke-width: 2px; }
+
+h4 i { margin-right: 10px; }
+
 .container { max-width: 724px; }
-.masthead { padding-top: 20px; }
+
 .middle { padding-top: 40px; padding-bottom: 75px; background: white; }
+
 .footer { padding-top: 75px; padding-bottom: 90px; }
 .footer a i { color: #aaa; margin-right: 10px; }
 .footer a:hover { color: white; }
@@ -15,8 +29,10 @@ html, body { height: 100%; background: black; }
 
 .transition { height: 0; }
 .transition svg { position: relative; }
+
 .transition-header-middle svg { height: 40px; top: -20px; }
-.transition-header-middle svg path { fill: white; }
+.transition-header-middle svg path { fill: white; stroke: #444; stroke-width: 5px; }
+
 .transition-middle-footer svg { height: 150px; top: -75px; }
 #transition-middle-footer-gradient *:nth-child(1)  { stop-color: #ffffff; }
 #transition-middle-footer-gradient *:nth-child(6)  { stop-color: #909090; }
@@ -31,7 +47,8 @@ html, body { height: 100%; background: black; }
     margin-left: -20px;
     margin-right: -20px;
   }
-  body>header, body>section {
+  body>header .container,
+  body>section .container {
     padding-left: 20px;
     padding-right: 20px;
   }

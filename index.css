@@ -2,13 +2,14 @@
 
 html, body { height: 100%; background: black; }
 
-body>* { position: relative; }
+body>* { position: relative; z-index: 0; }
+.transition { z-index: 1; }
 
-.header h1 { color: #fff; line-height: 2em; position: absolute; z-index: 1;
+.header h1 { color: #fff; line-height: 2em;
   font-family: "Julius Sans One", sans-serif; }
 .header { background-color: #4F77B7; padding-top: 20px;
   position: relative; height: 100px; }
-.header svg { position: absolute; top: 0; z-index: 0;
+.header svg { position: absolute; top: 0;
   height: 200px; width: 100%; }
 .header svg rect { fill: url(#header-pattern); opacity: 0.05; }
 #header-pattern path { stroke: white; stroke-width: 2px; }

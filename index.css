@@ -24,6 +24,13 @@ h4 i { margin-right: 10px; }
 .middle li { margin: 0 0 10px; }
 .middle b { display: inline-block; margin-right: 10px; }
 
+.languages li:nth-child(1) b { font-size: 1.8em; }
+.languages li:nth-child(2) b { font-size: 1.6em; }
+.languages li:nth-child(3) b { font-size: 1.4em; }
+.languages li:nth-child(4) b { font-size: 1.2em; }
+.languages li:nth-child(5) b { font-size: 1.0em; }
+.languages li:nth-child(6) b { font-size: 1.0em; }
+
 .footer { padding-top: 75px; padding-bottom: 90px; }
 .footer a i { color: #aaa; margin-right: 10px; }
 .footer a:hover { color: white; }

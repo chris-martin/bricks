@@ -14,8 +14,8 @@ body>* { position: relative; z-index: 0; }
 .header svg rect { opacity: 0.05; }
 #header-pattern path { stroke: white; stroke-width: 2px; }
 
-h4 { margin-top: 50px; margin-bottom: 25px; }
-h4 i { margin-right: 10px; }
+h3 { margin-top: 20px; }
+h3 i { margin-right: 10px; }
 
 .middle { padding-top: 40px; padding-bottom: 100px; background: white; }
 
@@ -24,12 +24,14 @@ h4 i { margin-right: 10px; }
 .middle li { margin: 0 0 10px; }
 .middle b { display: inline-block; margin-right: 10px; }
 
-.languages li:nth-child(1) b { font-size: 1.8em; }
-.languages li:nth-child(2) b { font-size: 1.6em; }
-.languages li:nth-child(3) b { font-size: 1.4em; }
-.languages li:nth-child(4) b { font-size: 1.2em; }
-.languages li:nth-child(5) b { font-size: 1.0em; }
-.languages li:nth-child(6) b { font-size: 1.0em; }
+.languages th { text-align: right; padding-right: 20px; }
+.languages td { font-size: 0.9em; }
+.languages tr:nth-child(1) th { font-size: 2em; }
+.languages tr:nth-child(2) th { font-size: 1.8em; }
+.languages tr:nth-child(3) th { font-size: 1.4em; }
+.languages tr:nth-child(4) th { font-size: 1.2em; }
+.languages tr:nth-child(5) th { font-size: 1.0em; }
+.languages tr:nth-child(6) th { font-size: 1.0em; }
 
 .footer { padding-top: 75px; padding-bottom: 90px; }
 .footer a i { color: #aaa; margin-right: 10px; }

@@ -14,6 +14,10 @@ body>* { position: relative; z-index: 0; }
 .header svg rect { opacity: 0.05; }
 #header-pattern path { stroke: white; stroke-width: 2px; }
 
+.row {
+  margin-bottom: 20px;
+}
+
 h3 { margin-top: 20px; }
 h3 i { margin-right: 10px; }
 
@@ -44,6 +48,11 @@ section[data-name="github"] a:before { content: "\e0e5"; }
 section[data-name="stackoverflow"] a:before { content: "\e032"; }
 section[data-name="googleplus"] a:before { content: "\e0fc"; }
 section[data-name="facebook"] a:before { content: "\e09c"; }
+
+section[data-name="tools"] li {
+  display: inline-block;
+  margin: 5px 10px;
+}
 
 .languages th { text-align: right; padding-right: 20px; }
 .languages td { font-size: 0.9em; }

@@ -22,7 +22,10 @@ h3 i { margin-right: 10px; }
 .middle ul { list-style-type: none; margin-left: 0px; }
 .middle ul ul { margin-left: 20px; }
 .middle li { margin: 0 0 10px; }
-.middle b { display: inline-block; margin-right: 10px; }
+section[data-name="work"] b,
+section[data-name="school"] b {
+  display: inline-block; margin-right: 10px;
+}
 
 h3:before {
   font-family: 'Elusive-Icons'; font-weight: normal; font-style: normal;

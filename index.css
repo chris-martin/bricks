@@ -78,7 +78,7 @@ section[data-name="tools"] li {
 .transition-header-middle svg { height: 40px; top: -20px; }
 .transition-header-middle svg path { fill: white; stroke: #444; stroke-width: 5px; }
 
-.transition-middle-footer svg { height: 150px; top: -75px; }
+.transition-middle-footer svg { height: 60px; top: -30px; }
 #transition-middle-footer-gradient *:nth-child(1)  { stop-color: #ffffff; }
 #transition-middle-footer-gradient *:nth-child(6)  { stop-color: #909090; }
 #transition-middle-footer-gradient *:nth-child(7)  { stop-color: #404040; }

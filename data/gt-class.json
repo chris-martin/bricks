@@ -1,0 +1,94 @@
+{
+  "fall 2005": [
+    [ "CS 1100", 1, "S", "Freshman Leap Seminar" ],
+    [ "CS 1321", 3, "A", "Intro to Computing" ],
+    [ "ENGL 1102", 3, "A", "English Composition II" ],
+    [ "HPS 1040", 2, "B", "Health" ],
+    [ "MATH 1502", 4, "B", "Calculus II" ]
+  ],
+  "spring 2006": [
+    [ "CS 1050", 3, "A", "Constructing Proofs" ],
+    [ "CS 1322", 3, "A", "Object Oriented Programming" ],
+    [ "ECON 2100", 3, "A", "Economics and Policy" ],
+    [ "MATH 2605", 4, "A", "Calc III for Computer Science" ]
+  ],
+  "fall 2006": [
+    [ "CS 2110", 4, "A", "Computer Organization and Programming" ],
+    [ "MATH 3012", 3, "A", "Applied Combinatorics" ],
+    [ "PHYS 2211", 4, "A", "Intro Physics I" ],
+    [ "PSYC 1101", 3, "A", "General Psychology" ],
+    [ "SPAN 1101", 3, "A", "Patterns of Spanish I" ]
+  ],
+  "spring 2007": [
+    [ "COOP 2001", 12, "V", "Co-op Work Assignment" ]
+  ],
+  "summer 2007": [
+    [ "CS 3510", 3, "A", "Design and Analysis of Algorithms" ],
+    [ "CS 4001", 3, "A", "Computing and Society " ],
+    [ "SPAN 2813", 3, "A", "Special Topics (Spanish)" ]
+  ],
+  "fall 2007": [
+    [ "CS 2200", 4, "A", "Systems and Networks" ],
+    [ "COOP 2000", 12, "V", "Co-op Work Assignment" ]
+  ],
+  "spring 2008": [
+    [ "CS 2340", 3, "A", "Objects and Design" ],
+    [ "CS 3300", 3, "A", "Intro to Software Engineering" ],
+    [ "CS 4400", 3, "A", "Intro to Database Systems" ],
+    [ "CS 4510", 3, "A", "Automata and Complexity" ]
+  ],
+  "summer 2008": [
+    [ "COOP 4000", 12, "V", "Co-op Work Assignment" ]
+  ],
+  "fall 2008": [
+    [ "CS 3210", 3, "A", "Design of Operating Systems" ],
+    [ "CS 3240", 3, "A", "Languages and Computation" ],
+    [ "ISYE 3770", 3, "A", "Statistics and Applications" ],
+    [ "MATH 2406", 3, "A", "Abstract Vector Spaces" ],
+    [ "MATH 4022", 3, "A", "Intro to Graph Theory" ]
+  ],
+  "spring 2009": [
+    [ "COOP 4000", 12, "V", "Co-op Work Assignment" ]
+  ],
+  "summer 2009": [
+    [ "CS 1171", 1, "S", "Computing in MATLAB" ],
+    [ "CS 4235", 3, "A", "Intro to Info Security" ],
+    [ "CS 4911", 3, "A", "Design Capstone Project" ],
+    [ "PHYS 2212", 4, "A", "Intro Physics II" ]
+  ],
+  "fall 2009": [
+    [ "CS 4290", 3, "A", "Advanced Computer Org" ],
+    [ "CS 4392", 3, "A", "Programming Languages" ],
+    [ "CS 4540", 3, "A", "Advanced Algorithms" ],
+    [ "MATH 4782", 3, "D", "Quantum Information and Computation" ]
+  ],
+  "spring 2010": [
+    [ "CS 3220", 3, "B", "Processor Design" ],
+    [ "EAS 1600", 4, "B", "Intro Environmental Science" ], 
+    [ "LCC 3401", 2, "B", "Technical Comm Practices" ]
+  ],
+  "fall 2010": [
+    [ "CS 6550", 3, "B", "Design and Analysis of Algorithms" ]
+  ],
+  "spring 2011": [
+    [ "CS 6241", 3, "A", "Compiler Design" ]
+  ],
+  "fall 2011": [
+    [ "CS 6520", 3, "B", "Computational Complexity" ]
+  ],
+  "spring 2012": [
+    [ "CS 8803", 3, "A", "Mobile Applications and Services" ]
+  ],
+  "summer 2012": [
+    [ "CS 4590", 3, "A", "Computer Audio" ],
+    [ "CSE 6740", 3, "B", "Computational Data Analy" ]
+  ],
+  "fall 2012": [
+    [ "CS 6260", 3, "A", "Applied Cryptography" ],
+    [ "CS 6491", 3, "A", "Computer Graphics" ]
+  ],
+  "spring 2013": [
+    [ "CS 6238", 3, "?", "Secure Computing Systems" ],
+    [ "CS 7560", 3, "?", "Theory of Cryptography" ]
+  ]
+}

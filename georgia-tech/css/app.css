@@ -1,0 +1,30 @@
+body {
+  background-color: rgb(240, 240, 240);
+  background-image: linear-gradient(90deg, transparent 50%, rgba(255,255,255,.5) 50%);
+  background-size: 4px 50px;
+}
+
+.semesters {
+  margin: 50px auto 150px;
+  width: 450px;
+}
+
+.semester {
+  list-style: none;
+  margin-top: 20px;
+}
+
+.course {
+  list-style: none;
+}
+
+.course .grade {
+  display: inline-block;
+  width: 15px;
+  color: green;
+}
+
+.course .number {
+  display: inline-block;
+  width: 90px;
+}

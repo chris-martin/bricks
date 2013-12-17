@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" ng-app="gtHistoryApp">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Chris Martin's GT course history</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/app.css">
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.5/angular.min.js"></script>
+    <script src="js/underscore-min.js"></script>
+    <script src="js/controllers.js"></script>
+  </head>
+  <body ng-controller="CourseListCtrl">
+    <ul class="semesters">
+      <li class="semester" ng-repeat="semester in semesters | orderBy:'-time'">
+        <h3 class="name">{{semester.name}}</h3>
+        <ul class="courses">
+          <li class="course" ng-repeat="course in semester.courses | orderBy:'number'">
+            <span class="number">{{course.number}}</span>
+            <span class="grade">{{course.grade}}</span>
+            <span class="name">{{course.name}}</span>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </body>
+</html>

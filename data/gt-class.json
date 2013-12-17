@@ -81,14 +81,18 @@
   ],
   "summer 2012": [
     [ "CS 4590", 3, "A", "Computer Audio" ],
-    [ "CSE 6740", 3, "B", "Computational Data Analy" ]
+    [ "CSE 6740", 3, "B", "Computational Data Analysis" ]
   ],
   "fall 2012": [
     [ "CS 6260", 3, "A", "Applied Cryptography" ],
     [ "CS 6491", 3, "A", "Computer Graphics" ]
   ],
   "spring 2013": [
-    [ "CS 6238", 3, "?", "Secure Computing Systems" ],
-    [ "CS 7560", 3, "?", "Theory of Cryptography" ]
+    [ "CS 6238", 3, "B", "Secure Computing Systems" ],
+    [ "CS 7560", 3, "A", "Theory of Cryptography" ]
+  ],
+  "fall 2013": [
+    [ "CS 6210", 3, "A", "Advanced Operating Systems" ],
+    [ "CS 6422", 3, "A", "Database System Implementation" ]
   ]
 }

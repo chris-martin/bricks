@@ -1,0 +1,112 @@
+.middle ul {
+    list-style-type: none;
+    margin-left: 0px;
+}
+
+.middle ul ul {
+    margin-left: 20px;
+}
+
+.middle li {
+    margin: 0 0 10px;
+}
+
+section[data-name="work"] b,
+section[data-name="school"] b {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+h3:before {
+    font-family: 'Elusive-Icons';
+    font-weight: normal;
+    font-style: normal;
+    speak: none;
+    line-height: 1;
+    display: inline-block;
+    text-decoration: inherit;
+    -webkit-font-smoothing: antialiased;
+    margin-right: 10px;
+}
+
+section[data-name="work"] h3:before {
+    content: "\e10d";
+}
+
+section[data-name="school"] h3:before {
+    content: "\e0f5";
+}
+
+section[data-name="programming"] h3:before {
+    content: "\e0b1";
+}
+
+section[data-name="tools"] h3:before {
+    content: "\e004";
+}
+
+section[data-name="philosophy"] h3:before {
+    content: "\e085";
+}
+
+section[data-name="email"] a:before {
+    content: "\e0eb";
+}
+
+section[data-name="twitter"] a:before {
+    content: "\e018";
+}
+
+section[data-name="github"] a:before {
+    content: "\e0e5";
+}
+
+section[data-name="stackoverflow"] a:before {
+    content: "\e032";
+}
+
+section[data-name="googleplus"] a:before {
+    content: "\e0fc";
+}
+
+section[data-name="facebook"] a:before {
+    content: "\e09c";
+}
+
+section[data-name="tools"] li {
+    display: inline-block;
+    margin: 5px 10px;
+}
+
+.languages th {
+    text-align: right;
+    padding-right: 20px;
+}
+
+.languages td {
+    font-size: 0.9em;
+}
+
+.languages tr:nth-child(1) th {
+    font-size: 2em;
+}
+
+.languages tr:nth-child(2) th {
+    font-size: 1.8em;
+}
+
+.languages tr:nth-child(3) th {
+    font-size: 1.4em;
+}
+
+.languages tr:nth-child(4) th {
+    font-size: 1.2em;
+}
+
+.languages tr:nth-child(5) th {
+    font-size: 1.0em;
+}
+
+.languages tr:nth-child(6) th {
+    font-size: 1.0em;
+}

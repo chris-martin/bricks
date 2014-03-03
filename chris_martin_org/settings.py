@@ -27,7 +27,13 @@ if PRODUCTION:
 else:
     SECRET_KEY = 'gyyh@$kt*__ms4o8f9wnzebn!ou4p&^f0ubd^kc*fvs=-e=f*$'
 
+# Templates
 TEMPLATE_DEBUG = True
+
+TEMPLATE_DIRS = (
+    os.path.join(BASE_DIR, 'chris_martin_org', 'templates'),
+)
+
 
 ALLOWED_HOSTS = []
 

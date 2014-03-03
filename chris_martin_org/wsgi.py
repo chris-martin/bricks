@@ -12,3 +12,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "chris_martin_org.settings")
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
+
+from dj_static import Cling
+application = Cling(application)

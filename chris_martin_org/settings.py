@@ -23,7 +23,7 @@ DEBUG = not PRODUCTION
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if PRODUCTION:
-    SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
+    SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or ''
 else:
     SECRET_KEY = 'gyyh@$kt*__ms4o8f9wnzebn!ou4p&^f0ubd^kc*fvs=-e=f*$'
 

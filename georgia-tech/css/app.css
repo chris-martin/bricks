@@ -1,0 +1,42 @@
+body {
+  background-color: rgb(245, 245, 245);
+  background-image: linear-gradient(90deg, transparent 50%, rgba(255,255,255,.5) 50%);
+  background-size: 3px 50px;
+}
+
+.semesters {
+  margin: 50px auto 150px;
+  width: 450px;
+}
+
+.semester {
+  list-style: none;
+  margin-top: 20px;
+}
+
+.semester>.name {
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.course {
+  list-style: none;
+  margin-top: 5px;
+}
+
+.course>.grade {
+  display: inline-block;
+  width: 20px;
+  color: rgb(70, 120, 70);
+}
+
+.course>.number {
+  display: inline-block;
+  width: 80px;
+  color: rgb(100, 100, 100);
+}
+
+.course>.name {
+  font-size: 1.2em;
+}

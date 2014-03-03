@@ -35,7 +35,10 @@ TEMPLATE_DIRS = (
 )
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '.chris-martin.org',
+    'chris-martin-org.herokuapp.com'
+]
 
 
 # Application definition

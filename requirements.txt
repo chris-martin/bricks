@@ -1,5 +1,4 @@
 Django==1.6.2
-South==0.8.4
 distribute==0.6.49
 dj-database-url==0.2.2
 dj-static==0.0.5

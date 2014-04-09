@@ -11,10 +11,8 @@
     margin: 0 0 10px;
 }
 
-section[data-name="work"] b,
-section[data-name="school"] b {
-    display: inline-block;
-    margin-right: 10px;
+section[data-name="timeline"] span {
+  display: inline-block; margin: 0 5px;
 }
 
 h3:before {
@@ -29,12 +27,8 @@ h3:before {
     margin-right: 10px;
 }
 
-section[data-name="work"] h3:before {
+section[data-name="timeline"] h3:before {
     content: "\e10d";
-}
-
-section[data-name="school"] h3:before {
-    content: "\e0f5";
 }
 
 section[data-name="programming"] h3:before {

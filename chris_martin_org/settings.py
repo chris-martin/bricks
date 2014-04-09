@@ -41,12 +41,15 @@ ROOT_URLCONF = 'chris_martin_org.urls'
 
 WSGI_APPLICATION = 'chris_martin_org.wsgi.application'
 
-DATABASES = {
-    'default': {
+import dj_database_url
+DATABASES = {}
+if PRODUCTION:
+    DATABASES['default'] = dj_database_url.config()
+else:
+    DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
-}
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

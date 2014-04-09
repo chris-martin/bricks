@@ -1,14 +1,12 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import patterns, url
 
-#from django.contrib import admin
-#admin.autodiscover()
+from django.contrib import admin
+admin.autodiscover()
 
-from chris_martin_org.views import HomeView
+from chris_martin_org.views import *
 
-urlpatterns = patterns('',
-    # Examples:
-    # url(r'^blog/', include('blog.urls')),
-    # url(r'^admin/', include(admin.site.urls)),
-
+urlpatterns = patterns(
+    '',
     url(r'^$', HomeView.as_view(), name='home'),
+    url(r'^georgia-tech/?$', SchoolView.as_view(), name='school')
 )

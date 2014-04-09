@@ -18,6 +18,22 @@ body > * {
     color: #fff;
     line-height: 2em;
     font-family: "Julius Sans One", sans-serif;
+    display: inline-block;
+    position: relative;
+    z-index: 2;
+}
+
+.header h1.page-title {
+    font-size: 20px;
+    line-height: 1.1em;
+    margin-left: 50px;
+    border-width: 0 0 2px 0;
+    border-style: solid;
+    border-color: white;
+}
+
+.header a:hover h1 {
+    color: #fff282;
 }
 
 .header {

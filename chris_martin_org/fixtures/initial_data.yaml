@@ -1,0 +1,216 @@
+- fields: {grade: S, hours: 1, number: '1100', semester: Fall, subject: CS, title: Freshman
+      Leap Seminar, year: 2005}
+  model: chris_martin_org.course
+  pk: 1
+- fields: {grade: A, hours: 3, number: '1321', semester: Fall, subject: CS, title: Intro
+      to Computing, year: 2005}
+  model: chris_martin_org.course
+  pk: 2
+- fields: {grade: A, hours: 3, number: '1102', semester: Fall, subject: ENGL, title: English
+      Composition II, year: 2005}
+  model: chris_martin_org.course
+  pk: 3
+- fields: {grade: B, hours: 2, number: '1040', semester: Fall, subject: HPS, title: Health,
+    year: 2005}
+  model: chris_martin_org.course
+  pk: 4
+- fields: {grade: B, hours: 4, number: '1502', semester: Fall, subject: MATH, title: Calculus
+      II, year: 2005}
+  model: chris_martin_org.course
+  pk: 5
+- fields: {grade: A, hours: 3, number: '1050', semester: Spring, subject: CS, title: Constructing
+      Proofs, year: 2006}
+  model: chris_martin_org.course
+  pk: 6
+- fields: {grade: A, hours: 3, number: '1322', semester: Spring, subject: CS, title: Object
+      Oriented Programming, year: 2006}
+  model: chris_martin_org.course
+  pk: 7
+- fields: {grade: A, hours: 3, number: '2100', semester: Spring, subject: ECON, title: Economics
+      and Policy, year: 2006}
+  model: chris_martin_org.course
+  pk: 8
+- fields: {grade: A, hours: 4, number: '2605', semester: Spring, subject: MATH, title: Calc
+      III for Computer Science, year: 2006}
+  model: chris_martin_org.course
+  pk: 9
+- fields: {grade: A, hours: 4, number: '2110', semester: Fall, subject: CS, title: Computer
+      Organization and Programming, year: 2006}
+  model: chris_martin_org.course
+  pk: 10
+- fields: {grade: A, hours: 3, number: '3012', semester: Fall, subject: MATH, title: Applied
+      Combinatorics, year: 2006}
+  model: chris_martin_org.course
+  pk: 11
+- fields: {grade: A, hours: 4, number: '2211', semester: Fall, subject: PHYS, title: Intro
+      Physics I, year: 2006}
+  model: chris_martin_org.course
+  pk: 12
+- fields: {grade: A, hours: 3, number: '1101', semester: Fall, subject: PSYC, title: General
+      Psychology, year: 2006}
+  model: chris_martin_org.course
+  pk: 13
+- fields: {grade: A, hours: 3, number: '1101', semester: Fall, subject: SPAN, title: Patterns
+      of Spanish I, year: 2006}
+  model: chris_martin_org.course
+  pk: 14
+- fields: {grade: V, hours: 12, number: '2001', semester: Spring, subject: COOP, title: Co-op
+      Work Assignment, year: 2007}
+  model: chris_martin_org.course
+  pk: 15
+- fields: {grade: A, hours: 3, number: '3510', semester: Summer, subject: CS, title: Design
+      and Analysis of Algorithms, year: 2007}
+  model: chris_martin_org.course
+  pk: 16
+- fields: {grade: A, hours: 3, number: '4001', semester: Summer, subject: CS, title: 'Computing
+      and Society ', year: 2007}
+  model: chris_martin_org.course
+  pk: 17
+- fields: {grade: A, hours: 3, number: '2813', semester: Summer, subject: SPAN, title: Special
+      Topics (Spanish), year: 2007}
+  model: chris_martin_org.course
+  pk: 18
+- fields: {grade: A, hours: 4, number: '2200', semester: Fall, subject: CS, title: Systems
+      and Networks, year: 2007}
+  model: chris_martin_org.course
+  pk: 19
+- fields: {grade: V, hours: 12, number: '2000', semester: Fall, subject: COOP, title: Co-op
+      Work Assignment, year: 2007}
+  model: chris_martin_org.course
+  pk: 20
+- fields: {grade: A, hours: 3, number: '2340', semester: Spring, subject: CS, title: Objects
+      and Design, year: 2008}
+  model: chris_martin_org.course
+  pk: 21
+- fields: {grade: A, hours: 3, number: '3300', semester: Spring, subject: CS, title: Intro
+      to Software Engineering, year: 2008}
+  model: chris_martin_org.course
+  pk: 22
+- fields: {grade: A, hours: 3, number: '4400', semester: Spring, subject: CS, title: Intro
+      to Database Systems, year: 2008}
+  model: chris_martin_org.course
+  pk: 23
+- fields: {grade: A, hours: 3, number: '4510', semester: Spring, subject: CS, title: Automata
+      and Complexity, year: 2008}
+  model: chris_martin_org.course
+  pk: 24
+- fields: {grade: V, hours: 12, number: '4000', semester: Summer, subject: COOP, title: Co-op
+      Work Assignment, year: 2008}
+  model: chris_martin_org.course
+  pk: 25
+- fields: {grade: A, hours: 3, number: '3210', semester: Fall, subject: CS, title: Design
+      of Operating Systems, year: 2008}
+  model: chris_martin_org.course
+  pk: 26
+- fields: {grade: A, hours: 3, number: '3240', semester: Fall, subject: CS, title: Languages
+      and Computation, year: 2008}
+  model: chris_martin_org.course
+  pk: 27
+- fields: {grade: A, hours: 3, number: '3770', semester: Fall, subject: ISYE, title: Statistics
+      and Applications, year: 2008}
+  model: chris_martin_org.course
+  pk: 28
+- fields: {grade: A, hours: 3, number: '2406', semester: Fall, subject: MATH, title: Abstract
+      Vector Spaces, year: 2008}
+  model: chris_martin_org.course
+  pk: 29
+- fields: {grade: A, hours: 3, number: '4022', semester: Fall, subject: MATH, title: Intro
+      to Graph Theory, year: 2008}
+  model: chris_martin_org.course
+  pk: 30
+- fields: {grade: V, hours: 12, number: '4000', semester: Spring, subject: COOP, title: Co-op
+      Work Assignment, year: 2009}
+  model: chris_martin_org.course
+  pk: 31
+- fields: {grade: S, hours: 1, number: '1171', semester: Summer, subject: CS, title: Computing
+      in MATLAB, year: 2009}
+  model: chris_martin_org.course
+  pk: 32
+- fields: {grade: A, hours: 3, number: '4235', semester: Summer, subject: CS, title: Intro
+      to Info Security, year: 2009}
+  model: chris_martin_org.course
+  pk: 33
+- fields: {grade: A, hours: 3, number: '4911', semester: Summer, subject: CS, title: Design
+      Capstone Project, year: 2009}
+  model: chris_martin_org.course
+  pk: 34
+- fields: {grade: A, hours: 4, number: '2212', semester: Summer, subject: PHYS, title: Intro
+      Physics II, year: 2009}
+  model: chris_martin_org.course
+  pk: 35
+- fields: {grade: A, hours: 3, number: '4290', semester: Fall, subject: CS, title: Advanced
+      Computer Org, year: 2009}
+  model: chris_martin_org.course
+  pk: 36
+- fields: {grade: A, hours: 3, number: '4392', semester: Fall, subject: CS, title: Programming
+      Languages, year: 2009}
+  model: chris_martin_org.course
+  pk: 37
+- fields: {grade: A, hours: 3, number: '4540', semester: Fall, subject: CS, title: Advanced
+      Algorithms, year: 2009}
+  model: chris_martin_org.course
+  pk: 38
+- fields: {grade: D, hours: 3, number: '4782', semester: Fall, subject: MATH, title: Quantum
+      Information and Computation, year: 2009}
+  model: chris_martin_org.course
+  pk: 39
+- fields: {grade: B, hours: 3, number: '3220', semester: Spring, subject: CS, title: Processor
+      Design, year: 2010}
+  model: chris_martin_org.course
+  pk: 40
+- fields: {grade: B, hours: 4, number: '1600', semester: Spring, subject: EAS, title: Intro
+      Environmental Science, year: 2010}
+  model: chris_martin_org.course
+  pk: 41
+- fields: {grade: B, hours: 2, number: '3401', semester: Spring, subject: LCC, title: Technical
+      Comm Practices, year: 2010}
+  model: chris_martin_org.course
+  pk: 42
+- fields: {grade: B, hours: 3, number: '6550', semester: Fall, subject: CS, title: Design
+      and Analysis of Algorithms, year: 2010}
+  model: chris_martin_org.course
+  pk: 43
+- fields: {grade: A, hours: 3, number: '6241', semester: Spring, subject: CS, title: Compiler
+      Design, year: 2011}
+  model: chris_martin_org.course
+  pk: 44
+- fields: {grade: B, hours: 3, number: '6520', semester: Fall, subject: CS, title: Computational
+      Complexity, year: 2011}
+  model: chris_martin_org.course
+  pk: 45
+- fields: {grade: A, hours: 3, number: '8803', semester: Spring, subject: CS, title: Mobile
+      Applications and Services, year: 2012}
+  model: chris_martin_org.course
+  pk: 46
+- fields: {grade: A, hours: 3, number: '4590', semester: Summer, subject: CS, title: Computer
+      Audio, year: 2012}
+  model: chris_martin_org.course
+  pk: 47
+- fields: {grade: B, hours: 3, number: '6740', semester: Summer, subject: CSE, title: Computational
+      Data Analysis, year: 2012}
+  model: chris_martin_org.course
+  pk: 48
+- fields: {grade: A, hours: 3, number: '6260', semester: Fall, subject: CS, title: Applied
+      Cryptography, year: 2012}
+  model: chris_martin_org.course
+  pk: 49
+- fields: {grade: A, hours: 3, number: '6491', semester: Fall, subject: CS, title: Computer
+      Graphics, year: 2012}
+  model: chris_martin_org.course
+  pk: 50
+- fields: {grade: B, hours: 3, number: '6238', semester: Spring, subject: CS, title: Secure
+      Computing Systems, year: 2013}
+  model: chris_martin_org.course
+  pk: 51
+- fields: {grade: A, hours: 3, number: '7560', semester: Spring, subject: CS, title: Theory
+      of Cryptography, year: 2013}
+  model: chris_martin_org.course
+  pk: 52
+- fields: {grade: A, hours: 3, number: '6210', semester: Fall, subject: CS, title: Advanced
+      Operating Systems, year: 2013}
+  model: chris_martin_org.course
+  pk: 53
+- fields: {grade: A, hours: 3, number: '6422', semester: Fall, subject: CS, title: Database
+      System Implementation, year: 2013}
+  model: chris_martin_org.course
+  pk: 54

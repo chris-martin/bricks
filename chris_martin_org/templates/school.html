@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Chris Martin's GT course history{% endblock %}
+
+{% block page-title %}GT Course History{% endblock %}
+
+{% block extra-head %}
+    {{ block.super }}
+    <link href="{% static 'school.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block body %}
+    <section class="middle">
+        <ul class="semesters">
+            {% regroup object_list|dictsortreversed:'chronological_index' by semester_and_year as semesters %}
+            {% for semester in semesters %}
+            <li class="semester">
+                <h3 class="name">{{ semester.grouper }}</h3>
+                <ul class="courses">
+                    {% for course in semester.list %}
+                    <li class="course">
+                        <span class="number">{{ course.subject }} {{ course.number }}</span>
+                        <span class="grade">{{ course.grade }}</span>
+                        <span class="name">{{ course.title }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endblock %}

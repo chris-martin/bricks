@@ -1,0 +1,117 @@
+- semester: Fall 2013
+  courses:
+  - {grade: A, hours: 3, number: '6210', subject: CS, title: Advanced Operating Systems}
+  - {grade: A, hours: 3, number: '6422', subject: CS, title: Database System Implementation}
+
+- semester: Spring 2013
+  courses:
+  - {grade: B, hours: 3, number: '6238', subject: CS, title: Secure Computing Systems}
+  - {grade: A, hours: 3, number: '7560', subject: CS, title: Theory of Cryptography}
+
+- semester: Fall 2012
+  courses:
+  - {grade: A, hours: 3, number: '6260', subject: CS, title: Applied Cryptography}
+  - {grade: A, hours: 3, number: '6491', subject: CS, title: Computer Graphics}
+
+- semester: Summer 2012
+  courses:
+  - {grade: A, hours: 3, number: '4590', subject: CS, title: Computer Audio}
+  - {grade: B, hours: 3, number: '6740', subject: CSE, title: Computational Data Analysis}
+
+- semester: Spring 2012
+  courses:
+  - {grade: A, hours: 3, number: '8803', subject: CS, title: Mobile Applications and Services}
+
+- semester: Fall 2011
+  courses:
+  - {grade: B, hours: 3, number: '6520', subject: CS, title: Computational Complexity}
+
+- semester: Spring 2011
+  courses:
+  - {grade: A, hours: 3, number: '6241', subject: CS, title: Compiler Design}
+
+- semester: Fall 2010
+  courses:
+  - {grade: B, hours: 3, number: '6550', subject: CS, title: Design and Analysis of Algorithms}
+
+- semester: Spring 2010
+  courses:
+  - {grade: B, hours: 3, number: '3220', subject: CS, title: Processor Design}
+  - {grade: B, hours: 4, number: '1600', subject: EAS, title: Intro Environmental Science}
+  - {grade: B, hours: 2, number: '3401', subject: LCC, title: Technical Comm Practices}
+
+- semester: Fall 2009
+  courses:
+  - {grade: A, hours: 3, number: '4290', subject: CS, title: Advanced Computer Org}
+  - {grade: A, hours: 3, number: '4392', subject: CS, title: Programming Languages}
+  - {grade: A, hours: 3, number: '4540', subject: CS, title: Advanced Algorithms}
+  - {grade: D, hours: 3, number: '4782', subject: MATH, title: Quantum Information and Computation}
+
+- semester: Summer 2009
+  courses:
+  - {grade: S, hours: 1, number: '1171', subject: CS, title: Computing in MATLAB}
+  - {grade: A, hours: 3, number: '4235', subject: CS, title: Intro to Info Security}
+  - {grade: A, hours: 3, number: '4911', subject: CS, title: Design Capstone Project}
+  - {grade: A, hours: 4, number: '2212', subject: PHYS, title: Intro Physics II}
+
+- semester: Spring 2009
+  courses:
+  - {grade: V, hours: 12, number: '4000', subject: COOP, title: Co-op Work Assignment}
+
+- semester: Fall 2008
+  courses:
+  - {grade: A, hours: 3, number: '3210', subject: CS, title: Design of Operating Systems}
+  - {grade: A, hours: 3, number: '3240', subject: CS, title: Languages and Computation}
+  - {grade: A, hours: 3, number: '3770', subject: ISYE, title: Statistics and Applications}
+  - {grade: A, hours: 3, number: '2406', subject: MATH, title: Abstract Vector Spaces}
+  - {grade: A, hours: 3, number: '4022', subject: MATH, title: Intro to Graph Theory}
+
+- semester: Summer 2008
+  courses:
+  - {grade: V, hours: 12, number: '4000', subject: COOP, title: Co-op Work Assignment}
+
+- semester: Spring 2008
+  courses:
+  - {grade: A, hours: 3, number: '2340', subject: CS, title: Objects and Design}
+  - {grade: A, hours: 3, number: '3300', subject: CS, title: Intro to Software Engineering}
+  - {grade: A, hours: 3, number: '4400', subject: CS, title: Intro to Database Systems}
+  - {grade: A, hours: 3, number: '4510', subject: CS, title: Automata and Complexity}
+
+- semester: Fall 2007
+  courses:
+  - {grade: A, hours: 4, number: '2200', subject: CS, title: Systems and Networks}
+  - {grade: V, hours: 12, number: '2000', subject: COOP, title: Co-op Work Assignment}
+
+- semester: Summer 2007
+  courses:
+  - {grade: A, hours: 3, number: '3510', subject: CS, title: Design and Analysis of Algorithms}
+  - {grade: A, hours: 3, number: '4001', subject: CS, title: Computing and Society}
+  - {grade: A, hours: 3, number: '2813', subject: SPAN, title: Special Topics (Spanish)}
+
+- semester: Spring 2007
+  courses:
+  - {grade: V, hours: 12, number: '2001', subject: COOP, title: Co-op Work Assignment}
+
+- semester: Fall 2006
+  courses:
+  - {grade: A, hours: 4, number: '2110', subject: CS, title: Computer Organization and Programming}
+  - {grade: A, hours: 3, number: '3012', subject: MATH, title: Applied Combinatorics}
+  - {grade: A, hours: 4, number: '2211', subject: PHYS, title: Intro Physics I}
+  - {grade: A, hours: 3, number: '1101', subject: PSYC, title: General Psychology}
+  - {grade: A, hours: 3, number: '1101', subject: SPAN, title: Patterns of Spanish I}
+
+
+- semester: Spring 2006
+  courses:
+  - {grade: A, hours: 3, number: '1050', subject: CS, title: Constructing Proofs}
+  - {grade: A, hours: 3, number: '1322', subject: CS, title: Object Oriented Programming}
+  - {grade: A, hours: 3, number: '2100', subject: ECON, title: Economics and Policy}
+  - {grade: A, hours: 4, number: '2605', subject: MATH, title: Calc III for Computer Science}
+
+- semester: Fall 2005
+  courses:
+  - {grade: S, hours: 1, number: '1100', subject: CS, title: Freshman Leap Seminar}
+  - {grade: A, hours: 3, number: '1321', subject: CS, title: Intro to Computing}
+  - {grade: A, hours: 3, number: '1102', subject: ENGL, title: English Composition II}
+  - {grade: B, hours: 2, number: '1040', subject: HPS, title: Health}
+  - {grade: B, hours: 4, number: '1502', subject: MATH, title: Calculus II}

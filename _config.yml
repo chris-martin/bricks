@@ -13,3 +13,4 @@ facebook_username: ch.martin
 # Build settings
 markdown: kramdown
 permalink: pretty
+timezone: America/New_York

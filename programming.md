@@ -141,7 +141,7 @@ Various other things I've worked with significantly:
 [CS-4400]: https://github.com/chris-martin/CS-4400/
 [cs6241]: https://github.com/chris-martin/cs6241/
 [delaunay]: https://github.com/chris-martin/delaunay
-[georgia]: http://georgia.chris-martin.org/
+[georgia]: https://github.com/chris-martin/georgia
 [github]: https://github.com/
 [grouch]: https://github.com/chris-martin/grouch
 [h2]: https://github.com/chris-martin/h2/tree/mac

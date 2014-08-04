@@ -24,7 +24,8 @@ because imperative languages are so unnecessarily difficult.
     1 0 1
     0 1 0 1
 
-The answers given are okay as far as Java goes.
+The answers given are okay as far as Java goes (although they're both subtly
+incorrect because they include an extra space at the end of each line).
 
 {% highlight java %}
 int i, j, a = 1;

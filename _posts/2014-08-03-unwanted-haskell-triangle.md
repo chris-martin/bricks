@@ -4,6 +4,7 @@ title: "Unwanted Haskell triangle"
 date: 2014-08-03 20:42
 timezone: EST
 tags: haskell java stackoverflow
+redirect_from: /haskell/java/stackoverflow/2014/08/03/unwanted-haskell-triangle/
 ---
 
 <blockquote class="twitter-tweet" lang="en"><p>Sometimes I see a Java SO

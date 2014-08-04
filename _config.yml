@@ -14,3 +14,6 @@ facebook_username: ch.martin
 markdown: kramdown
 permalink: /:year/:title
 timezone: UTC
+
+gems:
+  - jekyll-redirect-from

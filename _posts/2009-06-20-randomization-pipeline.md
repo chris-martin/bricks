@@ -3,7 +3,7 @@ layout: post
 title: "Randomization pipeline"
 date: 2009-06-20 23:45
 timezone: EST
-categories: algorithms randomness bash
+tags: algorithms randomness bash
 ---
 
 One disappointing aspect of my CS experience is that I don't get to write many

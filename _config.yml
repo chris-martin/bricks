@@ -12,5 +12,5 @@ facebook_username: ch.martin
 
 # Build settings
 markdown: kramdown
-permalink: pretty
+permalink: /:year/:title
 timezone: UTC

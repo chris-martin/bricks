@@ -3,7 +3,7 @@ layout: post
 title: "Unwanted Haskell triangle"
 date: 2014-08-03 20:42
 timezone: EST
-categories: haskell java stackoverflow
+tags: haskell java stackoverflow
 ---
 
 <blockquote class="twitter-tweet" lang="en"><p>Sometimes I see a Java SO

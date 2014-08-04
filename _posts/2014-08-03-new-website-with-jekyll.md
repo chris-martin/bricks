@@ -1,7 +1,7 @@
 ---
 layout: post
-title:  "New website with Jekyll"
-date:   2014-08-03 01:46:47 EST
+title: "New website with Jekyll"
+date: 2014-08-03 01:46:47 EST
 categories: jekyll
 ---
 

@@ -88,7 +88,7 @@ of the puzzle solved in a way that we can analyze and test in isolation.
 ### Lines
 
 We're going to be putting these sequences together in space-separated strings,
-so we import `intercalate :: [a] -> [[a]] -> [a]` , which for `Char` lists
+so we import `intercalate :: [a] -> [[a]] -> [a]` , which (for `Char` lists)
 functions as the equivalent of Scala's `Iterable.mkString` or Python's
 `str.join`.
 

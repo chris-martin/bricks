@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Unwanted Haskell triangle"
-date: 2014-08-03 20:42:00 EST
+date: "2014-08-03 20:42:00 EST"
 categories: haskell java stackoverflow
 ---
 

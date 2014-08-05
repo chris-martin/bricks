@@ -160,4 +160,30 @@ Java."
 
 Teaching, trolling, or proselytizing?
 
+## Addendum
+
+Here's a slightly revised program thanks to some feedback.
+
+<blockquote class="twitter-tweet" lang="en"><p>
+<a href="https://twitter.com/chris__martin">@chris__martin</a> Nice
+understandable solution. My similar would use
+&quot;zeroOnes = &#39;0&#39;:&#39;1&#39;:zeroOnes&quot; and &quot;take i $
+drop (i `mod` 2) $ zeroOnes&quot;.</p>&mdash; Franklin Chen (@franklinchen)
+<a href="https://twitter.com/franklinchen/statuses/496275930667843584">August
+4, 2014</a></blockquote>
+
+{% highlight haskell %}
+import Data.List (intercalate, intersperse)
+
+main :: IO()
+main = putStrLn $ triangle 4
+  where
+    triangle n = intercalate "\n" $ map line [1..n]
+    line i = intersperse ' ' $ take i $ drop (i `mod` 2) $ zeroOnes
+    zeroOnes = '0' : '1' : zeroOnes
+{% endhighlight %}
+
+I like how it expresses the zero-one sequence in more straightforward manner
+without being tricky with arithmetic.
+
 [stackoverflow]: https://stackoverflow.com/questions/25091218/print-triangle-pattern-using-java

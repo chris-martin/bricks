@@ -3,7 +3,7 @@ layout: post
 title: Javac bug report
 date: 2010-08-05 01:14
 timezone: EST
-tags: bash
+tags: java
 ---
 
 I have been cursing at Java a lot lately. Over this past week, it's because

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Fun with Find"
+title: "Fun with find"
 date: 2008-04-24 03:44
 timezone: EST
 tags: bash

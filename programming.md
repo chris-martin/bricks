@@ -77,11 +77,11 @@ projects since then. I have no fondness for it.
 
 ## Timeline
 
-### Card For Coin
+### Fold
 
 2014&mdash;Present
 
-Co-founder
+CTO
 
 ### GTRI Cyber Tech and Info Security Lab
 

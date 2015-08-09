@@ -2,7 +2,7 @@
 layout: post
 title: "Gradle Scala REPL"
 date: 2015-08-09 1:30
-timezone: PST
+timezone: Pacific
 tags: scala gradle
 ---
 

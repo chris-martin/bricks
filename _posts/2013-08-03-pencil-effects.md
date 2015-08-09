@@ -2,7 +2,7 @@
 layout: post
 title: Pencil effects
 date: 2013-08-03 16:48
-timezone: EST
+timezone: Eastern
 ---
 
 *All programs must have side effects to be useful* &mdash; can we please stop

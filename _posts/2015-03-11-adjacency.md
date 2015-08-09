@@ -2,7 +2,7 @@
 layout: post
 title: "Adjacency"
 date: 2015-03-11 21:15
-timezone: PST
+timezone: Pacific
 tags: haskell
 ---
 

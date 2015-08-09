@@ -2,7 +2,7 @@
 layout: post
 title: "Unwanted Haskell triangle"
 date: 2014-08-03 20:42
-timezone: EST
+timezone: Eastern
 tags: haskell java stackoverflow
 redirect_from: /haskell/java/stackoverflow/2014/08/03/unwanted-haskell-triangle/
 ---

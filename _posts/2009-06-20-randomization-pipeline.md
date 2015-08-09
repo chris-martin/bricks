@@ -2,7 +2,7 @@
 layout: post
 title: "Randomization pipeline"
 date: 2009-06-20 23:45
-timezone: EST
+timezone: Eastern
 tags: algorithms randomness bash
 ---
 

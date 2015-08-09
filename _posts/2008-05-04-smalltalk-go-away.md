@@ -2,7 +2,7 @@
 layout: post
 title: Smalltalk, go away
 date: 2008-05-04 21:45
-timezone: EST
+timezone: Eastern
 tags: smalltalk
 ---
 

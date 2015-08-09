@@ -2,7 +2,7 @@
 layout: post
 title: Last-minute math
 date: 2008-11-03 11:15
-timezone: EST
+timezone: Eastern
 tags: math
 ---
 

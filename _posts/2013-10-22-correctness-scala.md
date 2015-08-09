@@ -2,7 +2,7 @@
 layout: post
 title: Correctness.scala
 date: 2013-10-22 22:18
-timezone: EST
+timezone: Eastern
 tags: scala
 ---
 

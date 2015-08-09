@@ -2,7 +2,7 @@
 layout: post
 title: "The Great Macropod Exodus"
 date: 2006-02-12 02:55
-timezone: EST
+timezone: Eastern
 ---
 
 This story is particularly dear to me, and I felt it strongly deserved to be 

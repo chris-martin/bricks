@@ -2,7 +2,7 @@
 layout: post
 title: A Mathematician's Lament
 date: 2009-06-19 20:14
-timezone: EST
+timezone: Eastern
 tags: math
 ---
 

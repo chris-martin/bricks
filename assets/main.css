@@ -241,19 +241,24 @@ a.site-title:hover {
 .post-content ul,
 .post-content ol { padding-left: 20px; }
 
-.post pre,
 .post code {
   border: 1px solid #d5d5e9;
   background-color: #eef;
+  padding: 0 6px;
+  margin: 0 2px;
+}
+
+.post pre,
+.post pre code {
+  border: 1px solid #d5d5e9;
+  background-color: #eef;
   padding: 8px 12px;
+  margin: 0;
+  font-size: 15px;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
   overflow-x: auto;
-}
-
-.post pre code {
-  font-size: 15px;
 }
 
 .post h1 code,

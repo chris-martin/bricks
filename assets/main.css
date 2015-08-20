@@ -249,11 +249,25 @@ a.site-title:hover {
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
-  font-size: 15px;
   overflow-x: auto;
 }
 
-.post code { padding: 1px 5px; }
+.post pre code {
+  font-size: 15px;
+}
+
+.post h1 code,
+.post h2 code,
+.post h3 code,
+.post h4 code,
+.post h5 code,
+.post h6 code {
+  background: none;
+  padding: 0;
+  border: 0;
+}
+
+.post pre code { padding: 1px 5px; }
 
 .post ul,
 .post ol { margin-left: 1.35em; }

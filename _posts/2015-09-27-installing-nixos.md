@@ -376,6 +376,23 @@ To search for packages, use `nix-env -qaP | grep ...`.
 The left column shows attribute paths (which is what you need for
 `systemPackages` in the config), and the right column shows package names.
 
+<br/>
+<br/>
+
+<blockquote class="twitter-tweet" lang="en">
+  <p lang="en" dir="ltr">
+    Blog post: Installing
+    <a href="https://twitter.com/hashtag/NixOS?src=hash">#NixOS</a>
+    with encrypted root
+    <a href="http://t.co/YSh1klCdvM">http://t.co/YSh1klCdvM</a>
+  </p>&mdash; Chris Martin (@chris__martin)
+  <a href="https://twitter.com/chris__martin/status/648070378795872257">
+    September 27, 2015
+  </a>
+</blockquote>
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
 
 
 [download]: https://nixos.org/releases/nixos/15.09/nixos-15.09.336.83cc494/

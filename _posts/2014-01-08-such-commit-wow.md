@@ -2,7 +2,7 @@
 layout: post
 title: such commit&mdash;wow
 date_granularity: day
-tags: git doge
+tags: git doge twitter
 ---
 
 <blockquote class="twitter-tweet" lang="en">

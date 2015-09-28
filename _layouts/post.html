@@ -9,9 +9,13 @@ layout: default
       {% if page.date_granularity == 'month' %}
         {{ page.date | date: "%B %Y" }}
       {% else %}
-        {{ page.date | date: "%b %-d, %Y &mdash; %l:%M %p" }}
-        {% if page.timezone %}
-          {{page.timezone}}
+        {% if page.date_granularity == 'day' %}
+          {{ page.date | date: "%b %-d, %Y" }}
+        {% else %}
+          {{ page.date | date: "%b %-d, %Y &mdash; %l:%M %p" }}
+          {% if page.timezone %}
+            {{page.timezone}}
+          {% endif %}
         {% endif %}
       {% endif %}
     </p>

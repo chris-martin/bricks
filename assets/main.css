@@ -71,9 +71,7 @@ a:visited { color: #205caa; }
   display: block;
   color: #333;
   font-size: 26px;
-  letter-spacing: -1px;
-  float: left;
-  line-height: 28px;
+  line-height: 40px;
   position: relative;
   z-index: 1;
 }

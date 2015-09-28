@@ -5,11 +5,20 @@ layout: default
 
   <header class="post-header">
     <h1>{{ page.title }}</h1>
-    <p class="meta">{{ page.date | date: "%b %-d, %Y &mdash; %l:%M %p" }} {{page.timezone}}{% if page.author %} • {{ page.author }}{% endif %}{% if page.meta %} • {{ page.meta }}{% endif %}</p>
+    <p class="meta">
+      {% if page.date_granularity == 'month' %}
+        {{ page.date | date: "%B %Y" }}
+      {% else %}
+        {{ page.date | date: "%b %-d, %Y &mdash; %l:%M %p" }}
+        {% if page.timezone %}
+          {{page.timezone}}
+        {% endif %}
+      {% endif %}
+    </p>
   </header>
 
   <article class="post-content">
-  {{ content }}
+    {{ content }}
   </article>
 
 </div>

@@ -2,6 +2,7 @@
 layout: post
 title: "The Great Macropod Exodus"
 date: 2006-02-12 02:55
+thumbnail: /assets/posts/2006-02-12-the-great-macropod-exodus/thumbnail.png
 timezone: Eastern
 ---
 

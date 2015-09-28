@@ -4,6 +4,7 @@ title: "Unwanted Haskell triangle"
 date: 2014-08-03 20:42
 timezone: Eastern
 tags: haskell java stackoverflow
+thumbnail: /assets/posts/2014-08-03-unwanted-haskell-triangle/triangle.png
 redirect_from: /haskell/java/stackoverflow/2014/08/03/unwanted-haskell-triangle/
 ---
 

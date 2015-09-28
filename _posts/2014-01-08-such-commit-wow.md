@@ -2,6 +2,7 @@
 layout: post
 title: such commit&mdash;wow
 date_granularity: day
+thumbnail: /assets/posts/2014-01-08-such-commit-wow/doge.png
 tags: git doge twitter
 ---
 

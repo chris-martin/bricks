@@ -7,16 +7,26 @@ layout: default
   <ul class="posts">
     {% for post in site.posts %}
       <li>
-        <span class="post-date">
-          {% if post.date_granularity == 'month' %}
-            {{ post.date | date: "%B %Y" }}
-          {% else %}
-            {{ post.date | date: "%b %-d, %Y" }}
-          {% endif %}
+        <span class="post-text">
+          <span class="post-date">
+            {% if post.date_granularity == 'month' %}
+              {{ post.date | date: "%B %Y" }}
+            {% else %}
+              {{ post.date | date: "%b %-d, %Y" }}
+            {% endif %}
+          </span>
+          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">
+            {{ post.title }}
+          </a>
         </span>
-        <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">
-          {{ post.title }}
-        </a>
+
+        {% if post.thumbnail %}
+          <span class="post-thumbnail">
+            <span class="post-thumbnail-image"
+                  style="background-image: url('{{ post.thumbnail }}');">
+            </span>
+          </span>
+        {% endif %}
       </li>
     {% endfor %}
   </ul>

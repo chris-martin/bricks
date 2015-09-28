@@ -2,6 +2,7 @@
 layout: post
 title: Georgia Tech course history
 date_granularity: month
+thumbnail: /assets/posts/2013-12-31-georgia-tech/coc.jpg
 tags: java
 ---
 

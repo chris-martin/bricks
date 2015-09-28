@@ -3,6 +3,7 @@ layout: post
 title: "Gradle Scala REPL"
 date: 2015-08-09 1:30
 timezone: Pacific
+thumbnail: /assets/posts/2015-08-08-gradle-scala-repl/thumbnail.png
 tags: scala gradle
 ---
 

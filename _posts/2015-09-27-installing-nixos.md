@@ -3,6 +3,7 @@ layout: post
 title: "Installing NixOS"
 date: 2015-09-27 02:30
 timezone: Pacific
+thumbnail: /assets/posts/2015-09-27-installing-nixos/passphrase-prompt.jpg
 tags: nixos
 ---
 

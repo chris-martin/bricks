@@ -2,6 +2,7 @@
 layout: post
 title: '"Dynamic typing"'
 date_granularity: day
+thumbnail: /assets/posts/2015-08-09-dynamic-typing/duck.jpg
 tags: twitter
 ---
 

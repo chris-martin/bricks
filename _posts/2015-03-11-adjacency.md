@@ -3,6 +3,7 @@ layout: post
 title: "Adjacency"
 date: 2015-03-11 21:15
 timezone: Pacific
+thumbnail: /assets/posts/2015-03-11-adjacency/thumbnail.png
 tags: haskell
 ---
 

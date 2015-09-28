@@ -162,7 +162,32 @@ a.site-title:hover {
 
 .posts { list-style-type: none; }
 
-.posts li { margin-bottom: 30px; }
+.posts li {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 20px;
+}
+
+.posts .post-thumbnail {
+  flex: 2;
+  min-width: 100px;
+}
+
+.posts .post-thumbnail-image {
+  background-size: cover;
+  background-position: center center;
+  border-radius: 0 10px 0 10px;
+  box-shadow: 1px 1px 3px 1px rgba(0, 0, 0, 0.2);
+  border-top: 1px solid #e4e4e4;
+  min-height: 80px;
+  display: block;
+}
+
+.posts .post-text {
+  flex: 3;
+  padding: 10px 1em 10px 0;
+  border-top: 1px solid #e4e4e4;
+}
 
 .posts .post-link {
   font-size: 24px;

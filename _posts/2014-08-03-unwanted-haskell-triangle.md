@@ -13,6 +13,8 @@ people who will never know about it.</p>&mdash; Chris Martin (@chris__martin)
 <a href="https://twitter.com/chris__martin/statuses/495434666623909889">August
 2, 2014</a></blockquote>
 
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
 It's getting increasingly painful to read Stack Overflow newb questions,
 because imperative languages are so unnecessarily difficult.
 

@@ -45,3 +45,5 @@ side-effects to be useful.
 (@milessabin)
 <a href="https://twitter.com/milessabin/statuses/363762121748004864">August
 3, 2013</a></blockquote>
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>

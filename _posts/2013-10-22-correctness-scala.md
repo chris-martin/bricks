@@ -1,8 +1,7 @@
 ---
 layout: post
 title: Correctness.scala
-date: 2013-10-22 22:18
-timezone: Eastern
+date_granularity: day
 tags: scala
 ---
 

@@ -1,8 +1,7 @@
 ---
 layout: post
 title: Kernel, vectors, graphs
-date: 2008-09-19 20:08
-timezone: Eastern
+date_granularity: day
 tags: math
 ---
 

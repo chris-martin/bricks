@@ -1,8 +1,7 @@
 ---
 layout: post
 title: Last-minute math
-date: 2008-11-03 11:15
-timezone: Eastern
+date_granularity: day
 tags: math
 ---
 

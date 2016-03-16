@@ -1,8 +1,7 @@
 ---
 layout: post
 title: "Intro Scala pitfalls"
-date: 2015-08-24 3:30
-timezone: Pacific
+date_granularity: day
 tags: scala
 ---
 

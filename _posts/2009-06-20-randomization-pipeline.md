@@ -1,8 +1,7 @@
 ---
 layout: post
 title: "Randomization pipeline"
-date: 2009-06-20 23:45
-timezone: Eastern
+date_granularity: day
 thumbnail: /assets/posts/2009-06-20-randomization-pipeline/thumbnail.png
 tags: algorithms randomness bash
 ---

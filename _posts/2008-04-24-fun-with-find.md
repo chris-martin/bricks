@@ -1,8 +1,7 @@
 ---
 layout: post
 title: "Fun with find"
-date: 2008-04-24 03:44
-timezone: Eastern
+date_granularity: day
 thumbnail: /assets/posts/2008-04-24-fun-with-find/thumbnail.png
 tags: bash
 ---

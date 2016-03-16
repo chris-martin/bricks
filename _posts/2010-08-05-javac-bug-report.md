@@ -1,8 +1,7 @@
 ---
 layout: post
 title: Javac bug report
-date: 2010-08-05 01:14
-timezone: Eastern
+date_granularity: day
 tags: java
 ---
 

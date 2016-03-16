@@ -1,8 +1,7 @@
 ---
 layout: post
 title: Smalltalk, go away
-date: 2008-05-04 21:45
-timezone: Eastern
+date_granularity: day
 tags: smalltalk
 ---
 

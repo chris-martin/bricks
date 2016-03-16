@@ -1,9 +1,8 @@
 ---
 layout: post
 title: Pencil effects
-date: 2013-08-03 16:48
+date_granularity: day
 thumbnail: /assets/posts/2013-08-03-pencil-effects/pencil.jpg
-timezone: Eastern
 ---
 
 *All programs must have side effects to be useful* &mdash; can we please stop

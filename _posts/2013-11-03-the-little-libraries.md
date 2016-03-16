@@ -1,8 +1,7 @@
 ---
 layout: post
 title: Where do the little libraries belong?
-date: 2013-11-03 01:45
-timezone: Eastern
+date_granularity: day
 tags: java
 ---
 

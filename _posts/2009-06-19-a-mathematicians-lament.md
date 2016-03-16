@@ -1,8 +1,7 @@
 ---
 layout: post
 title: A Mathematician's Lament
-date: 2009-06-19 20:14
-timezone: Eastern
+date_granularity: day
 tags: math
 ---
 

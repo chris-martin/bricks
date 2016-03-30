@@ -1,0 +1,34 @@
+@import '../global.scss';
+
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.post {
+  border-bottom: 1px solid darkgray;
+  margin: 1em 0;
+  padding-bottom: 1em;
+
+  .head {
+    display: inline-block;
+    width: 100%;
+
+    .title {
+      font-size: 115%;
+      float: left;
+    }
+    .date {
+      float: right;
+      font-size: 75%;
+      color: darkgray;
+    }
+    .title, .date {
+      display: inline-block;
+    }
+  }
+
+  .description {
+
+  }
+}

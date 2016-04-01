@@ -31,7 +31,7 @@ compileCss inFile = do
                 SassC.errorMessage err >>= putStrLn
                 return Nothing
             Right bs -> do
-                let outFile = "css/" ++ hash bs ++ ".css"
+                let outFile = "hash/" ++ hash bs ++ ".css"
                 BS.writeFile ("out/" ++ outFile) bs
                 return $ Just outFile
       else do

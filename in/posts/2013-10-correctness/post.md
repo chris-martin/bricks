@@ -2,6 +2,7 @@
 title:    Correctness.scala
 date:     2013 Oct 22
 slug:     correctness-scala
+css:      correctness.scss
 abstract: ```
           // Let’s talk about programs.
           type P

@@ -24,7 +24,7 @@ main = do
 
     -- setup up output directories
     Dir.createDirectoryIfMissing True "out"
-    Dir.createDirectoryIfMissing True "out/css"
+    Dir.createDirectoryIfMissing True "out/hash"
 
     -- write the CNAME file so github pages will do its DNS thing
     writeFile "out/CNAME" "chris-martin.org"
@@ -38,13 +38,14 @@ main = do
     LBS.writeFile "out/index.html" $ renderHtml $
         Home.pageHtml indexMarkdown indexCss (snd <$> posts)
 
-    mapM_ (\p -> writePost p defaultPostCss) (snd <$> posts)
+    mapM_ (\p -> writePost p defaultPostCss) posts
 
-writePost :: Post -> Maybe FilePath -> IO ()
-writePost post defaultCss = do
-    Dir.createDirectoryIfMissing True $ dropFileName path
-    postCss <- join <$> sequence (compileCss <$> Post.postCss post)
+writePost :: (FilePath, Post) -> Maybe FilePath -> IO ()
+writePost (path, post) defaultCss = do
+    Dir.createDirectoryIfMissing True $ dropFileName outPath
+    postCss <- join <$> sequence ((compileCss . (inPath ++)) <$> Post.postCss post)
     let html = renderHtml $ Post.pageHtml post (postCss <|> defaultCss)
-    LBS.writeFile path html
+    LBS.writeFile outPath html
   where
-    path = "out/" ++ (T.unpack $ postUrl post)
+    inPath = "in/posts/" ++ path ++ "/"
+    outPath = "out/" ++ (T.unpack $ postUrl post)

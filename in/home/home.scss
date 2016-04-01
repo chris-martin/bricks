@@ -1,34 +1,44 @@
 @import '../global.scss';
 
 .container {
-  max-width: 500px;
+  max-width: 35em;
+}
+
+h1 {
+  margin-bottom: 2em;
+  border-bottom: 1px solid darkgray;
 }
 
 .post {
   border-bottom: 1px solid darkgray;
   margin: 1em 0;
   padding-bottom: 0.5em;
+}
 
-  .head {
-    display: inline-block;
-    width: 100%;
+.post-head {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
 
-    .title {
-      font-size: 115%;
-      float: left;
-    }
-    .date {
-      float: right;
-      font-size: 75%;
-      color: darkgray;
-    }
-    .title, .date {
-      display: inline-block;
-    }
-  }
+.post-title {
+  font-size: 115%;
+  flex: 1;
+}
 
-  .abstract {
-    text-align: justify;
-    padding: 0 10px;
-  }
+.post-date {
+  font-size: 75%;
+  color: darkgray;
+  white-space: nowrap;
+}
+
+.post-title,
+.post-date {
+  display: inline-block;
+}
+
+.post-abstract {
+  text-align: justify;
+  padding: 0 1em;
 }

@@ -22,18 +22,21 @@ pageHtml md stylePath posts = H.docTypeHtml $ do
         H.title "Chris Martin"
         mapM_ styleLink stylePath
     H.body $ do
-        H.div ! A.class_ "container" $ do
-            H.section $ markdown md
-            H.section $ do
-                H.h2 "Writings"
-                mapM_ postHtml posts
+        globalPageHeader HomePage
+        H.main $
+            H.div ! A.class_ "container" $ do
+                H.div $
+                    markdown md
+                H.div $ do
+                    H.h2 "Writings"
+                    mapM_ postHtml posts
 
 postHtml :: Post -> Html
 postHtml post = H.div ! A.class_ "post" $ do
-    H.div ! A.class_ "head" $ do
-        H.a ! A.class_ "title" ! A.href (H.textValue $ postUrl post) $
+    H.div ! A.class_ "post-head" $ do
+        H.a ! A.class_ "post-title" ! A.href (H.textValue $ postUrl post) $
             postTitle post
-        H.div ! A.class_ "date" $
+        H.div ! A.class_ "post-date" $
             toHtml $ formatChron $ postChron post
-    H.div ! A.class_ "abstract" $
+    H.div ! A.class_ "post-abstract" $
         markdown $ L.fromStrict $ postAbstract post

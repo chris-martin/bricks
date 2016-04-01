@@ -28,7 +28,8 @@ import Data.Validation (AccValidation (..), _AccValidation, _Either)
 
 import qualified System.Directory as Dir
 
-import           Text.Blaze.Html5            (Html, preEscapedToHtml, (!))
+import           Text.Blaze.Html5            (Html, preEscapedToHtml, toHtml,
+                                              (!))
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
@@ -156,6 +157,13 @@ pageHtml post stylePath = H.docTypeHtml $ do
         H.title $ postTitle post
         mapM_ (styleLink . ("../" ++)) stylePath
     H.body $ do
-        H.div ! A.class_ "container" $ do
-            H.h1 $ postTitle post
-            H.div ! A.class_ "post-body" $ markdown $ postBody post
+        globalPageHeader PostPage
+        H.main $
+            H.div ! A.class_ "container" $ do
+                H.div ! A.class_ "post-head" $ do
+                    H.h1 ! A.class_ "post-title" $
+                        postTitle post
+                    H.div ! A.class_ "post-date" $
+                        toHtml $ formatChron $ postChron post
+                H.div ! A.class_ "post-body" $
+                    markdown $ postBody post

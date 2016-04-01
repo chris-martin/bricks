@@ -154,8 +154,8 @@ pageHtml post stylePath = H.docTypeHtml $ do
     H.head $ do
         H.meta ! A.charset "utf-8"
         H.title $ postTitle post
-        mapM_ styleLink stylePath
+        mapM_ (styleLink . ("../" ++)) stylePath
     H.body $ do
         H.div ! A.class_ "container" $ do
             H.h1 $ postTitle post
-            markdown $ postBody post
+            H.div ! A.class_ "post-body" $ markdown $ postBody post

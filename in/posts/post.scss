@@ -1,3 +1,9 @@
+@import '../global.scss';
+
 .container {
-  max-width: 800px;
+  max-width: 35em;
+}
+
+.post-body {
+  text-align: justify;
 }

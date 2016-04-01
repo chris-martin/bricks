@@ -5,12 +5,10 @@ module ChrisMartinOrg.Home
     ) where
 
 import ChrisMartinOrg.Chron
-import           ChrisMartinOrg.Core
-import           ChrisMartinOrg.Css
-import           ChrisMartinOrg.Post (Post (..), postUrl)
-import qualified ChrisMartinOrg.Post as Post
+import ChrisMartinOrg.Core
+import ChrisMartinOrg.Css
+import ChrisMartinOrg.Post  (Post (..), postUrl)
 
-import qualified Data.Text      as T
 import qualified Data.Text.Lazy as L
 
 import           Text.Blaze.Html5            (Html, toHtml, (!))
@@ -25,9 +23,10 @@ pageHtml md stylePath posts = H.docTypeHtml $ do
         mapM_ styleLink stylePath
     H.body $ do
         H.div ! A.class_ "container" $ do
-            H.div $ markdown md
-            H.h2 "Writings"
-            mapM_ postHtml posts
+            H.section $ markdown md
+            H.section $ do
+                H.h2 "Writings"
+                mapM_ postHtml posts
 
 postHtml :: Post -> Html
 postHtml post = H.div ! A.class_ "post" $ do

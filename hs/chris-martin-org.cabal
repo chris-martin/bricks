@@ -6,7 +6,10 @@ cabal-version:         >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     ChrisMartinOrg
+                     , ChrisMartinOrg.Chron
                      , ChrisMartinOrg.Core
+                     , ChrisMartinOrg.Css
+                     , ChrisMartinOrg.Home
                      , ChrisMartinOrg.Post
   build-depends:       base >= 4.7 && < 5
                      , blaze-html
@@ -16,6 +19,7 @@ library
                      , cryptonite
                      , data-default
                      , directory
+                     , filepath
                      , highlighting-kate
                      , hsass
                      , lens

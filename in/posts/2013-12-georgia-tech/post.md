@@ -2,12 +2,10 @@
 title:     Georgia Tech course history
 date:      2013 Dec
 thumbnail: coc.jpg
+css:       georgia-tech.scss
 slug:      georgia-tech
 abstract:  2005 — 2013
 --------------------------------------------------------------------------------
-
-<link rel="stylesheet"
-  href="/assets/posts/2013-12-31-georgia-tech/georgia-tech.css"/>
 
 Fall 2013
 --------------------------------------------------------

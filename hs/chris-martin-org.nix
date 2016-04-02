@@ -1,8 +1,8 @@
-{ mkDerivation, base, blaze-html, blaze-markup, bytestring
-, containers, cryptonite, data-default, directory, doctest
-, highlighting-kate, hsass, HUnit, lens, markdown, stdenv
-, test-framework, test-framework-hunit, text, time, unix
-, validation
+{ mkDerivation, attoparsec, base, blaze-html, blaze-markup
+, bytestring, containers, cryptonite, data-default, directory
+, doctest, filepath, highlighting-kate, hsass, HUnit, lens
+, markdown, safe, stdenv, test-framework, test-framework-hunit
+, text, time, unix, validation
 }:
 mkDerivation {
   pname = "chris-martin-org";
@@ -11,9 +11,9 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    base blaze-html blaze-markup bytestring containers cryptonite
-    data-default directory highlighting-kate hsass lens markdown text
-    time unix validation
+    attoparsec base blaze-html blaze-markup bytestring containers
+    cryptonite data-default directory filepath highlighting-kate hsass
+    lens markdown safe text time unix validation
   ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [

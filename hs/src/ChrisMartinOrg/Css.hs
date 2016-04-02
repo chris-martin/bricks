@@ -3,13 +3,15 @@
 module ChrisMartinOrg.Css
     ( styleLink
     , compileCss
+    , compileCssSource
+    , compileCssFallback
     ) where
 
 import ChrisMartinOrg.Core
+import ChrisMartinOrg.Hash (writeHashBS)
 
-import qualified Data.ByteString as BS
-import           Data.Default
-import           Data.String     (IsString (..))
+import Data.Default
+import Data.String  (IsString (..))
 
 import qualified System.Directory as Dir
 
@@ -20,8 +22,15 @@ import qualified Text.Sass             as Sass
 import qualified Text.Sass.Compilation as SassC
 import           Text.Sass.Options     (SassOptions (..), SassOutputStyle (..))
 
-compileCss :: FilePath -> IO (Maybe FilePath)
-compileCss inFile = do
+compileCss :: Css -> IO (Maybe CompiledCss)
+compileCss (CssSource path) = compileCssSource path
+compileCss (CssCompiled path) = pure $ Just path
+
+compileCssFallback :: Fallback Css -> IO (Maybe CompiledCss)
+compileCssFallback xs = firstJust <$> sequence (compileCss <$> xs)
+
+compileCssSource :: FilePath -> IO (Maybe CompiledCss)
+compileCssSource inFile = do
     exists <- Dir.doesFileExist inFile
     if exists
       then do
@@ -30,10 +39,7 @@ compileCss inFile = do
             Left err -> do
                 SassC.errorMessage err >>= putStrLn
                 return Nothing
-            Right bs -> do
-                let outFile = "hash/" ++ hash bs ++ ".css"
-                BS.writeFile ("out/" ++ outFile) bs
-                return $ Just outFile
+            Right bs -> (Just . CompiledCss) <$> writeHashBS bs "css"
       else do
         _ <- putStrLn $ "Missing CSS: " ++ inFile
         return Nothing
@@ -41,8 +47,8 @@ compileCss inFile = do
 sassOpts :: SassOptions
 sassOpts = def { sassOutputStyle = SassStyleCompact }
 
-styleLink :: FilePath -> Html
+styleLink :: CompiledCss -> Html
 styleLink href = link
     ! A.rel "stylesheet"
     ! A.type_ "text/css"
-    ! A.href (fromString href)
+    ! A.href (fromString $ compiledCssPath href)

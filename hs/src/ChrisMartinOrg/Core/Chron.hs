@@ -1,4 +1,4 @@
-module ChrisMartinOrg.Chron
+module ChrisMartinOrg.Core.Chron
     ( Chron(..)
     , formatChron
     , parseChron

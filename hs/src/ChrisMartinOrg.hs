@@ -2,20 +2,16 @@
 
 module ChrisMartinOrg (main) where
 
+import           ChrisMartinOrg.Core
 import           ChrisMartinOrg.Css
 import qualified ChrisMartinOrg.Home as Home
-import           ChrisMartinOrg.Post (Post, getPosts, postUrl)
-import qualified ChrisMartinOrg.Post as Post
+import           ChrisMartinOrg.Post (getPosts, writePost)
 
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Text            as T
+import           Data.Maybe           (maybeToList)
 import qualified Data.Text.Lazy.IO    as LTextIO
 
-import Control.Applicative ((<|>))
-import Control.Monad       (join)
-
-import qualified System.Directory      as Dir
-import           System.FilePath.Posix (dropFileName)
+import qualified System.Directory as Dir
 
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 
@@ -29,23 +25,13 @@ main = do
     -- write the CNAME file so github pages will do its DNS thing
     writeFile "out/CNAME" "chris-martin.org"
 
+    defaultPostCss <- compileCssSource "in/posts/post.scss"
+
     posts <- getPosts
 
-    defaultPostCss <- compileCss "in/posts/post.scss"
-
     indexMarkdown <- LTextIO.readFile "in/home/content.md"
-    indexCss <- compileCss "in/home/home.scss"
+    indexCss <- compileCssSource "in/home/home.scss"
     LBS.writeFile "out/index.html" $ renderHtml $
-        Home.pageHtml indexMarkdown indexCss (snd <$> posts)
+        Home.pageHtml indexMarkdown indexCss posts
 
-    mapM_ (\p -> writePost p defaultPostCss) posts
-
-writePost :: (FilePath, Post) -> Maybe FilePath -> IO ()
-writePost (path, post) defaultCss = do
-    Dir.createDirectoryIfMissing True $ dropFileName outPath
-    postCss <- join <$> sequence ((compileCss . (inPath ++)) <$> Post.postCss post)
-    let html = renderHtml $ Post.pageHtml post (postCss <|> defaultCss)
-    LBS.writeFile outPath html
-  where
-    inPath = "in/posts/" ++ path ++ "/"
-    outPath = "out/" ++ (T.unpack $ postUrl post)
+    mapM_ (\p -> writePost $ p { postCss = postCss p ++ (CssCompiled <$> maybeToList defaultPostCss) }) posts

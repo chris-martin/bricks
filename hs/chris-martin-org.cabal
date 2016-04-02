@@ -1,17 +1,23 @@
 name:                  chris-martin-org
 version:               0.1.0.0
+license:               Apache-2.0
 build-type:            Simple
 cabal-version:         >=1.10
 
 library
   hs-source-dirs:      src
   exposed-modules:     ChrisMartinOrg
-                     , ChrisMartinOrg.Chron
                      , ChrisMartinOrg.Core
+                     , ChrisMartinOrg.Core.Chron
                      , ChrisMartinOrg.Css
+                     , ChrisMartinOrg.Hash
                      , ChrisMartinOrg.Home
                      , ChrisMartinOrg.Post
+                     , ChrisMartinOrg.Post.Body
+                     , ChrisMartinOrg.Post.Page
+                     , ChrisMartinOrg.Post.Parse
   build-depends:       base >= 4.7 && < 5
+                     , attoparsec
                      , blaze-html
                      , blaze-markup
                      , bytestring
@@ -24,6 +30,7 @@ library
                      , hsass
                      , lens
                      , markdown
+                     , safe
                      , text
                      , time
                      , unix

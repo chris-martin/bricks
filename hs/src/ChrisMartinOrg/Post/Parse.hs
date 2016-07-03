@@ -8,13 +8,15 @@ import ChrisMartinOrg.Core
 
 import Prelude hiding (lines)
 
-import Control.Arrow (left)
+import Control.Applicative ((<|>), many)
+import Control.Arrow       (left)
 import Control.Lens
 
-import qualified Data.Map.Strict as Map
-import           Data.Maybe      (maybeToList)
-import qualified Data.Text       as T
-import qualified Data.Text.Lazy  as L
+import qualified Data.Attoparsec.Text.Lazy as A
+import qualified Data.Map.Strict      as Map
+import           Data.Maybe           (maybeToList)
+import qualified Data.Text            as T
+import qualified Data.Text.Lazy       as L
 
 import Data.Validation (AccValidation (..), _Either)
 
@@ -39,7 +41,7 @@ parsePost dir text = (^. _Either) $ Post dir
                left T.pack (parseChron str)
     css = maybeToList $ (CssSource . (dir </>) . T.unpack) <$> getMaybe "css"
     thumb = ((dir </>) . T.unpack) <$> getMaybe "thumbnail"
-    body = PostBodyText bodyText -- todo
+    body = parseBody bodyText
 
 eitherVal :: Either a b -> AccValidation [a] b
 eitherVal (Left  x) = AccFailure [x]
@@ -83,7 +85,7 @@ parseMeta meta = parseMetaKV <$> lineGroups where
 parseMetaKV :: [T.Text] -> (T.Text, T.Text)
 parseMetaKV lines = (T.strip k, T.intercalate "\n" vLines) where
     (k, v1) = splitOn2T ":" $ head lines
-    startCol = (T.length k) + 1 + (T.length $ T.takeWhile (== ' ') v1)
+    startCol = T.length k + 1 + T.length (T.takeWhile (== ' ') v1)
     vLines = T.drop startCol <$> lines
 
 -- |
@@ -105,3 +107,20 @@ splitOn2L pat src = case L.breakOn pat src of
 splitOn2T :: T.Text -> T.Text -> (T.Text, T.Text)
 splitOn2T pat src = case T.breakOn pat src of
     (x, y) -> (x, T.drop (T.length pat) y)
+
+parseBody :: L.Text -> PostBody
+parseBody t = case A.parse bodyParser t of
+    A.Done i r -> r
+
+bodyParser :: A.Parser PostBody
+bodyParser = PostBodyList <$> many (asset <|> stuff)
+    where
+    asset :: A.Parser PostBody
+    asset = (PostBodyAsset . T.unpack) <$> (open *> value <* close)
+        where
+        open = A.string (T.pack "${")
+        value = A.takeWhile (/= '}')
+        close = A.string (T.pack "}")
+    stuff :: A.Parser PostBody
+    stuff = PostBodyText . L.fromStrict <$>
+        (A.string (T.pack "$") <|> A.takeWhile1 (/= '$'))

@@ -4,11 +4,15 @@ module ChrisMartinOrg (main) where
 
 import           ChrisMartinOrg.Core
 import           ChrisMartinOrg.Css
+import           ChrisMartinOrg.Hash (writeHashFile)
 import qualified ChrisMartinOrg.Home as Home
 import           ChrisMartinOrg.Post (getPosts, writePost)
+import           Control.Monad       (when)
+
+import Control.Monad (forM_)
 
 import qualified Data.ByteString.Lazy as LBS
-import           Data.Maybe           (maybeToList)
+import           Data.Maybe           (isNothing, maybeToList)
 import qualified Data.Text.Lazy.IO    as LTextIO
 
 import qualified System.Directory as Dir
@@ -18,7 +22,7 @@ import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 main :: IO ()
 main = do
 
-    -- setup up output directories
+    -- set up output directories
     Dir.createDirectoryIfMissing True "out"
     Dir.createDirectoryIfMissing True "out/hash"
 
@@ -34,4 +38,16 @@ main = do
     LBS.writeFile "out/index.html" $ renderHtml $
         Home.pageHtml indexMarkdown indexCss posts
 
-    mapM_ (\p -> writePost $ p { postCss = postCss p ++ (CssCompiled <$> maybeToList defaultPostCss) }) posts
+    forM_ posts $ \p ->
+        writePost $ p { postCss = postCss p ++ (CssCompiled <$> maybeToList defaultPostCss) }
+
+-- todo - use this
+resolveThumb :: FilePath -> FilePath -> IO (Maybe FilePath)
+resolveThumb path asset =
+    do
+        outPathMaybe <- writeHashFile fullPath
+        when (isNothing outPathMaybe) putError
+        return outPathMaybe
+    where
+    fullPath = path ++ "/" ++ asset
+    putError = putStrLn $ "Missing thumbnail: " ++ fullPath

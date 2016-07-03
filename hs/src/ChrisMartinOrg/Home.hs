@@ -8,6 +8,8 @@ import ChrisMartinOrg.Core
 import ChrisMartinOrg.Css
 import ChrisMartinOrg.Post (postUrl)
 
+import Control.Monad (forM_)
+
 import           Data.String    (IsString (..))
 import qualified Data.Text.Lazy as L
 
@@ -38,5 +40,7 @@ postHtml post = H.div ! A.class_ "post" $ do
             toHtml $ postTitle post
         H.div ! A.class_ "post-date" $
             toHtml $ formatChron $ postChron post
-    H.div ! A.class_ "post-abstract" $
+    H.div ! A.class_ "post-abstract" $ do
+        forM_ (postThumb post) $ \t ->
+            H.img ! A.src (fromString t)
         markdown $ L.fromStrict $ postAbstract post

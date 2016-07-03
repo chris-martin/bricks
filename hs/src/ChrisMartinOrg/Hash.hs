@@ -14,7 +14,7 @@ import qualified System.Directory      as Dir
 import           System.FilePath.Posix (takeExtension, (<.>), (</>))
 
 hash :: ByteString -> String
-hash bs = take 32 $ show ((Hash.hash bs) :: Hash.Digest HashAlg.SHA3_256)
+hash bs = take 32 $ show (Hash.hash bs :: Hash.Digest HashAlg.SHA3_256)
 
 writeHashBS :: ByteString -> String -> IO FilePath
 writeHashBS bs ext = do
@@ -28,7 +28,9 @@ writeHashFile :: FilePath -> IO (Maybe FilePath)
 writeHashFile file = do
     exists <- Dir.doesFileExist file
     if exists
-        then undefined  -- todo
+        then do
+            bs <- BS.readFile file
+            Just <$> writeHashBS bs ext
         else pure Nothing
   where
     ext = takeExtension file

@@ -34,7 +34,7 @@ Channels are stable sets of packages.
 Go to <a href="https://nixos.org/channels/">nixos.org/channels</a> and find
 the highest-numbered channel.
 
-Channels are released every six months. At the time of writing, `nixos-16.03`
+Channels are released every six months. At the time of writing, "nixos-16.03"
 (from March 2016) is the latest channel, so that's what we'll use in the
 following steps; but you should replace `16.03` with the version you're using.
 

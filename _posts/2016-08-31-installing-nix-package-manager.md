@@ -15,7 +15,7 @@ This is only what you need to know to get a working installation.
 ## 1. Install Nix
 
 This first step requires you to be a sudoer (it will prompt you for your
-password), but <emph>do not</emph> type "sudo" yourself.
+password), but *do not* type "sudo" yourself.
 It's important for all of these steps to be performed as your own user,
 not as root.
 

@@ -48,7 +48,7 @@ source $HOME/.nix-profile/etc/profile.d/nix.sh
 export NIX_PATH="nixpkgs=$HOME/.nix-defexpr/channels/nixos-16.03"
 {% endhighlight %}
 
-## 4. Add the Nix channel
+## 4. Add the channel
 
 Run the following commands in a new shell, because you'll need the `.bashrc`
 changes made by step 3:

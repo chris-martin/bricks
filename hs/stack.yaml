@@ -1,0 +1,7 @@
+resolver: 'lts-7.2'
+
+packages:
+- '.'
+
+nix:
+  shell-file: 'shell.nix'

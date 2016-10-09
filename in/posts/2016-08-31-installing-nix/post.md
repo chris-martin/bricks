@@ -1,9 +1,10 @@
----
-layout: post
-title: "Installing the Nix package manager"
-date_granularity: day
-tags: nixos
----
+--------------------------------------------------------------------------------
+title:    Installing the Nix package manager
+date:     2016 Aug 31
+slug:     installing-nix-package-manager
+abstract: A minimal guide to getting started with the Nix package manager
+          on any Linux or OSX machine.
+--------------------------------------------------------------------------------
 
 A minimal guide to getting started with
 [the Nix package manager](https://nixos.org/nix/)

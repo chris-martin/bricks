@@ -1,9 +1,9 @@
----
-layout: post
-title: "NixOS on DigitalOcean"
-date_granularity: day
-tags: nixos
----
+--------------------------------------------------------------------------------
+title:    NixOS on DigitalOcean
+date:     2016 Oct 5
+slug:     nixos-on-digitalocean
+abstract: How to start a new NixOS droplet on Digital Ocean using nixos-infect.
+--------------------------------------------------------------------------------
 
 How to start a new NixOS droplet on Digital Ocean using
 [nixos-infect](https://github.com/elitak/nixos-infect):

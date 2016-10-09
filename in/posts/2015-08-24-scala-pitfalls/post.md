@@ -79,7 +79,7 @@ the library, not an idiom to emulate.
 
 These examples are at least careful enough to check the `Option` before
 unwrapping it, similar to how one would guard against `null` dereferences
-in other languages. 
+in other languages.
 
 ```scala
 if (xOption.isDefined) f(xOption.get)
@@ -93,22 +93,22 @@ In Scala we can do better and preserve type safety all the way through.
 The easy go-to solution for any `Option` problem is a pattern match:
 
 ```scala
-xOption match { 
+xOption match {
   case Some(x) => f(x)
   case None    =>
 }
 
-xOption match { 
+xOption match {
   case Some(x) => f(x)
   case None    => y
 }
 
-xOption match { 
+xOption match {
   case Some(x) => !f(x)
   case None    => true
 }
 ```
- 
+
 And then with a little more API familiarity these expressions can be reduced:
 
 ```scala
@@ -175,7 +175,7 @@ There are several options for conversions between Java and Scala collections:
 Unfortunately these names are all very similar, and the documentation doesn’t
 explain how to choose.
 
-I find this one easiest in most situations: 
+I find this one easiest in most situations:
 
 ```scala
 import scala.collection.JavaConversions._

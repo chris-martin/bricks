@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module ChrisMartinOrg.Post
     ( getPosts
@@ -15,13 +16,15 @@ import           ChrisMartinOrg.Post.Parse (parsePost)
 import Prelude hiding (lines)
 
 import Control.Applicative (liftA2)
+import Control.Exception   (try, IOException)
+import Data.Functor (($>))
 
 import qualified Data.ByteString.Lazy as LBS
 import           Data.List            (sort)
 import           Data.Maybe           (catMaybes)
 import qualified Data.Text            as T
 import qualified Data.Text.Lazy       as L
-import qualified Data.Text.Lazy.IO    as LTextIO
+import qualified Data.Text.IO         as TextIO
 
 import qualified System.Directory      as Dir
 import           System.FilePath.Posix (dropFileName, (</>))
@@ -40,18 +43,22 @@ getPosts = do
   where
     basePath = "in" </> "posts"
 
-getPost :: FilePath -> IO (Maybe Post)
+getPost :: FilePath  -- ^ The directory containing the post
+        -> IO (Maybe Post)
 getPost dir = do
     i <- Dir.doesFileExist file
     if i
         then do
-            text <- LTextIO.readFile file
-            case parsePost dir text of
-                Left errs -> do
-                    putStrLn dir
-                    sequence_ ((putStrLn . T.unpack . T.append "  ") <$> errs)
-                    return Nothing
-                Right post -> return $ Just post
+            textEither <- try $ TextIO.readFile file
+            case textEither of
+                Left (e :: IOException) -> (putStrLn $ show e) $> Nothing
+                Right text ->
+                    case parsePost dir text of
+                        Left errs -> do
+                            putStrLn dir
+                            sequence_ ((putStrLn . T.unpack . T.append "  ") <$> errs)
+                            return Nothing
+                        Right post -> return $ Just post
         else pure Nothing
     where file = dir </> "post.md"
 

@@ -52,7 +52,7 @@ data Css = CssCompiled CompiledCss
 
 data Page = HomePage | PostPage
 
-data PostBody = PostBodyText L.Text
+data PostBody = PostBodyText T.Text
               | PostBodyAsset FilePath
               | PostBodyList [PostBody]
 
@@ -72,8 +72,8 @@ data Post = Post
 --  Functions
 -----------------------------------------------------------------
 
-markdown :: L.Text -> Html
-markdown = Markdown.markdown def { Markdown.msXssProtect = False }
+markdown :: T.Text -> Html
+markdown = Markdown.markdown def { Markdown.msXssProtect = False } . L.fromStrict
 
 globalPageHeader :: Page -> Html
 globalPageHeader page =

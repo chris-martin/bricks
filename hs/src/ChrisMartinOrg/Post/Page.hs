@@ -26,6 +26,7 @@ html i = H.docTypeHtml $ do
     H.head $ do
         H.meta ! A.charset "utf-8"
         H.title $ inputTitle i
+        H.link ! A.rel "icon" ! A.href ""
         mapM_ (styleLink . CompiledCss . (".." </>) . compiledCssPath) $ inputCss i
     H.body $ do
         globalPageHeader PostPage

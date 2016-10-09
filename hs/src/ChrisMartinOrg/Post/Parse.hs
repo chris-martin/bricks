@@ -22,7 +22,9 @@ import Data.Validation (AccValidation (..), _Either)
 
 import System.FilePath.Posix ((</>))
 
-parsePost :: FilePath -> L.Text -> Either [T.Text] Post
+parsePost :: FilePath -- ^ The directory containing the post
+          -> T.Text   -- ^ The content of the post.md file
+          -> Either [T.Text] Post
 parsePost dir text = (^. _Either) $ Post dir
     <$> getVal "title"
     <*> eitherVal chron
@@ -33,7 +35,7 @@ parsePost dir text = (^. _Either) $ Post dir
     <*> AccSuccess body
   where
     (metaText, bodyText) = splitPost text
-    meta = Map.fromList $ parseMeta $ L.toStrict metaText
+    meta = Map.fromList $ parseMeta metaText
     get key = maybe (Left $ T.append "Missing: " key) Right $ getMaybe key
     getVal = eitherVal . get
     getMaybe key = Map.lookup key meta
@@ -53,10 +55,10 @@ eitherVal (Right x) = AccSuccess  x
 --
 -- >>> splitPost "---\nabc\ndef\n---\nghi\njkl"
 -- ("abc\ndef","ghi\njkl")
-splitPost :: L.Text -> (L.Text, L.Text)
-splitPost text = splitOn2L sep otherLines where
-    (firstLine, otherLines) = splitOn2L "\n" text
-    sep = L.concat ["\n", firstLine, "\n"]
+splitPost :: T.Text -> (T.Text, T.Text)
+splitPost text = splitOn2T sep otherLines where
+    (firstLine, otherLines) = splitOn2T "\n" text
+    sep = T.concat ["\n", firstLine, "\n"]
 
 -- |
 -- >>> parseMeta "abc: def"
@@ -100,16 +102,18 @@ groupByStart isStart = foldr f [] where
 
 -- Like breakOn, but does not include the pattern in the second piece. Or like
 -- splitOn, but only performing a single split rather than arbitrarily many.
-splitOn2L :: L.Text -> L.Text -> (L.Text, L.Text)
-splitOn2L pat src = case L.breakOn pat src of
-    (x, y) -> (x, L.drop (L.length pat) y)
+--splitOn2L :: L.Text -> L.Text -> (L.Text, L.Text)
+--splitOn2L pat src = case L.breakOn pat src of
+--    (x, y) -> (x, L.drop (L.length pat) y)
 
+-- Like breakOn, but does not include the pattern in the second piece. Or like
+-- splitOn, but only performing a single split rather than arbitrarily many.
 splitOn2T :: T.Text -> T.Text -> (T.Text, T.Text)
 splitOn2T pat src = case T.breakOn pat src of
     (x, y) -> (x, T.drop (T.length pat) y)
 
-parseBody :: L.Text -> PostBody
-parseBody t = case A.parse bodyParser t of
+parseBody :: T.Text -> PostBody
+parseBody t = case A.parse bodyParser (L.fromStrict t) of
     A.Done i r -> r
 
 bodyParser :: A.Parser PostBody
@@ -122,5 +126,4 @@ bodyParser = PostBodyList <$> many (asset <|> stuff)
         value = A.takeWhile (/= '}')
         close = A.string (T.pack "}")
     stuff :: A.Parser PostBody
-    stuff = PostBodyText . L.fromStrict <$>
-        (A.string (T.pack "$") <|> A.takeWhile1 (/= '$'))
+    stuff = PostBodyText <$> (A.string (T.pack "$") <|> A.takeWhile1 (/= '$'))

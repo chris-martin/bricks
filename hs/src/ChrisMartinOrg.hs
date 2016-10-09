@@ -13,7 +13,7 @@ import Control.Monad (forM_)
 
 import qualified Data.ByteString.Lazy as LBS
 import           Data.Maybe           (isNothing, maybeToList)
-import qualified Data.Text.Lazy.IO    as LTextIO
+import qualified Data.Text.IO         as TextIO
 
 import qualified System.Directory as Dir
 
@@ -33,7 +33,7 @@ main = do
 
     posts <- getPosts
 
-    indexMarkdown <- LTextIO.readFile "in/home/content.md"
+    indexMarkdown <- TextIO.readFile "in/home/content.md"
     indexCss <- compileCssSource "in/home/home.scss"
     LBS.writeFile "out/index.html" $ renderHtml $
         Home.pageHtml indexMarkdown indexCss posts

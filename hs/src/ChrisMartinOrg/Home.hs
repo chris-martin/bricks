@@ -12,16 +12,18 @@ import Control.Monad (forM_)
 
 import           Data.String    (IsString (..))
 import qualified Data.Text.Lazy as L
+import qualified Data.Text      as T
 
 import           Text.Blaze.Html5            (Html, toHtml, (!))
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-pageHtml :: L.Text -> Maybe CompiledCss -> [Post] -> Html
+pageHtml :: T.Text -> Maybe CompiledCss -> [Post] -> Html
 pageHtml md css posts = H.docTypeHtml $ do
     H.head $ do
         H.meta ! A.charset "utf-8"
         H.title "Chris Martin"
+        H.link ! A.rel "icon" ! A.href ""
         mapM_ styleLink css
     H.body $ do
         globalPageHeader HomePage
@@ -43,4 +45,4 @@ postHtml post = H.div ! A.class_ "post" $ do
     H.div ! A.class_ "post-abstract" $ do
         forM_ (postThumb post) $ \t ->
             H.img ! A.src (fromString t)
-        markdown $ L.fromStrict $ postAbstract post
+        markdown $ postAbstract post

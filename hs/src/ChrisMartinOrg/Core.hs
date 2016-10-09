@@ -9,12 +9,10 @@ module ChrisMartinOrg.Core
     , CompiledCss(..)
     , Post(..)
     , PostBody(..)
-    , Fallback(..)
 
     -- * Functions
     , markdown
     , globalPageHeader
-    , firstJust
 
     , module ChrisMartinOrg.Core.Chron
 
@@ -29,8 +27,6 @@ import           Data.ByteString (ByteString)
 import qualified Data.Text       as T
 import qualified Data.Text.Lazy  as L
 
-import Safe (headMay)
-
 import           Text.Blaze.Html5            (Html, toHtml, (!))
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
@@ -41,9 +37,6 @@ import qualified Text.Markdown as Markdown
 -----------------------------------------------------------------
 --  Types
 -----------------------------------------------------------------
-
--- | Alternatives for a value that has fallbacks in case of failure.
-type Fallback x = [x]
 
 newtype CompiledCss = CompiledCss { compiledCssPath :: FilePath }
 
@@ -62,7 +55,7 @@ data Post = Post
     , postChron    :: Chron
     , postSlug     :: T.Text
     , postThumb    :: Maybe FilePath
-    , postCss      :: Fallback Css
+    , postCss      :: [Css]
     , postAbstract :: T.Text
     , postBody     :: PostBody
     }
@@ -82,6 +75,3 @@ globalPageHeader page =
             case page of
                 HomePage -> mempty
                 _ -> H.a ! A.href ".." $ toHtml ("Chris Martin" :: String)
-
-firstJust :: [Maybe a] -> Maybe a
-firstJust = headMay . catMaybes

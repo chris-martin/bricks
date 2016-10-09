@@ -22,27 +22,30 @@ import qualified Text.Sass             as Sass
 import qualified Text.Sass.Compilation as SassC
 import           Text.Sass.Options     (SassOptions (..), SassOutputStyle (..))
 
-compileCss :: Css -> IO (Maybe CompiledCss)
+compileCss :: Css -> IO (Either String CompiledCss)
 compileCss (CssSource path) = compileCssSource path
-compileCss (CssCompiled path) = pure $ Just path
+compileCss (CssCompiled path) = pure $ Right path
 
-compileCssFallback :: Fallback Css -> IO (Maybe CompiledCss)
-compileCssFallback xs = firstJust <$> sequence (compileCss <$> xs)
+compileCssFallback :: [Css] -> IO (Maybe CompiledCss)
+compileCssFallback [] = pure Nothing
+compileCssFallback (x:xs) = do
+    e <- compileCss x
+    either fail (return . Just) e
+  where
+    fail err = do putStrLn err
+                  compileCssFallback xs
 
-compileCssSource :: FilePath -> IO (Maybe CompiledCss)
+compileCssSource :: FilePath -> IO (Either String CompiledCss)
 compileCssSource inFile = do
     exists <- Dir.doesFileExist inFile
     if exists
       then do
         result <- Sass.compileFile inFile sassOpts
         case result of
-            Left err -> do
-                SassC.errorMessage err >>= putStrLn
-                return Nothing
-            Right bs -> (Just . CompiledCss) <$> writeHashBS bs "css"
+            Left err -> Left <$> SassC.errorMessage err
+            Right bs -> Right <$> CompiledCss <$> writeHashBS bs "css"
       else do
-        _ <- putStrLn $ "Missing CSS: " ++ inFile
-        return Nothing
+        return $ Left $ "Missing CSS: " ++ inFile
 
 sassOpts :: SassOptions
 sassOpts = def { sassOutputStyle = SassStyleCompact }

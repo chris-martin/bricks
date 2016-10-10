@@ -5,10 +5,10 @@ module ChrisMartinOrg.Post.Parse
     ) where
 
 import ChrisMartinOrg.Core
+import ChrisMartinOrg.Content (contentParser)
 
 import Prelude hiding (lines)
 
-import Control.Applicative ((<|>), many)
 import Control.Arrow       (left)
 import Control.Lens
 
@@ -113,17 +113,5 @@ splitOn2T pat src = case T.breakOn pat src of
     (x, y) -> (x, T.drop (T.length pat) y)
 
 parseBody :: T.Text -> Content
-parseBody t = case A.parse bodyParser (L.fromStrict t) of
+parseBody t = case A.parse contentParser (L.fromStrict t) of
     A.Done i r -> r
-
-bodyParser :: A.Parser Content
-bodyParser = ContentList <$> many (asset <|> stuff)
-    where
-    asset :: A.Parser Content
-    asset = (ContentAsset . T.unpack) <$> (open *> value <* close)
-        where
-        open = A.string (T.pack "${")
-        value = A.takeWhile (/= '}')
-        close = A.string (T.pack "}")
-    stuff :: A.Parser Content
-    stuff = ContentText <$> (A.string (T.pack "$") <|> A.takeWhile1 (/= '$'))

@@ -8,7 +8,7 @@ module ChrisMartinOrg.Core
     , Css(..)
     , CompiledCss(..)
     , Post(..)
-    , PostBody(..)
+    , Content(..)
 
     -- * Functions
     , markdown
@@ -45,9 +45,9 @@ data Css = CssCompiled CompiledCss
 
 data Page = HomePage | PostPage
 
-data PostBody = PostBodyText T.Text
-              | PostBodyAsset FilePath
-              | PostBodyList [PostBody]
+data Content = ContentText T.Text
+              | ContentAsset FilePath
+              | ContentList [Content]
 
 data Post = Post
     { postDir      :: FilePath
@@ -57,7 +57,7 @@ data Post = Post
     , postThumb    :: Maybe FilePath
     , postCss      :: [Css]
     , postAbstract :: T.Text
-    , postBody     :: PostBody
+    , postBody     :: Content
     }
 
 

@@ -1,5 +1,5 @@
 module ChrisMartinOrg.Post.Body
-    ( preprocessBody
+    ( resolveContentAssets
     ) where
 
 import ChrisMartinOrg.Core
@@ -15,12 +15,12 @@ import           Text.Blaze.Html5            (Html, preEscapedToHtml, toHtml,
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-preprocessBody :: FilePath -> PostBody -> IO T.Text
-preprocessBody _ (PostBodyText x) = pure x
-preprocessBody path (PostBodyAsset x) =
+resolveContentAssets :: FilePath -> Content -> IO T.Text
+resolveContentAssets _ (ContentText x) = pure x
+resolveContentAssets path (ContentAsset x) =
     maybe T.empty (T.pack . ("../" ++)) <$> resolveAsset path x
-preprocessBody path (PostBodyList xs) =
-    T.concat <$> sequence (preprocessBody path <$> xs)
+resolveContentAssets path (ContentList xs) =
+    T.concat <$> sequence (resolveContentAssets path <$> xs)
 
 resolveAsset :: FilePath -> FilePath -> IO (Maybe FilePath)
 resolveAsset path asset = do

@@ -9,7 +9,7 @@ module ChrisMartinOrg.Post
 
 import           ChrisMartinOrg.Core
 import           ChrisMartinOrg.Css        (compileCssFallback)
-import           ChrisMartinOrg.Post.Body  (preprocessBody)
+import           ChrisMartinOrg.Post.Body  (resolveContentAssets)
 import qualified ChrisMartinOrg.Post.Page  as Page
 import           ChrisMartinOrg.Post.Parse (parsePost)
 
@@ -82,7 +82,7 @@ writePost post = do
 getPageInput :: Post -> IO Page.Input
 getPageInput post = do
     css <- compileCssFallback $ postCss post
-    bodyText <- preprocessBody (postDir post) (postBody post)
+    bodyText <- resolveContentAssets (postDir post) (postBody post)
     return $ Page.Input
         { Page.inputTitle = toHtml $ L.fromStrict $ postTitle post
         , Page.inputChron = postChron post

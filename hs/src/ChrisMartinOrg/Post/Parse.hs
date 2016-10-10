@@ -112,18 +112,18 @@ splitOn2T :: T.Text -> T.Text -> (T.Text, T.Text)
 splitOn2T pat src = case T.breakOn pat src of
     (x, y) -> (x, T.drop (T.length pat) y)
 
-parseBody :: T.Text -> PostBody
+parseBody :: T.Text -> Content
 parseBody t = case A.parse bodyParser (L.fromStrict t) of
     A.Done i r -> r
 
-bodyParser :: A.Parser PostBody
-bodyParser = PostBodyList <$> many (asset <|> stuff)
+bodyParser :: A.Parser Content
+bodyParser = ContentList <$> many (asset <|> stuff)
     where
-    asset :: A.Parser PostBody
-    asset = (PostBodyAsset . T.unpack) <$> (open *> value <* close)
+    asset :: A.Parser Content
+    asset = (ContentAsset . T.unpack) <$> (open *> value <* close)
         where
         open = A.string (T.pack "${")
         value = A.takeWhile (/= '}')
         close = A.string (T.pack "}")
-    stuff :: A.Parser PostBody
-    stuff = PostBodyText <$> (A.string (T.pack "$") <|> A.takeWhile1 (/= '$'))
+    stuff :: A.Parser Content
+    stuff = ContentText <$> (A.string (T.pack "$") <|> A.takeWhile1 (/= '$'))

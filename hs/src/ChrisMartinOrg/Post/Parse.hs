@@ -5,7 +5,7 @@ module ChrisMartinOrg.Post.Parse
     ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Content (contentParser)
+import ChrisMartinOrg.Content (parseContent)
 
 import Prelude hiding (lines)
 
@@ -32,7 +32,7 @@ parsePost dir text = (^. _Either) $ Post dir
     <*> AccSuccess thumb
     <*> AccSuccess css
     <*> getVal "abstract"
-    <*> AccSuccess body
+    <*> eitherVal body
   where
     (metaText, bodyText) = splitPost text
     meta = Map.fromList $ parseMeta metaText
@@ -43,7 +43,7 @@ parsePost dir text = (^. _Either) $ Post dir
                left T.pack (parseChron str)
     css = maybeToList $ (CssSource . (dir </>) . T.unpack) <$> getMaybe "css"
     thumb = ((dir </>) . T.unpack) <$> getMaybe "thumbnail"
-    body = parseBody bodyText
+    body = left T.pack (parseContent bodyText)
 
 eitherVal :: Either a b -> AccValidation [a] b
 eitherVal (Left  x) = AccFailure [x]
@@ -111,7 +111,3 @@ groupByStart isStart = foldr f [] where
 splitOn2T :: T.Text -> T.Text -> (T.Text, T.Text)
 splitOn2T pat src = case T.breakOn pat src of
     (x, y) -> (x, T.drop (T.length pat) y)
-
-parseBody :: T.Text -> Content
-parseBody t = case A.parse contentParser (L.fromStrict t) of
-    A.Done i r -> r

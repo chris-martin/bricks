@@ -22,6 +22,8 @@ pageHtml :: T.Text -> Maybe CompiledCss -> [Post] -> Html
 pageHtml md css posts = H.docTypeHtml $ do
     H.head $ do
         H.meta ! A.charset "utf-8"
+        H.meta ! A.content "width=device-width,initial-scale=1"
+               ! A.name "viewport"
         H.title "Chris Martin"
         H.link ! A.rel "icon" ! A.href ""
         mapM_ styleLink css
@@ -44,5 +46,6 @@ postHtml post = H.div ! A.class_ "post" $ do
             toHtml $ formatChron $ postChron post
     H.div ! A.class_ "post-abstract" $ do
         forM_ (postThumb post) $ \t ->
-            H.img ! A.src (fromString t)
+            H.img ! A.class_ "post-thumb" ! A.src (fromString t)
         markdown $ postAbstract post
+    H.br

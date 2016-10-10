@@ -25,6 +25,8 @@ html :: Input -> Html
 html i = H.docTypeHtml $ do
     H.head $ do
         H.meta ! A.charset "utf-8"
+        H.meta ! A.content "width=device-width,initial-scale=1"
+               ! A.name "viewport"
         H.title $ inputTitle i
         H.link ! A.rel "icon" ! A.href ""
         mapM_ (styleLink . CompiledCss . (".." </>) . compiledCssPath) $ inputCss i

@@ -12,7 +12,12 @@ h1 {
 .post {
   border-bottom: 1px solid darkgray;
   margin: 1em 0;
+  line-height: 0;
   padding-bottom: 0.5em;
+
+  br:last-child {
+    clear: both;
+  }
 }
 
 .post-head {
@@ -25,6 +30,11 @@ h1 {
 .post-title {
   font-size: 115%;
   flex: 1;
+}
+
+.post-head,
+.post-abstract {
+  line-height: 1.5em;
 }
 
 .post-date {
@@ -40,5 +50,13 @@ h1 {
 
 .post-abstract {
   text-align: justify;
-  padding: 0 1em;
+}
+
+.post-thumb {
+  height: 60px;
+  width: 120px;
+  border-radius: 5px;
+  object-fit: cover;
+  float: right;
+  margin: 0 0 10px 20px;
 }

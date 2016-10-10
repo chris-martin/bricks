@@ -9,7 +9,7 @@ module ChrisMartinOrg.Post
 
 import           ChrisMartinOrg.Core
 import           ChrisMartinOrg.Css        (compileCssFallback)
-import           ChrisMartinOrg.Post.Body  (resolveContentAssets)
+import           ChrisMartinOrg.Content    (resolveContentAssets)
 import qualified ChrisMartinOrg.Post.Page  as Page
 import           ChrisMartinOrg.Post.Parse (parsePost)
 

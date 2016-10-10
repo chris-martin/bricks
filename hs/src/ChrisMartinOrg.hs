@@ -2,6 +2,7 @@
 
 module ChrisMartinOrg (main) where
 
+import           ChrisMartinOrg.Content (parseContent, resolveContentAssets)
 import           ChrisMartinOrg.Core
 import           ChrisMartinOrg.Css
 import           ChrisMartinOrg.Hash (writeHashFile)
@@ -18,14 +19,16 @@ import           Data.Monoid          ((<>))
 import qualified Data.Text.IO         as TextIO
 
 import qualified System.Directory as Dir
+import           System.FilePath.Posix ((</>))
 
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 
-defaultPostCssPath, homeContentPath, homeCssPath :: FilePath
+defaultPostCssPath, homeDir, homeContentPath, homeCssPath :: FilePath
 
 defaultPostCssPath = "in/posts/post.scss"
-homeContentPath    = "in/home/content.md"
-homeCssPath        = "in/home/home.scss"
+homeDir            = "in/home"
+homeContentPath    = homeDir </> "content.md"
+homeCssPath        = homeDir </> "home.scss"
 
 main :: IO ()
 main = do
@@ -57,8 +60,18 @@ main = do
 
     posts' <- sequence (patchPost defaultPostCssMaybe <$> posts)
 
-    homeMarkdown <- TextIO.readFile homeContentPath
-    let homeHtml = renderHtml $ Home.pageHtml homeMarkdown homeCssMaybe posts'
+    homeSrc <- TextIO.readFile homeContentPath
+
+    homeContent <- case parseContent homeSrc of
+        Left err -> do
+            putStrLn $ homeContentPath <> ": " <> err
+            return $ ContentText homeSrc
+        Right homeContent ->
+            return homeContent
+
+    homeText <- resolveContentAssets homeDir (homeContent :: Content)
+
+    let homeHtml = renderHtml $ Home.pageHtml homeText homeCssMaybe posts'
     LBS.writeFile "out/index.html" homeHtml
 
     forM_ posts' $ writePost

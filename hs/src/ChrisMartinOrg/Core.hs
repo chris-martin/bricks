@@ -47,6 +47,8 @@ data Page = HomePage | PostPage
 
 data Content = ContentText T.Text
               | ContentAsset FilePath
+              | ContentCode { codeLang :: T.Text
+                            , codeBody :: T.Text }
               | ContentList [Content]
 
 data Post = Post

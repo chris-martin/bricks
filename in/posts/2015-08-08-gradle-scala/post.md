@@ -176,6 +176,7 @@ java -Dscala.usejavacp=true \
 ```
 
 **repl.scala**
+
 ```scala
 myproject.repl.init()
 import myproject.repl._

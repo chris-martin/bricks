@@ -8,6 +8,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     ChrisMartinOrg
                      , ChrisMartinOrg.Content
+                     , ChrisMartinOrg.Content.Parse
                      , ChrisMartinOrg.Core
                      , ChrisMartinOrg.Core.Chron
                      , ChrisMartinOrg.Css

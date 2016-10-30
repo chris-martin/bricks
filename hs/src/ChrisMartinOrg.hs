@@ -2,24 +2,27 @@
 
 module ChrisMartinOrg (main) where
 
-import           ChrisMartinOrg.Content (parseContent, resolveContentAssets)
-import           ChrisMartinOrg.Core
-import           ChrisMartinOrg.Css
-import           ChrisMartinOrg.Hash (writeHashFile)
-import qualified ChrisMartinOrg.Home as Home
-import           ChrisMartinOrg.Post (getPosts, writePost)
+import ChrisMartinOrg.Core
+import ChrisMartinOrg.Css
 
-import           Control.Monad       (when, forM_)
+import qualified ChrisMartinOrg.Home as Home
+
+import ChrisMartinOrg.Content (parseContent, resolveContentAssets)
+import ChrisMartinOrg.Hash (writeHashFile)
+import ChrisMartinOrg.Post (getPosts, writePost)
 
 import qualified Data.ByteString.Lazy as LBS
-import           Data.Foldable        (toList)
-import           Data.Functor         (($>))
-import           Data.Maybe           (isNothing, maybeToList)
-import           Data.Monoid          ((<>))
 import qualified Data.Text.IO         as TextIO
+import qualified System.Directory     as Dir
 
-import qualified System.Directory as Dir
-import           System.FilePath.Posix ((</>))
+import Control.Monad (when, forM_)
+
+import Data.Foldable        (toList)
+import Data.Functor         (($>))
+import Data.Maybe           (isNothing, maybeToList)
+import Data.Monoid          ((<>))
+
+import System.FilePath.Posix ((</>))
 
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 
@@ -65,7 +68,7 @@ main = do
     homeContent <- case parseContent homeSrc of
         Left err -> do
             putStrLn $ homeContentPath <> ": " <> err
-            return $ ContentText homeSrc
+            return $ pure $ ContentText homeSrc
         Right homeContent ->
             return homeContent
 

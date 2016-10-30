@@ -9,6 +9,7 @@ module ChrisMartinOrg.Core
     , CompiledCss(..)
     , Post(..)
     , Content(..)
+    , ContentPart(..)
 
     -- * Functions
     , markdown
@@ -23,11 +24,15 @@ import ChrisMartinOrg.Core.Chron
 import Data.Default
 import Data.Maybe   (catMaybes)
 
-import           Data.ByteString (ByteString)
+import Data.ByteString (ByteString)
+
+import Data.Sequence (Seq)
+
 import qualified Data.Text       as T
 import qualified Data.Text.Lazy  as L
 
-import           Text.Blaze.Html5            (Html, toHtml, (!))
+import Text.Blaze.Html5 (Html, toHtml, (!))
+
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
@@ -45,7 +50,9 @@ data Css = CssCompiled CompiledCss
 
 data Page = HomePage | PostPage
 
-data Content = ContentText T.Text
+type Content = Seq ContentPart
+
+data ContentPart = ContentText T.Text
               | ContentAsset FilePath
               | ContentCode { codeLang :: T.Text
                             , codeBody :: T.Text }

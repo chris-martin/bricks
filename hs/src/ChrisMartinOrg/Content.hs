@@ -72,7 +72,7 @@ contentToC :: Content -> C
 contentToC = foldMap (C . Seq.singleton . contentPartToC) . contentParts
 
 cpToHtml :: C_Part -> Html
-cpToHtml (C_Text x) = markdown x
+cpToHtml (C_Text x) = H.div ! A.class_ "container" $ markdown x
 cpToHtml (C_Code lang body) = H.toHtml
     $ Kate.formatHtmlBlock Kate.defaultFormatOpts
     $ Kate.highlightAs (T.unpack lang) (T.unpack body)

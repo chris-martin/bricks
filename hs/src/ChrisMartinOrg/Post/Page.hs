@@ -34,8 +34,8 @@ html i = H.docTypeHtml $ do
     H.body $ do
         globalPageHeader PostPage
         H.main $
-            H.div ! A.class_ "container" $ do
-                H.div ! A.class_ "post-head" $ do
+            H.div $ do
+                H.div ! A.class_ "post-head container" $ do
                     H.h1 ! A.class_ "post-title" $
                         inputTitle i
                     H.div ! A.class_ "post-date" $

@@ -1,28 +1,24 @@
 @import '../global.scss';
 
-.container {
-  max-width: 35em;
-}
-
 .post-head {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  margin-bottom: 2em;
-  border-bottom: 1px solid darkgray;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 2em;
+    border-bottom: 1px solid darkgray;
 }
 
 .post-title {
-  flex: 1;
-  margin-bottom: 0;
+    flex: 1;
+    margin-bottom: 0;
 }
 
 .post-date {
-  white-space: nowrap;
-  color: darkgray;
+    white-space: nowrap;
+    color: darkgray;
 }
 
 .post-body {
-  text-align: justify;
+    text-align: justify;
 }

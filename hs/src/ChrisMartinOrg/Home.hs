@@ -33,10 +33,10 @@ pageHtml content css posts = H.docTypeHtml $ do
     H.body $ do
         globalPageHeader HomePage
         H.main $
-            H.div ! A.class_ "container" $ do
+            H.div $ do
                 H.div $
                     contentToHtml content
-                H.div $ do
+                H.div ! A.class_ "container" $ do
                     H.h2 "Writings"
                     mapM_ postHtml posts
 

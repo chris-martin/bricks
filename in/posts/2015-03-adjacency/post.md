@@ -14,7 +14,9 @@ reflect some central tenet of the language.
 
 A quick code example:
 
-    a b c
+```
+a b c
+```
 
 - In a lisp (adding some parens),
   this is "a list of *a*, *b*, and *c*".

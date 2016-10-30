@@ -1,28 +1,18 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ChrisMartinOrg (main) where
 
 import ChrisMartinOrg.Core
 import ChrisMartinOrg.Css
+import ChrisMartinOrg.Prelude
 
 import qualified ChrisMartinOrg.Home as Home
 
 import ChrisMartinOrg.Content (parseContent, resolveContentAssets)
-import ChrisMartinOrg.Hash (writeHashFile)
-import ChrisMartinOrg.Post (getPosts, writePost)
+import ChrisMartinOrg.Hash    (writeHashFile)
+import ChrisMartinOrg.Post    (getPosts, writePost)
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text.IO         as TextIO
 import qualified System.Directory     as Dir
-
-import Control.Monad (when, forM_)
-
-import Data.Foldable        (toList)
-import Data.Functor         (($>))
-import Data.Maybe           (isNothing, maybeToList)
-import Data.Monoid          ((<>))
-
-import System.FilePath.Posix ((</>))
 
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 
@@ -87,7 +77,7 @@ ifLeft e f = either (\x -> f x $> ()) (const $ pure ()) e
 patchPost :: Maybe CompiledCss -- ^ Default post css
           -> Post -> IO Post
 patchPost defaultPostCssMaybe p = do
-    let postCss' = postCss p ++ (CssCompiled <$> toList defaultPostCssMaybe)
+    let postCss' = postCss p <> (CssCompiled <$> toList defaultPostCssMaybe)
     postThumb' <- resolveThumbMaybe $ postThumb p
     return $ p { postCss   = postCss'
                , postThumb = postThumb' }

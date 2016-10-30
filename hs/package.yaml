@@ -3,6 +3,12 @@ version: 0.1.0.0
 license: Apache-2.0
 github: chris-martin/chris-martin.org
 
+default-extensions:
+  - GeneralizedNewtypeDeriving
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - ScopedTypeVariables
+
 library:
   source-dirs: src
   exposed-modules:
@@ -14,6 +20,7 @@ library:
     - ChrisMartinOrg.Css
     - ChrisMartinOrg.Hash
     - ChrisMartinOrg.Home
+    - ChrisMartinOrg.Prelude
     - ChrisMartinOrg.Post
     - ChrisMartinOrg.Post.Page
     - ChrisMartinOrg.Post.Parse

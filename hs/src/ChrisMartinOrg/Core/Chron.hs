@@ -4,16 +4,13 @@ module ChrisMartinOrg.Core.Chron
     , parseChron
     ) where
 
-import Control.Monad       (mfilter)
+import ChrisMartinOrg.Prelude
 
-import           Data.List          (findIndex)
 import qualified Data.Text          as T
-import Text.Read (readMaybe)
-import           Data.Maybe         (catMaybes, isJust)
-
 import qualified Data.Time.Calendar as Cal
 import qualified Data.Time.Format   as TimeF
 
+import Text.Read (readMaybe)
 
 data Chron = Chron
     { chronYear  :: Int

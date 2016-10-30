@@ -1,21 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ChrisMartinOrg.Content.Parse
     ( parseContent
     ) where
 
 import ChrisMartinOrg.Core
-
-import Prelude hiding (concat, takeWhile)
+import ChrisMartinOrg.Prelude
 
 import qualified Data.Sequence as Seq
-import qualified Data.Text as Text
-
-import Control.Applicative (many, liftA2, (<|>))
-import Data.Foldable (fold)
-import Data.Monoid ((<>))
-import Data.Text (Text)
-import Data.Sequence (Seq)
+import qualified Data.Text     as Text
 
 import Data.Attoparsec.Combinator (lookAhead)
 import Data.Attoparsec.Text
@@ -84,10 +75,6 @@ codeAtNewline = end <|> (stuff <+> codeAtNewline)
   where
     end = "" <$ "```" <* lookAhead endOfBlock
     stuff = takeWhile (/= '\n') <+> "\n"
-
--- | In a code block: not after a line break.
-codeAtInline :: Parser Text
-codeAtInline = undefined
 
 
 ---------------------------------------------------------------------

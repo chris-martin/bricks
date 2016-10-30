@@ -1,6 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
-
 module ChrisMartinOrg.Core
     (
     -- * Types
@@ -22,24 +19,18 @@ module ChrisMartinOrg.Core
     ) where
 
 import ChrisMartinOrg.Core.Chron
+import ChrisMartinOrg.Prelude
 
-import Data.ByteString (ByteString)
 import Data.Default
-import Data.Foldable (null)
-import Data.Maybe (catMaybes)
-import Data.Monoid ((<>))
-import Data.Sequence (Seq)
 
-import qualified Data.Sequence   as Seq
-import qualified Data.Text       as T
-import qualified Data.Text.Lazy  as L
-
-import Text.Blaze.Html5 (Html, toHtml, (!))
-
+import qualified Data.Sequence               as Seq
+import qualified Data.Text                   as T
+import qualified Data.Text.Lazy              as L
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
+import qualified Text.Markdown               as Markdown
 
-import qualified Text.Markdown as Markdown
+import Text.Blaze.Html5 (Html, toHtml, (!))
 
 
 -----------------------------------------------------------------

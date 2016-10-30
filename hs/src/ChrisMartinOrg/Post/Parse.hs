@@ -1,14 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ChrisMartinOrg.Post.Parse
     ( parsePost
     ) where
 
 import ChrisMartinOrg.Core
+import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Content (parseContent)
-
-import Prelude hiding (lines)
 
 import Control.Lens
 
@@ -17,10 +14,7 @@ import qualified Data.Map.Strict           as Map
 import qualified Data.Text                 as T
 import qualified Data.Text.Lazy            as L
 
-import Control.Arrow (left)
-import Data.Maybe (maybeToList)
 import Data.Validation (AccValidation (..), _Either)
-import System.FilePath.Posix ((</>))
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -89,10 +83,11 @@ parseMeta meta = parseMetaKV <$> lineGroups where
 -- :}
 -- ("abc","def\n ghi")
 parseMetaKV :: [T.Text] -> (T.Text, T.Text)
-parseMetaKV lines = (T.strip k, T.intercalate "\n" vLines) where
-    (k, v1) = splitOn2T ":" $ head lines
+parseMetaKV lines@(firstLine:_) = (T.strip k, T.intercalate "\n" vLines) where
+    (k, v1) = splitOn2T ":" firstLine
     startCol = T.length k + 1 + T.length (T.takeWhile (== ' ') v1)
     vLines = T.drop startCol <$> lines
+parseMetaKV [] = ("", "")
 
 -- |
 -- >>> groupByStart (== '-') "one-two-three"

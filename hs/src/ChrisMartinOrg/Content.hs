@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ChrisMartinOrg.Content
     ( parseContent
     , resolveContentAssets
@@ -7,23 +5,17 @@ module ChrisMartinOrg.Content
     ) where
 
 import ChrisMartinOrg.Core
+import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Content.Parse (parseContent)
 import ChrisMartinOrg.Hash (writeHashFile)
 
-import qualified Data.Sequence        as Seq
-import qualified Data.Text            as T
-import qualified Data.Text.Lazy       as L
+import qualified Data.Sequence               as Seq
+import qualified Data.Text                   as T
+import qualified Data.Text.Lazy              as L
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 import qualified Text.Highlighting.Kate      as Kate
-
-import Control.Monad (when)
-import Data.Foldable (fold, toList)
-import Data.Maybe (isNothing)
-import Data.Monoid ((<>))
-import Data.Sequence (Seq)
-import Data.Text (Text)
 
 import Text.Blaze.Html5 (Html, preEscapedToHtml, toHtml, (!))
 import Text.Blaze.Html.Renderer.String (renderHtml)

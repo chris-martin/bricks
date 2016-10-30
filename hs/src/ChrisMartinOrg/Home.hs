@@ -1,24 +1,19 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ChrisMartinOrg.Home
     ( pageHtml
     ) where
 
 import ChrisMartinOrg.Core
 import ChrisMartinOrg.Css
+import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Content (contentToHtml)
-import ChrisMartinOrg.Post (postUrl)
+import ChrisMartinOrg.Post    (postUrl)
 
-import Control.Monad (forM_)
-
-import qualified Data.Text.Lazy as L
-import qualified Data.Text      as T
-
+import qualified Data.Text.Lazy              as L
+import qualified Data.Text                   as T
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-import Data.String (IsString (..))
 import Text.Blaze.Html5 (Html, toHtml, (!))
 
 pageHtml :: Content -> Maybe CompiledCss -> [Post] -> Html

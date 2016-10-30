@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ChrisMartinOrg.Css
     ( styleLink
     , compileCss
@@ -8,19 +6,19 @@ module ChrisMartinOrg.Css
     ) where
 
 import ChrisMartinOrg.Core
+import ChrisMartinOrg.Prelude
+
 import ChrisMartinOrg.Hash (writeHashBS)
 
 import Data.Default
-import Data.String  (IsString (..))
 
-import qualified System.Directory as Dir
-
-import           Text.Blaze.Html5            as H hiding (main)
+import qualified System.Directory            as Dir
 import qualified Text.Blaze.Html5.Attributes as A
+import qualified Text.Sass                   as Sass
+import qualified Text.Sass.Compilation       as SassC
 
-import qualified Text.Sass             as Sass
-import qualified Text.Sass.Compilation as SassC
-import           Text.Sass.Options     (SassOptions (..), SassOutputStyle (..))
+import Text.Blaze.Html5 as H hiding (main)
+import Text.Sass.Options (SassOptions (..), SassOutputStyle (..))
 
 compileCss :: Css -> IO (Either String CompiledCss)
 compileCss (CssSource path) = compileCssSource path
@@ -45,7 +43,7 @@ compileCssSource inFile = do
             Left err -> Left <$> SassC.errorMessage err
             Right bs -> Right <$> CompiledCss <$> writeHashBS bs "css"
       else do
-        return $ Left $ "Missing CSS: " ++ inFile
+        return $ Left ("Missing CSS: " <> inFile)
 
 sassOpts :: SassOptions
 sassOpts = def { sassOutputStyle = SassStyleCompact }

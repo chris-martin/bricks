@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module ChrisMartinOrg.Post
     ( getPosts
     , postUrl
@@ -8,25 +5,13 @@ module ChrisMartinOrg.Post
     ) where
 
 import ChrisMartinOrg.Core
+import ChrisMartinOrg.Prelude
 
 import qualified ChrisMartinOrg.Post.Page as Page
 
 import ChrisMartinOrg.Css (compileCssFallback)
 import ChrisMartinOrg.Content (resolveContentAssets, contentToHtml)
 import ChrisMartinOrg.Post.Parse (parsePost)
-
-import Prelude hiding (lines)
-
-import Control.Applicative (liftA2)
-import Control.Exception (try, IOException)
-import Data.Foldable (fold)
-import Data.Functor (($>))
-import Data.Monoid ((<>))
-import Data.Sequence (Seq)
-import Data.Text (Text)
-import Data.List (sort)
-import Data.Maybe (catMaybes)
-import System.FilePath.Posix (dropFileName, (</>))
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Sequence        as Seq
@@ -35,6 +20,7 @@ import qualified Data.Text.Lazy       as L
 import qualified Data.Text.IO         as TextIO
 import qualified System.Directory     as Dir
 
+import System.FilePath.Posix (dropFileName)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 import Text.Blaze.Html5 (Html, toHtml)
 
@@ -66,7 +52,7 @@ getPost dir = do
 
 listDirectory :: FilePath -> IO [FilePath]
 listDirectory path =
-    filter (not . isSpecial) <$> Dir.getDirectoryContents path
+    mfilter (not . isSpecial) <$> Dir.getDirectoryContents path
     where isSpecial = liftA2 (||) (== ".") (== "..")
 
 postUrl :: Post -> FilePath

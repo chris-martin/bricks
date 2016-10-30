@@ -1,15 +1,13 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ChrisMartinOrg.Post.Page
     ( Input(..)
     , html
     ) where
 
 import ChrisMartinOrg.Core
+import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Css (styleLink)
 
-import System.FilePath.Posix ((</>))
 import Text.Blaze.Html5 (Html, toHtml, (!))
 
 import qualified Text.Blaze.Html5            as H

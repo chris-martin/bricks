@@ -22,6 +22,10 @@ import Data.Maybe (maybeToList)
 import Data.Validation (AccValidation (..), _Either)
 import System.FilePath.Posix ((</>))
 
+-- $setup
+-- >>> :set -XOverloadedStrings
+-- >>> import qualified Data.Text as Text
+
 parsePost :: FilePath -- ^ The directory containing the post
           -> T.Text   -- ^ The content of the post.md file
           -> Either [T.Text] Post

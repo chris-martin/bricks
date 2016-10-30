@@ -1,0 +1,58 @@
+name: chris-martin-org
+version: 0.1.0.0
+license: Apache-2.0
+github: chris-martin/chris-martin.org
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - ChrisMartinOrg
+    - ChrisMartinOrg.Content
+    - ChrisMartinOrg.Content.Parse
+    - ChrisMartinOrg.Core
+    - ChrisMartinOrg.Core.Chron
+    - ChrisMartinOrg.Css
+    - ChrisMartinOrg.Hash
+    - ChrisMartinOrg.Home
+    - ChrisMartinOrg.Post
+    - ChrisMartinOrg.Post.Page
+    - ChrisMartinOrg.Post.Parse
+
+dependencies:
+  - base
+  - attoparsec
+  - blaze-html
+  - blaze-markup
+  - bytestring
+  - containers
+  - cryptonite
+  - data-default
+  - directory
+  - filepath
+  - highlighting-kate
+  - hsass
+  - lens
+  - markdown
+  - safe
+  - text
+  - time
+  - unix
+  - validation
+
+executables:
+  site:
+    source-dirs: app
+    main: Main.hs
+    dependencies:
+      - chris-martin-org
+
+tests:
+  test:
+    source-dirs: test
+    main: test.hs
+    dependencies:
+      - base
+      - HUnit
+      - test-framework
+      - test-framework-hunit
+      - doctest

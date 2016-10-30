@@ -38,10 +38,6 @@ import qualified System.Directory     as Dir
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 import Text.Blaze.Html5 (Html, toHtml)
 
--- $setup
--- >>> :set -XOverloadedStrings
--- >>> import qualified Data.Text as Text
-
 getPosts :: IO [Post]
 getPosts = do
     paths <- (reverse . sort) <$> listDirectory basePath

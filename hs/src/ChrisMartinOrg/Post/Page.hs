@@ -6,11 +6,12 @@ module ChrisMartinOrg.Post.Page
     ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Css  (styleLink)
+
+import ChrisMartinOrg.Css (styleLink)
 
 import System.FilePath.Posix ((</>))
+import Text.Blaze.Html5 (Html, toHtml, (!))
 
-import           Text.Blaze.Html5            (Html, toHtml, (!))
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 

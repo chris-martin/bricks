@@ -5,21 +5,21 @@ module ChrisMartinOrg.Post.Parse
     ) where
 
 import ChrisMartinOrg.Core
+
 import ChrisMartinOrg.Content (parseContent)
 
 import Prelude hiding (lines)
 
-import Control.Arrow       (left)
 import Control.Lens
 
 import qualified Data.Attoparsec.Text.Lazy as A
-import qualified Data.Map.Strict      as Map
-import           Data.Maybe           (maybeToList)
-import qualified Data.Text            as T
-import qualified Data.Text.Lazy       as L
+import qualified Data.Map.Strict           as Map
+import qualified Data.Text                 as T
+import qualified Data.Text.Lazy            as L
 
+import Control.Arrow (left)
+import Data.Maybe (maybeToList)
 import Data.Validation (AccValidation (..), _Either)
-
 import System.FilePath.Posix ((</>))
 
 parsePost :: FilePath -- ^ The directory containing the post

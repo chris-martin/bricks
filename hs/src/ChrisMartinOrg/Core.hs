@@ -14,6 +14,8 @@ module ChrisMartinOrg.Core
     -- * Functions
     , markdown
     , globalPageHeader
+    , singlePartContent
+    , collapseSeqAppend
 
     , module ChrisMartinOrg.Core.Chron
 
@@ -21,13 +23,14 @@ module ChrisMartinOrg.Core
 
 import ChrisMartinOrg.Core.Chron
 
-import Data.Default
-import Data.Maybe   (catMaybes)
-
 import Data.ByteString (ByteString)
-
+import Data.Default
+import Data.Foldable (null)
+import Data.Maybe (catMaybes)
+import Data.Monoid ((<>))
 import Data.Sequence (Seq)
 
+import qualified Data.Sequence   as Seq
 import qualified Data.Text       as T
 import qualified Data.Text.Lazy  as L
 
@@ -50,13 +53,19 @@ data Css = CssCompiled CompiledCss
 
 data Page = HomePage | PostPage
 
-type Content = Seq ContentPart
+newtype Content = Content { contentParts :: Seq ContentPart }
+
+instance Monoid Content where
+    mempty = Content mempty
+    mappend (Content x) (Content y) = Content $ collapseSeqAppend f x y
+      where
+        f (ContentText x) (ContentText y) = Just $ ContentText (x <> y)
+        f _ _ = Nothing
 
 data ContentPart = ContentText T.Text
-              | ContentAsset FilePath
-              | ContentCode { codeLang :: T.Text
-                            , codeBody :: T.Text }
-              | ContentList [Content]
+                 | ContentAsset FilePath
+                 | ContentCode { codeLang :: T.Text
+                               , codeBody :: T.Text }
 
 data Post = Post
     { postDir      :: FilePath
@@ -84,3 +93,21 @@ globalPageHeader page =
             case page of
                 HomePage -> mempty
                 _ -> H.a ! A.href ".." $ toHtml ("Chris Martin" :: String)
+
+singlePartContent :: ContentPart -> Content
+singlePartContent = Content . Seq.singleton
+
+collapseSeqAppend :: (a -> a -> Maybe a) -> Seq a -> Seq a -> Seq a
+collapseSeqAppend f x y = maybe (x <> y) id $ do
+    x' <- seqLast x
+    y' <- seqFirst y
+    collapsed <- f x' y'
+    return $ Seq.take (length x - 1) x <>
+             Seq.singleton collapsed   <>
+             Seq.drop 1 y
+  where
+    seqIndexMaybe :: Seq a -> Int -> Maybe a
+    seqIndexMaybe xs i =
+        if null xs then Nothing else Just (Seq.index xs i)
+    seqFirst xs = seqIndexMaybe xs 0
+    seqLast xs = seqIndexMaybe xs (length xs - 1)

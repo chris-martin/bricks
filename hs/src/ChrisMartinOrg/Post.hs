@@ -7,30 +7,36 @@ module ChrisMartinOrg.Post
     , writePost
     ) where
 
-import           ChrisMartinOrg.Core
-import           ChrisMartinOrg.Css        (compileCssFallback)
-import           ChrisMartinOrg.Content    (resolveContentAssets)
-import qualified ChrisMartinOrg.Post.Page  as Page
-import           ChrisMartinOrg.Post.Parse (parsePost)
+import ChrisMartinOrg.Core
+
+import qualified ChrisMartinOrg.Post.Page as Page
+
+import ChrisMartinOrg.Css (compileCssFallback)
+import ChrisMartinOrg.Content (resolveContentAssets, contentToHtml)
+import ChrisMartinOrg.Post.Parse (parsePost)
 
 import Prelude hiding (lines)
 
 import Control.Applicative (liftA2)
-import Control.Exception   (try, IOException)
+import Control.Exception (try, IOException)
+import Data.Foldable (fold)
 import Data.Functor (($>))
+import Data.Monoid ((<>))
+import Data.Sequence (Seq)
+import Data.Text (Text)
+import Data.List (sort)
+import Data.Maybe (catMaybes)
+import System.FilePath.Posix (dropFileName, (</>))
 
 import qualified Data.ByteString.Lazy as LBS
-import           Data.List            (sort)
-import           Data.Maybe           (catMaybes)
+import qualified Data.Sequence        as Seq
 import qualified Data.Text            as T
 import qualified Data.Text.Lazy       as L
 import qualified Data.Text.IO         as TextIO
-
-import qualified System.Directory      as Dir
-import           System.FilePath.Posix (dropFileName, (</>))
+import qualified System.Directory     as Dir
 
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
-import Text.Blaze.Html5              (toHtml)
+import Text.Blaze.Html5 (Html, toHtml)
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -82,10 +88,10 @@ writePost post = do
 getPageInput :: Post -> IO Page.Input
 getPageInput post = do
     css <- compileCssFallback $ postCss post
-    bodyText <- resolveContentAssets (postDir post) (postBody post)
+    body <- resolveContentAssets (postDir post) (postBody post)
     return $ Page.Input
         { Page.inputTitle = toHtml $ L.fromStrict $ postTitle post
         , Page.inputChron = postChron post
         , Page.inputCss = css
-        , Page.inputBody = markdown bodyText
+        , Page.inputBody = contentToHtml body
         }

@@ -33,25 +33,27 @@ public class Two<B> extends One<B> {
 Error message
 ----------------------------------------------------------------------------
 
-    An exception has occurred in the compiler (1.6.0_21). Please file a bug at
-    the Java Developer Connection (http://java.sun.com/webapps/bugreport) after
-    checking the Bug Parade for duplicates. Include your program and the
-    following diagnostic in your report. Thank you.
+```
+An exception has occurred in the compiler (1.6.0_21). Please file a bug at
+the Java Developer Connection (http://java.sun.com/webapps/bugreport) after
+checking the Bug Parade for duplicates. Include your program and the
+following diagnostic in your report. Thank you.
 
-    java.lang.NullPointerException
-      at com.sun.tools.javac.comp.Check.checkCompatibleConcretes(Check.java:1215)
-      at com.sun.tools.javac.comp.Check.checkCompatibleSupertypes(Check.java:1567)
-      at com.sun.tools.javac.comp.Attr.attribClassBody(Attr.java:2674)
-      at com.sun.tools.javac.comp.Attr.attribClass(Attr.java:2628)
-      at com.sun.tools.javac.comp.Attr.attribClass(Attr.java:2564)
-      at com.sun.tools.javac.main.JavaCompiler.attribute(JavaCompiler.java:1036)
-      at com.sun.tools.javac.main.JavaCompiler.compile2(JavaCompiler.java:765)
-      at com.sun.tools.javac.main.JavaCompiler.compile(JavaCompiler.java:730)
-      at com.sun.tools.javac.main.Main.compile(Main.java:353)
-      at com.sun.tools.javac.main.Main.compile(Main.java:279)
-      at com.sun.tools.javac.main.Main.compile(Main.java:270)
-      at com.sun.tools.javac.Main.compile(Main.java:69)
-      at com.sun.tools.javac.Main.main(Main.java:54)
+java.lang.NullPointerException
+  at com.sun.tools.javac.comp.Check.checkCompatibleConcretes(Check.java:1215)
+  at com.sun.tools.javac.comp.Check.checkCompatibleSupertypes(Check.java:1567)
+  at com.sun.tools.javac.comp.Attr.attribClassBody(Attr.java:2674)
+  at com.sun.tools.javac.comp.Attr.attribClass(Attr.java:2628)
+  at com.sun.tools.javac.comp.Attr.attribClass(Attr.java:2564)
+  at com.sun.tools.javac.main.JavaCompiler.attribute(JavaCompiler.java:1036)
+  at com.sun.tools.javac.main.JavaCompiler.compile2(JavaCompiler.java:765)
+  at com.sun.tools.javac.main.JavaCompiler.compile(JavaCompiler.java:730)
+  at com.sun.tools.javac.main.Main.compile(Main.java:353)
+  at com.sun.tools.javac.main.Main.compile(Main.java:279)
+  at com.sun.tools.javac.main.Main.compile(Main.java:270)
+  at com.sun.tools.javac.Main.compile(Main.java:69)
+  at com.sun.tools.javac.Main.main(Main.java:54)
+```
 
 Workaround
 ----------------------------------------------------------------------------

@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ChrisMartinOrg.Content
-    ( resolveContentAssets
-    , parseContent
+    ( parseContent
+    , resolveContentAssets
+    , contentToHtml
     ) where
 
 import ChrisMartinOrg.Core
@@ -10,31 +11,34 @@ import ChrisMartinOrg.Core
 import ChrisMartinOrg.Content.Parse (parseContent)
 import ChrisMartinOrg.Hash (writeHashFile)
 
-import Control.Monad (when)
-
+import qualified Data.Sequence        as Seq
 import qualified Data.Text            as T
 import qualified Data.Text.Lazy       as L
+import qualified Text.Blaze.Html5            as H
+import qualified Text.Blaze.Html5.Attributes as A
+import qualified Text.Highlighting.Kate      as Kate
 
-import Data.Foldable (toList)
+import Control.Monad (when)
+import Data.Foldable (fold, toList)
 import Data.Maybe (isNothing)
 import Data.Monoid ((<>))
+import Data.Sequence (Seq)
 import Data.Text (Text)
 
 import Text.Blaze.Html5 (Html, preEscapedToHtml, toHtml, (!))
+import Text.Blaze.Html.Renderer.String (renderHtml)
 
-import qualified Text.Blaze.Html5            as H
-import qualified Text.Blaze.Html5.Attributes as A
-
--- todo - rename this
-resolveContentAssets :: FilePath -> Content -> IO Text
+resolveContentAssets :: FilePath -> Content -> IO Content
 resolveContentAssets path xs =
-    T.concat <$> sequence (resolveContentPartAssets path <$> toList xs)
+    Content <$> sequence (resolveContentPartAssets path <$> contentParts xs)
 
-resolveContentPartAssets :: FilePath -> ContentPart -> IO Text
-resolveContentPartAssets _ (ContentText x) = pure x
-resolveContentPartAssets _ (ContentCode lang code) = pure "[ CODE ]" -- todo
-resolveContentPartAssets path (ContentAsset x) =
-    maybe T.empty (T.pack . ("../" <>)) <$> resolveAsset path x
+resolveContentPartAssets :: FilePath -> ContentPart -> IO ContentPart
+resolveContentPartAssets path (ContentAsset x) = do
+    resolvedMaybe <- resolveAsset path x
+    return $ case resolvedMaybe of
+        Nothing -> ContentText ("${" <> T.pack x <> "}")
+        Just resolved -> ContentAsset ("../" <> resolved)
+resolveContentPartAssets _ x = pure x
 
 resolveAsset :: FilePath -> FilePath -> IO (Maybe FilePath)
 resolveAsset path asset = do
@@ -44,3 +48,31 @@ resolveAsset path asset = do
   where
     fullPath = path <> "/" <> asset
     putError = putStrLn $ "Missing asset: " <> fullPath
+
+data C_Part = C_Text Text | C_Code Text Text
+
+newtype C = C { c_parts :: Seq C_Part }
+
+instance Monoid C where
+    mempty = C mempty
+    mappend (C x) (C y) = C $ collapseSeqAppend f x y
+      where
+        f (C_Text x) (C_Text y) = Just $ C_Text (x <> y)
+        f _ _ = Nothing
+
+contentPartToC :: ContentPart -> C_Part
+contentPartToC (ContentText x) = C_Text x
+contentPartToC (ContentAsset x) = C_Text $ T.pack x
+contentPartToC (ContentCode lang body) = C_Code lang body
+
+contentToHtml :: Content -> Html
+contentToHtml = foldMap cpToHtml . c_parts . contentToC
+
+contentToC :: Content -> C
+contentToC = foldMap (C . Seq.singleton . contentPartToC) . contentParts
+
+cpToHtml :: C_Part -> Html
+cpToHtml (C_Text x) = markdown x
+cpToHtml (C_Code lang body) = H.toHtml
+    $ Kate.formatHtmlBlock Kate.defaultFormatOpts
+    $ Kate.highlightAs (T.unpack lang) (T.unpack body)

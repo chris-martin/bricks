@@ -68,7 +68,7 @@ main = do
     homeContent <- case parseContent homeSrc of
         Left err -> do
             putStrLn $ homeContentPath <> ": " <> err
-            return $ pure $ ContentText homeSrc
+            return $ singlePartContent $ ContentText homeSrc
         Right homeContent ->
             return homeContent
 

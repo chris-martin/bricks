@@ -48,21 +48,21 @@ atInline =
     (stuff   <+> atInline)  <|>
     end
   where
-    newline = pure . ContentText . Text.singleton <$> char '\n'
+    newline = singlePartContent . ContentText . Text.singleton <$> char '\n'
 
-stuff = asset <|> (pure . ContentText <$> text)
+stuff = asset <|> (singlePartContent . ContentText <$> text)
   where
     text = (takeWhile1 (notInClass "\n$")) <|>
            (Text.singleton <$> char '$')
 
 -- | At least one newline, interpreted as regular text.
-newlines = pure . ContentText <$> p <?> "newlines"
+newlines = singlePartContent . ContentText <$> p <?> "newlines"
   where p = takeWhile1 (== '\n')
 
-asset = pure . ContentAsset <$> p <?> "asset"
+asset = singlePartContent . ContentAsset <$> p <?> "asset"
   where p = "${" *> manyTill anyChar (char '}')
 
-end = Seq.empty <$ endOfInput
+end = mempty <$ endOfInput
 
 
 ---------------------------------------------------------------------
@@ -70,7 +70,9 @@ end = Seq.empty <$ endOfInput
 ---------------------------------------------------------------------
 
 code :: Parser Content
-code = pure <$> liftA2 ContentCode codeOpen codeAtNewline <?> "code"
+code = singlePartContent
+    <$> liftA2 ContentCode codeOpen codeAtNewline
+    <?> "code"
 
 codeOpen :: Parser Text
 codeOpen = "```" *> takeWhile (/= '\n') <* char '\n'

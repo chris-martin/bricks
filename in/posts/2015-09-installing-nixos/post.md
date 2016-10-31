@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 title:     Installing NixOS
 date:      2015 Sept 27
+css:       installing-nixos.scss
 thumbnail: passphrase-prompt.jpg
 slug:      installing-nixos
 abstract:  I just installed NixOS on my laptop.
@@ -14,12 +15,16 @@ encryption. Feel free to tweet questions at me and I’ll help if I can,
 though you’ll find more knowledgable folks in the `#nixos` channel on
 Freenode.
 
-I keep my NixOS configuration in [a git repository][git]. I recommend
-learning from other people’s configuration files and sharing your own.
+I keep my NixOS configuration in
+[a git repository](https://github.com/chris-martin/nixos-config).
+I recommend learning from other people’s configuration files and sharing
+your own.
 
 Much of this follows Bluish Coder’s
-[Installing NixOS on a ThinkPad W540 with encrypted root][bluish]
-and [Encrypted Root on NixOS][wiki-encrypted-root] on the NixOS wiki.
+[Installing NixOS on a ThinkPad W540 with encrypted root](http://bluishcoder.co.nz/2014/05/14/installing-nixos-with-encrypted-root-on-thinkpad-w540.html)
+and
+[Encrypted Root on NixOS](https://nixos.org/wiki/Encrypted_Root_on_NixOS)
+on the NixOS wiki.
 
 My requirements, constraints, and choices
 --------------------------------------------------------------------------
@@ -64,11 +69,14 @@ the passphrase before proceeding.
 Creating NixOS USB installer
 --------------------------------------------------------------------------
 
-Download NixOS [15.09.336.83cc494][download] x86_64 minimal install ISO.
+Download NixOS
+[15.09.336.83cc494](https://nixos.org/releases/nixos/15.09/nixos-15.09.336.83cc494/)
+x86_64 minimal install ISO.
 
 *(I first tried the latest stable release, 14.12, and had an error
 installing Grub. I switched to this particular build of NixOS 15.09
-on [Domen Kožar’s recommendation][tweet].)*
+on
+[Domen Kožar’s recommendation](https://twitter.com/iElectric/status/643359273012043776).)*
 
 Load it onto a flash drive using unetbootin.
 
@@ -83,7 +91,7 @@ sudo mlabel -i <device> -s ::"NIXOS_ISO  "
 ```
 
 Note the spaces that pad the label name to
-[exactly 11 characters][label-11-chars].
+[exactly 11 characters](http://askubuntu.com/a/103695/333663).
 
 Boot the NixOS live "CD". It contains the utilities that you’ll need to
 set up the disk, and of course the NixOS installer.
@@ -238,7 +246,8 @@ wpa_supplicant -B -i interface -c <(wpa_passphrase 'SSID' 'key')
 ```
 
 I’m not sure why, exactly, but that’s what
-[the wiki][wpa_supplicant] says to do.
+[the wiki](https://nixos.org/wiki/Wpa_supplicant)
+says to do.
 
 ### If you reboot during this process
 
@@ -383,7 +392,7 @@ The left column shows attribute paths (which is what you need for
 <br/>
 <br/>
 
-<blockquote class="twitter-tweet" lang="en">
+<blockquote>
   <p lang="en" dir="ltr">
     Blog post: Installing
     <a href="https://twitter.com/hashtag/NixOS?src=hash">#NixOS</a>
@@ -394,21 +403,3 @@ The left column shows attribute paths (which is what you need for
     September 27, 2015
   </a>
 </blockquote>
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-
-[download]: https://nixos.org/releases/nixos/15.09/nixos-15.09.336.83cc494/
-
-[label-11-chars]: http://askubuntu.com/a/103695/333663
-
-[bluish]: http://bluishcoder.co.nz/2014/05/14/installing-nixos-with-encrypted-root-on-thinkpad-w540.html
-
-[wiki-encrypted-root]: https://nixos.org/wiki/Encrypted_Root_on_NixOS
-
-[tweet]: https://twitter.com/iElectric/status/643359273012043776
-
-[wpa_supplicant]: https://nixos.org/wiki/Wpa_supplicant
-
-[git]: https://github.com/chris-martin/nixos-config

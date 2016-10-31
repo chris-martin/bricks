@@ -38,11 +38,14 @@ import Text.Blaze.Html5 (Html, toHtml, (!))
 -----------------------------------------------------------------
 
 newtype CompiledCss = CompiledCss { compiledCssPath :: FilePath }
+    deriving Show
 
 data Css = CssCompiled CompiledCss
          | CssSource FilePath
+    deriving Show
 
 data Page = HomePage | PostPage
+    deriving (Show, Eq)
 
 newtype Content = Content { contentParts :: Seq ContentPart }
 

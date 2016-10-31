@@ -41,11 +41,9 @@ main = do
 
     let homeCssMaybe = either (const Nothing) Just homeCss
 
-    -- todo - this should get used for posts that don't
-    -- specify a css file, but it doesn't.
     defaultPostCss <- compileCssSource defaultPostCssPath
 
-    let defaultPostCssMaybe = either (const Nothing) Just homeCss
+    let defaultPostCssMaybe = either (const Nothing) Just defaultPostCss
 
     ifLeft defaultPostCss (\err ->
         putStrLn $ "Failed to compile the default post CSS "

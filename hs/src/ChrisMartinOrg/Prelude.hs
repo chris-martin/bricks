@@ -73,8 +73,8 @@ import Data.Tuple as X
     ( fst, snd )
 
 import Prelude as X
-    ( (+), (-), (==), (/=)
-    , fromIntegral, show, writeFile, undefined )
+    ( Eq(..), Num(..), Show(..)
+    , fromIntegral, writeFile, undefined )
 
 import System.FilePath.Posix as X
     ( FilePath

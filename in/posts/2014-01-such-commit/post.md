@@ -10,7 +10,7 @@ abstract: ```
           ```
 --------------------------------------------------------------------------------
 
-<blockquote class="twitter-tweet" lang="en">
+<blockquote>
   <p lang="en" dir="ltr">
     alias such=git<br/>
     alias very=git<br/>
@@ -24,5 +24,3 @@ abstract: ```
     January 8, 2014
   </a>
 </blockquote>
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>

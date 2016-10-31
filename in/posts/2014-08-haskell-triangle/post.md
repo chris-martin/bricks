@@ -9,13 +9,11 @@ abstract:      Sometimes I see a Java question, write myself a Haskell
                will never know about it.
 --------------------------------------------------------------------------------
 
-<blockquote class="twitter-tweet" lang="en"><p>Sometimes I see a Java SO
+<blockquote><p>Sometimes I see a Java SO
 question, write myself a haskell solution, then sadly read over the thread of
 people who will never know about it.</p>— Chris Martin (@chris__martin)
 <a href="https://twitter.com/chris__martin/statuses/495434666623909889">August
 2, 2014</a></blockquote>
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 It’s getting increasingly painful to read Stack Overflow newb questions,
 because imperative languages are so unnecessarily difficult.
@@ -23,13 +21,15 @@ because imperative languages are so unnecessarily difficult.
 How do I do \_\_\_\_ in Java?
 --------------------------------------------------------------------------
 
-[This question on Stack Overflow][stackoverflow] is about producing this string
-(using Java):
+[This question on Stack Overflow](https://stackoverflow.com/questions/25091218/print-triangle-pattern-using-java)
+is about producing this string (using Java):
 
-    1
-    0 1
-    1 0 1
-    0 1 0 1
+```
+1
+0 1
+1 0 1
+0 1 0 1
+```
 
 The answers given are okay as far as Java goes (although they’re both subtly
 incorrect because they include an extra space at the end of each line).
@@ -153,7 +153,9 @@ and the Haskell uses more human words.
 Do you have a moment to talk about our Lord and Savior Jesus Christ?
 --------------------------------------------------------------------------
 
-<blockquote class="twitter-tweet" lang="en"><p>you could post it, just for
+<blockquote><p>Sometimes I see a Java SO question, write myself a haskell solution, then sadly read over the thread of people who will never know about it.</p>&mdash; Chris Martin (@chris__martin) <a href="https://twitter.com/chris__martin/status/495434666623909889">August 2, 2014</a></blockquote>
+
+<blockquote><p>you could post it, just for
 curiosity&#39;s sake, but it&#39;d only cause negative emotions</p>—
 Chris Martin (@chris__martin) <a
 href="https://twitter.com/chris__martin/statuses/495434954399285248">August 2,
@@ -172,7 +174,7 @@ Addendum
 
 Here’s a slightly revised program thanks to some feedback.
 
-<blockquote class="twitter-tweet" lang="en"><p>
+<blockquote><p>
 <a href="https://twitter.com/chris__martin">@chris__martin</a> Nice
 understandable solution. My similar would use
 &quot;zeroOnes = &#39;0&#39;:&#39;1&#39;:zeroOnes&quot; and &quot;take i $
@@ -193,5 +195,3 @@ main = putStrLn $ triangle 4
 
 I like how it expresses the zero-one sequence in more straightforward manner
 without being tricky with arithmetic.
-
-[stackoverflow]: https://stackoverflow.com/questions/25091218/print-triangle-pattern-using-java

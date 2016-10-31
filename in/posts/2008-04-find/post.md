@@ -46,11 +46,13 @@ yields exactly what I’m looking for.
 I ran this from the SVN directory for my software engineering project to see
 how much code we’d produced. The result:
 
-     18208 total
-       706 Connection.java
-       636 ColabClient.java
-       632 ColabClientGUI.java
-       506 ParagraphEditor.java
+```
+ 18208 total
+   706 Connection.java
+   636 ColabClient.java
+   632 ColabClientGUI.java
+   506 ParagraphEditor.java
+```
 
 Fascinating.
 

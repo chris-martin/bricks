@@ -1,63 +1,83 @@
 @import '../global.scss';
 
 h1 {
-  margin-bottom: 2em;
-  border-bottom: 1px solid darkgray;
+    margin-bottom: 2em;
+    border-bottom: 1px solid darkgray;
 }
 
-.photo {
-  width: 150px;
-  border-radius: 5px;
+.content {
+
+    .photo {
+        width: 125px;
+        float: right;
+        border-radius: 5px;
+    }
+
+    @media(max-width: 400px) {
+
+        .photo {
+            width: 75px;
+        }
+
+        ul {
+            padding-left: 0;
+        }
+
+        li {
+            list-style-type: none;
+            line-height: 1.7em;
+        }
+    }
 }
 
 .post {
-  border-bottom: 1px solid darkgray;
-  margin: 1em 0;
-  line-height: 0;
-  padding-bottom: 0.5em;
+    border-bottom: 1px solid darkgray;
+    margin: 1em 0;
+    line-height: 0;
+    padding-bottom: 0.5em;
 
-  br:last-child {
-    clear: both;
-  }
+    br:last-child {
+        clear: both;
+    }
 }
 
 .post-head {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-end;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
 }
 
 .post-title {
-  font-size: 115%;
-  flex: 1;
+    font-size: 115%;
+    flex: 1;
 }
 
 .post-head,
 .post-abstract {
-  line-height: 1.5em;
+    line-height: 1.5em;
 }
 
 .post-date {
-  font-size: 75%;
-  color: darkgray;
-  white-space: nowrap;
+    font-size: 75%;
+    color: darkgray;
+    white-space: nowrap;
 }
 
 .post-title,
 .post-date {
-  display: inline-block;
+    display: inline-block;
 }
 
 .post-abstract {
-  text-align: justify;
+    text-align: justify;
 }
 
 .post-thumb {
-  height: 60px;
-  width: 120px;
-  border-radius: 5px;
-  object-fit: cover;
-  float: right;
-  margin: 0 0 10px 20px;
+    height: 60px;
+    width: 120px;
+    border-radius: 5px;
+    object-fit: cover;
+    float: right;
+    margin: 0 0 10px 20px;
 }

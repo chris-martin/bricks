@@ -15,6 +15,10 @@ h1 {
     margin-top: 1em;
 }
 
+h1, h2 {
+    clear: both;
+}
+
 .container {
     padding: 0 2em;
     margin: 0 auto;
@@ -33,6 +37,22 @@ h1 {
     }
 }
 
+blockquote {
+    background: #f5f2e7;
+    border: 1px solid #eadea3;
+    margin: 1em 0;
+    border-width: 0 0 0 10px;
+    padding: 1.6em 2em;
+    border-radius: 5px;
+
+    &>*:first-child {
+        margin-top: 0;
+    }
+    &>*:last-child {
+        margin-bottom: 0;
+    }
+}
+
 div.sourceCode {
 
     box-sizing: border-box;
@@ -45,6 +65,7 @@ div.sourceCode {
         border: 3px solid #f1f1f1;
         border-radius: 5px;
         padding: 1em;
+        margin: 0;
         word-break: break-all;
         line-height: 1.2em;
 

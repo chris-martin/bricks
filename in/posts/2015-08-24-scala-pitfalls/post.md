@@ -134,6 +134,8 @@ xs.foreach(x =>
 )
 ```
 
+<br>
+
 ```scala
 w.toRight("a").flatMap(x =>
   f(x).toRight("b").flatMap(y =>
@@ -151,6 +153,8 @@ for {
   z <- map.get(y)
 } g(z, x)
 ```
+
+<br>
 
 ```scala
 for {

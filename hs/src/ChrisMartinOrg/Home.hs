@@ -29,7 +29,7 @@ pageHtml content css posts = H.docTypeHtml $ do
         globalPageHeader HomePage
         H.main $
             H.div $ do
-                H.div $
+                H.div ! A.class_ "content" $
                     contentToHtml content
                 H.div ! A.class_ "container" $ do
                     H.h2 "Writings"

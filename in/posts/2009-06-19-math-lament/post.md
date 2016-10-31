@@ -6,8 +6,9 @@ abstract: The big question everyone had in middle-to-high school mathematics
           classes was "When am I ever going to use this?"
 --------------------------------------------------------------------------------
 
-Slashdot recently featured ["A Mathematician’s Lament"][lament] by Paul
-Lockhart.
+Slashdot recently featured
+["A Mathematician’s Lament"](http://www.maa.org/external_archive/devlin/devlin_03_08.html)
+by Paul Lockhart.
 
 The big question everyone had in middle-to-high school mathematics classes was
 "When am I ever going to use this?" Those few who had interest in the subject
@@ -28,7 +29,7 @@ favorite excerpts.
 > that? (And of course it’s actually much worse than this— at least it’s
 > understood that there is an art of sculpture that I am being prevented from
 > appreciating).
-
+>
 > By concentrating on *what*, and leaving out *why*, mathematics is reduced to
 > an empty shell. The art is not in the "truth" but in the explanation, the
 > argument. It is the argument itself which gives the truth its context, and
@@ -41,14 +42,14 @@ favorite excerpts.
 > of facts and formulas in our mathematics classes, I’m complaining about the
 > lack of *mathematics* in our mathematics classes.
 
----
+
 
 > The saddest part of all this "reform" are the attempts to "make math
 > interesting" and "relevant to kids’ lives." You don’t need to *make* math
 > interesting— it’s already more interesting than we can handle! And the glory
 > of it is its complete *irrelevance* to our lives. That’s why it’s so fun!
 
----
+
 
 > In place of a natural problem context in which students can make decisions
 > about what they want their words to mean, and what notions they wish to
@@ -61,7 +62,7 @@ favorite excerpts.
 > same exact numbers, and have the same exact properties. Who uses such words
 > outside of fourth grade?
 
----
+
 
 > What is happening is the systematic undermining of the student’s intuition. A
 > proof, that is, a mathematical argument, is a work of fiction, a poem. Its
@@ -69,11 +70,9 @@ favorite excerpts.
 > clearly, deeply, and elegantly. A well-written, well-crafted argument should
 > feel like a splash of cool water, and be a beacon of light— it should refresh
 > the spirit and illuminate the mind. And it should be *charming*.
-
+>
 > There is nothing charming about what passes for proof in geometry class.
 > Students are presented a rigid and dogmatic format in which their so-called
 > "proofs" are to be conducted— a format as unnecessary and inappropriate as
 > insisting that children who wish to plant a garden refer to their flowers by
 > genus and species.
-
-[lament]: http://www.maa.org/external_archive/devlin/devlin_03_08.html

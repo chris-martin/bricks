@@ -22,6 +22,8 @@ import static one.Two.three;
 public class One<A> { }
 ```
 
+<br>
+
 ```java
 /* Two.java */
 package one;
@@ -79,6 +81,8 @@ package abc;
 import static abc.Two.three;
 public class One<A> { }
 ```
+
+<br>
 
 ```java
 /* Two.java */

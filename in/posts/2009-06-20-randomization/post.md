@@ -17,8 +17,9 @@ but will rarely consider its practical application.
 In the software engineering world, we focus on higher-level architecture, and
 sometimes use the term *clever* pejoratively. The software goal is to abstract
 out the algorithms entirely so we can leave those pesky *implementation details*
-to libraries written by guys with smaller [Erdős numbers][erdos] and larger
-[beards][rms].
+to libraries written by guys with smaller
+[Erdős numbers](http://en.wikipedia.org/wiki/Erd%C5%91s_number) and larger
+[beards](http://en.wikipedia.org/wiki/Richard_Stallman).
 
 There is certainly nothing wrong with this mentality. Writing javascript for the
 web without a framework may be more fun for a while, but it is ultimately
@@ -57,7 +58,8 @@ done
 echo "${all[$((RANDOM % i))]}"
 ```
 
-But this just doesn’t feel like it follows the [Way of Unix][koans], because it
+But this just doesn’t feel like it follows the
+[Way of Unix](http://www.catb.org/~esr/writings/unix-koans/), because it
 requires holding the entire list in memory just to eventually write a single
 line. We’re piping streams without using the pipelining to our advantage.  I’d
 like to be able to do this using constant space.
@@ -70,10 +72,12 @@ neat little in-place array randomizer introduced in algorithms class. This is
 not all that related my current problem, but I’d mention it as sort of a source
 of inspiration. It’s a simple array shuffle:
 
-    function shuffle(S)
-        for a in 1..|S|
-            b := randomly select integer from [i, n]
-            swap(S, a, b)
+```
+function shuffle(S)
+    for a in 1..|S|
+        b := randomly select integer from [i, n]
+        swap(S, a, b)
+```
 
 It’s not a difficult exercise to show that this produces a uniformly random
 distribution of array permutations. Let *pr(x<sub>i</sub>, j)* be the
@@ -102,11 +106,13 @@ sort, wherein the array is divided into *randomized* and *unrandomized* segments
 
 This is also useful for generating a random subset of size *r*:
 
-    function subset(S, r)
-        for a in 1..r
-            b := randomly select integer from [i, n]
-            swap(S, a, b)
-        return S[1..r]
+```
+function subset(S, r)
+    for a in 1..r
+        b := randomly select integer from [i, n]
+        swap(S, a, b)
+    return S[1..r]
+```
 
 That was quite a digression. But the point was, you can generate uniform
 randomness in some odd, unobvious ways.
@@ -118,14 +124,16 @@ But to get back to the task at hand: picking a random element from an input
 stream in constant space. I can only think of one reasonable way to write this
 algorithm:
 
-    function choose(input)
-        i = 1
-        chosen := nil
-        for x in input
-            if (true with probability f_i)
-                chosen := x
-            i := i + 1
-        return chosen
+```
+function choose(input)
+    i = 1
+    chosen := nil
+    for x in input
+        if (true with probability f_i)
+            chosen := x
+        i := i + 1
+    return chosen
+```
 
 It holds onto a single entry (*chosen*) at a time. Each time new entry *x* is
 read, it becomes the chosen entry with some probability dependent only on *i*
@@ -186,22 +194,27 @@ done
 echo $chosen
 ```
 
-Tested it with a cute little histogram script called [bars][bars]:
+Tested it with a cute little histogram script called
+[bars](https://github.com/chris-martin/bars):
 
 ```bash
 (for i in {1..10000}; do (echo `seq 1 5 | ./choose`); done) | ./bars -r 0 -3 30
 ```
 
-        1| 1047| ******************************
-        2| 1002| *****************************
-        3|  988| ****************************
-        4| 1035| ******************************
-        5|  977| ****************************
-        6|  982| ****************************
-        7|  988| ****************************
-        8|  976| ****************************
-        9|  996| *****************************
-       10| 1009| *****************************
+<br>
+
+```
+    1| 1047| ******************************
+    2| 1002| *****************************
+    3|  988| ****************************
+    4| 1035| ******************************
+    5|  977| ****************************
+    6|  982| ****************************
+    7|  988| ****************************
+    8|  976| ****************************
+    9|  996| *****************************
+   10| 1009| *****************************
+```
 
 More Random Elements
 ----------------------------------------------------------------------------
@@ -209,14 +222,16 @@ More Random Elements
 So the next logical question is: Can this be generalized to choose some *r*
 elements instead of just one?
 
-    function choose(input, r)
-        i = 1
-        chosen := collection of size r
-        for x in input
-            if (true with probability f_i))
-                chosen.add(x)
-            i := i + 1
-        return chosen
+```
+function choose(input, r)
+    i = 1
+    chosen := collection of size r
+    for x in input
+        if (true with probability f_i))
+            chosen.add(x)
+        i := i + 1
+    return chosen
+```
 
 The new algorithm is strikingly similar to the first, but *chosen* now needs to
 be some sort of data structure which holds up to *r* elements. For the same
@@ -298,16 +313,20 @@ This histogram is for the selection of 2 elements from 1 to 5:
 (for i in {1..10000}; do (echo `seq 1 5 | ./choose 2 | sort | tr "\n" " "`); done) | ./bars -r 0
 ```
 
-      1 2| 1016| ******************************
-      1 3| 1007| *****************************
-      1 4|  998| *****************************
-      1 5|  997| *****************************
-      2 3|  981| *****************************
-      2 4| 1015| ******************************
-      2 5|  987| *****************************
-      3 4|  994| *****************************
-      3 5|  975| ****************************
-      4 5| 1030| ******************************
+<br>
+
+```
+  1 2| 1016| ******************************
+  1 3| 1007| *****************************
+  1 4|  998| *****************************
+  1 5|  997| *****************************
+  2 3|  981| *****************************
+  2 4| 1015| ******************************
+  2 5|  987| *****************************
+  3 4|  994| *****************************
+  3 5|  975| ****************************
+  4 5| 1030| ******************************
+```
 
 A Few Notes
 ----------------------------------------------------------------------------
@@ -319,7 +338,8 @@ independence. For instance, a poorly designed array shuffling algorithm that
 merely shifts indices (moves each *x<sub>i</sub>* to position
 *(i + random) % n*) would satisfy the former but not the latter requirement.
 
-This implementation is not good for large sets, because [$RANDOM][bash-random]
+This implementation is not good for large sets, because
+[$RANDOM](http://tldp.org/LDP/abs/html/randomvar.html)
 is limited to 32767. It won’t fail, but as the set number approaches this
 magnitude, probabilities will be off.
 
@@ -343,12 +363,6 @@ I think this is a good strategy if you ever need to pick something random from a
 set elements read from IO in a situation where space is a concern.
 
 So, like all clever tricks, you will likely never have good reason to use it.
-
-[bars]: https://github.com/chris-martin/bars
-[bash-random]: http://tldp.org/LDP/abs/html/randomvar.html
-[erdos]: http://en.wikipedia.org/wiki/Erd%C5%91s_number
-[koans]: http://www.catb.org/~esr/writings/unix-koans/
-[rms]: http://en.wikipedia.org/wiki/Richard_Stallman
 
 <script src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 

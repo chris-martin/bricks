@@ -51,6 +51,9 @@ import Data.List as X
     ( (!!)
     , concat, findIndex, reverse, sort, take )
 
+import Data.Map as X
+    ( Map )
+
 import Data.Maybe as X
     ( Maybe(..)
     , catMaybes, isJust, isNothing, maybe, maybeToList )
@@ -76,9 +79,13 @@ import Prelude as X
     ( Eq(..), Num(..), Show(..)
     , fromIntegral, writeFile, undefined )
 
+import Safe as X
+    ( lastMay )
+
 import System.FilePath.Posix as X
     ( FilePath
-    , (</>) )
+    , (</>)
+    , takeDirectory )
 
 import System.IO as X
     ( IO

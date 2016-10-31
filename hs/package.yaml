@@ -3,6 +3,8 @@ version: 0.1.0.0
 license: Apache-2.0
 github: chris-martin/chris-martin.org
 
+ghc-options: -Wall
+
 default-extensions:
   - GeneralizedNewtypeDeriving
   - NoImplicitPrelude
@@ -24,6 +26,7 @@ library:
     - ChrisMartinOrg.Post
     - ChrisMartinOrg.Post.Page
     - ChrisMartinOrg.Post.Parse
+    - ChrisMartinOrg.Redirect
 
 dependencies:
   - base

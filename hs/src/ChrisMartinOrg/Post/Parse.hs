@@ -22,7 +22,7 @@ import Data.Validation (AccValidation (..), _Either)
 
 parsePost :: FilePath -- ^ The directory containing the post
           -> T.Text   -- ^ The content of the post.md file
-          -> Either [T.Text] Post
+          -> Either [Text] Post
 parsePost dir text = (^. _Either) $ Post dir
     <$> getVal "title"
     <*> eitherVal chron
@@ -30,17 +30,38 @@ parsePost dir text = (^. _Either) $ Post dir
     <*> AccSuccess thumb
     <*> AccSuccess css
     <*> getVal "abstract"
+    <*> AccSuccess redirectFrom
     <*> eitherVal body
   where
     (metaText, bodyText) = splitPost text
+
+    meta :: Map Text Text
     meta = Map.fromList $ parseMeta metaText
+
+    get :: Text -> Either Text Text
     get key = maybe (Left $ T.append "Missing: " key) Right $ getMaybe key
+
+    getVal :: Text -> AccValidation [Text] Text
     getVal = eitherVal . get
+
+    getMaybe :: Text -> Maybe Text
     getMaybe key = Map.lookup key meta
+
+    chron :: Either Text Chron
     chron = do str <- T.unpack <$> get "date"
                left T.pack (parseChron str)
+
+    css :: [Css]
     css = maybeToList $ (CssSource . (dir </>) . T.unpack) <$> getMaybe "css"
+
+    thumb :: Maybe FilePath
     thumb = ((dir </>) . T.unpack) <$> getMaybe "thumbnail"
+
+    redirectFrom :: [FilePath]
+    redirectFrom = maybe [] (fmap T.unpack . T.splitOn "\n") $
+        getMaybe "redirect from"
+
+    body :: Either Text Content
     body = left T.pack (parseContent bodyText)
 
 eitherVal :: Either a b -> AccValidation [a] b

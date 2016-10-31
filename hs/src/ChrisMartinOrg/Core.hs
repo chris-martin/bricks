@@ -62,14 +62,15 @@ data ContentPart = ContentText T.Text
                                , codeBody :: T.Text }
 
 data Post = Post
-    { postDir      :: FilePath
-    , postTitle    :: T.Text
-    , postChron    :: Chron
-    , postSlug     :: T.Text
-    , postThumb    :: Maybe FilePath
-    , postCss      :: [Css]
-    , postAbstract :: T.Text
-    , postBody     :: Content
+    { postDir          :: FilePath
+    , postTitle        :: T.Text
+    , postChron        :: Chron
+    , postSlug         :: T.Text
+    , postThumb        :: Maybe FilePath
+    , postCss          :: [Css]
+    , postAbstract     :: T.Text
+    , postRedirectFrom :: [FilePath]
+    , postBody         :: Content
     }
 
 

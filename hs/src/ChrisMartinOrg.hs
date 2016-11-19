@@ -35,9 +35,6 @@ main = do
     -- set up output directories
     forM_ [ outDir, hashDir ] $ Dir.createDirectoryIfMissing True
 
-    -- write the CNAME file so github pages will do its DNS thing
-    writeFile "out/CNAME" "chris-martin.org"
-
     homeCss :: Either String CompiledCss <- compileCssSource homeCssPath
 
     ifLeft homeCss (\err ->

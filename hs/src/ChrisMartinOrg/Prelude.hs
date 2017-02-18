@@ -59,8 +59,7 @@ import Data.Maybe as X
     , catMaybes, isJust, isNothing, maybe, maybeToList )
 
 import Data.Monoid as X
-    ( Monoid(..)
-    , (<>) )
+    ( Monoid(..) )
 
 import Data.Sequence as X
     ( Seq )

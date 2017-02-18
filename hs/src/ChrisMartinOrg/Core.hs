@@ -22,6 +22,7 @@ import ChrisMartinOrg.Core.Chron
 import ChrisMartinOrg.Prelude
 
 import Data.Default
+import Data.Semigroup
 
 import qualified Data.Sequence               as Seq
 import qualified Data.Text                   as T
@@ -49,12 +50,13 @@ data Page = HomePage | PostPage
 
 newtype Content = Content { contentParts :: Seq ContentPart }
 
-instance Monoid Content where
-    mempty = Content mempty
-    mappend (Content x) (Content y) = Content $ collapseSeqAppend f x y
+instance Semigroup Content where
+    Content x <> Content y = Content $ collapseSeqAppend f x y
       where
         f (ContentText x) (ContentText y) = Just $ ContentText (x <> y)
         f _ _ = Nothing
+
+instance Monoid Content where mempty = Content mempty; mappend = (<>)
 
 data ContentPart = ContentText T.Text
                  | ContentAsset FilePath

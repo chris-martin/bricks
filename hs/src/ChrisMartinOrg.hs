@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text.IO         as TextIO
 import qualified System.Directory     as Dir
 
+import Data.Semigroup
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 
 defaultPostCssPath, homeDir, homeContentPath, homeCssPath, inDir,

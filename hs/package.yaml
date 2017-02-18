@@ -47,7 +47,6 @@ dependencies:
   - text
   - time
   - unix
-  - validation
 
 executables:
   site:

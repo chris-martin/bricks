@@ -11,6 +11,7 @@ import qualified Crypto.Hash.Algorithms as HashAlg
 import qualified Data.ByteString        as BS
 import qualified System.Directory       as Dir
 
+import Data.Semigroup
 import System.FilePath.Posix (takeExtension, (<.>))
 
 hash :: ByteString -> String

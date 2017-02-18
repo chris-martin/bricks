@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module ChrisMartinOrg.Post.Parse
     ( parsePost
     ) where
@@ -8,22 +10,33 @@ import ChrisMartinOrg.Prelude
 import ChrisMartinOrg.Content (parseContent)
 
 import Control.Lens
+import Data.Semigroup
 
 import qualified Data.Attoparsec.Text.Lazy as A
 import qualified Data.Map.Strict           as Map
 import qualified Data.Text                 as T
 import qualified Data.Text.Lazy            as L
 
-import Data.Validation (AccValidation (..), _Either)
-
 -- $setup
 -- >>> :set -XOverloadedStrings
 -- >>> import qualified Data.Text as Text
 
+data AccValidation e a = AccFailure e | AccSuccess a deriving Functor
+
+instance Semigroup e => Applicative (AccValidation e) where
+    AccFailure e1 <*> AccFailure e2 = AccFailure (e1 <> e2)
+    AccFailure e1 <*> AccSuccess _  = AccFailure e1
+    AccSuccess _  <*> AccFailure e2 = AccFailure e2
+    AccSuccess f  <*> AccSuccess a  = AccSuccess (f a)
+
+accValidationToEither :: AccValidation e a -> Either e a
+accValidationToEither (AccFailure e) = Left e
+accValidationToEither (AccSuccess a) = Right a
+
 parsePost :: FilePath -- ^ The directory containing the post
           -> T.Text   -- ^ The content of the post.md file
           -> Either [Text] Post
-parsePost dir text = (^. _Either) $ Post dir
+parsePost dir text = accValidationToEither $ Post dir
     <$> getVal "title"
     <*> eitherVal chron
     <*> getVal "slug"

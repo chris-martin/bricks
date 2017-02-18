@@ -8,6 +8,8 @@ import ChrisMartinOrg.Prelude
 import qualified Data.Sequence as Seq
 import qualified Data.Text     as Text
 
+import Data.Semigroup
+
 import Data.Attoparsec.Combinator (lookAhead)
 import Data.Attoparsec.Text
     ( (<?>), Parser, choice, eitherP, takeTill, parseOnly
@@ -88,5 +90,5 @@ endOfBlock = choice
     , () <$ endOfInput
     ]
 
-(<+>) :: (Applicative f, Monoid a) => f a -> f a -> f a
+(<+>) :: (Applicative f, Semigroup a) => f a -> f a -> f a
 (<+>) = liftA2 (<>)

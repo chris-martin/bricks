@@ -11,6 +11,7 @@ import ChrisMartinOrg.Prelude
 import ChrisMartinOrg.Hash (writeHashBS)
 
 import Data.Default
+import Data.Semigroup
 
 import qualified System.Directory            as Dir
 import qualified Text.Blaze.Html5.Attributes as A

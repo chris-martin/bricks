@@ -10,6 +10,8 @@ import ChrisMartinOrg.Prelude
 import ChrisMartinOrg.Content.Parse (parseContent)
 import ChrisMartinOrg.Hash (writeHashFile)
 
+import Data.Semigroup
+
 import qualified Data.Sequence               as Seq
 import qualified Data.Text                   as T
 import qualified Data.Text.Lazy              as L

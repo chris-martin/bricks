@@ -1,0 +1,51 @@
+@import '../post.scss';
+
+ol ol {
+    list-style: lower-alpha;
+}
+
+table.water {
+    margin: 0 auto;
+    border-spacing: 0;
+    text-align: center;
+
+    td {
+        width: 2em;
+        height: 2em;
+
+        &.wall {
+            background: #ab84ab;
+        }
+    }
+
+    &.unfilled {
+
+        td.wall {
+            border-left: 0.1em solid white;
+            border-right: 0.1em solid white;
+        }
+
+        tr:last-child td {
+            height: auto;
+        }
+    }
+
+    &.filled {
+
+        td.water {
+            background: #60d1e2;
+            color: white;
+            &:before {
+                content: '💦';
+            }
+        }
+    }
+}
+
+.water-monoid {
+    margin: 3em 1em;
+
+    img {
+        width: 100%;
+    }
+}

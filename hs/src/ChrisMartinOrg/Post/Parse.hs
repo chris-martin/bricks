@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE ApplicativeDo, DeriveFunctor, RecordWildCards #-}
 
 module ChrisMartinOrg.Post.Parse
     ( parsePost
@@ -9,13 +9,10 @@ import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Content (parseContent)
 
-import Control.Lens
 import Data.Semigroup
 
-import qualified Data.Attoparsec.Text.Lazy as A
 import qualified Data.Map.Strict           as Map
 import qualified Data.Text                 as T
-import qualified Data.Text.Lazy            as L
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -24,6 +21,7 @@ import qualified Data.Text.Lazy            as L
 data AccValidation e a = AccFailure e | AccSuccess a deriving Functor
 
 instance Semigroup e => Applicative (AccValidation e) where
+    pure = AccSuccess
     AccFailure e1 <*> AccFailure e2 = AccFailure (e1 <> e2)
     AccFailure e1 <*> AccSuccess _  = AccFailure e1
     AccSuccess _  <*> AccFailure e2 = AccFailure e2
@@ -36,23 +34,30 @@ accValidationToEither (AccSuccess a) = Right a
 parsePost :: FilePath -- ^ The directory containing the post
           -> T.Text   -- ^ The content of the post.md file
           -> Either [Text] Post
-parsePost dir text = accValidationToEither $ Post dir
-    <$> getVal "title"
-    <*> eitherVal chron
-    <*> getVal "slug"
-    <*> AccSuccess thumb
-    <*> AccSuccess css
-    <*> getVal "abstract"
-    <*> AccSuccess redirectFrom
-    <*> eitherVal body
+parsePost dir text = accValidationToEither $ do
+
+    postTitle <- getVal "title"
+
+    postChron <- eitherVal $ do x <- get "date"
+                                left T.pack (parseChron (T.unpack x))
+
+    postSlug <- getVal "slug"
+
+    postAbstract <- getVal "abstract"
+
+    postBody <- eitherVal (left T.pack (parseContent bodyText))
+
+    pure Post{..}
   where
     (metaText, bodyText) = splitPost text
 
     meta :: Map Text Text
-    meta = Map.fromList $ parseMeta metaText
+    meta = Map.fromList (parseMeta metaText)
 
     get :: Text -> Either Text Text
-    get key = maybe (Left $ T.append "Missing: " key) Right $ getMaybe key
+    get key = case getMaybe key of
+                  Nothing -> Left (T.append "Missing: " key)
+                  Just x -> Right x
 
     getVal :: Text -> AccValidation [Text] Text
     getVal = eitherVal . get
@@ -60,22 +65,24 @@ parsePost dir text = accValidationToEither $ Post dir
     getMaybe :: Text -> Maybe Text
     getMaybe key = Map.lookup key meta
 
-    chron :: Either Text Chron
-    chron = do str <- T.unpack <$> get "date"
-               left T.pack (parseChron str)
+    postDir = dir
 
-    css :: [Css]
-    css = maybeToList $ (CssSource . (dir </>) . T.unpack) <$> getMaybe "css"
+    postThumb = do x <- getMaybe "thumbnail"
+                   pure (dir </> T.unpack x)
 
-    thumb :: Maybe FilePath
-    thumb = ((dir </>) . T.unpack) <$> getMaybe "thumbnail"
+    postCss = maybeToList $ do x <- getMaybe "css"
+                               pure (CssSource (dir </> T.unpack x))
 
-    redirectFrom :: [FilePath]
-    redirectFrom = maybe [] (fmap T.unpack . T.splitOn "\n") $
-        getMaybe "redirect from"
+    postTwitterCard = getMaybe "twitter card"
 
-    body :: Either Text Content
-    body = left T.pack (parseContent bodyText)
+    postTwitterImage = do x <- getMaybe "twitter image"
+                          pure (dir </> T.unpack x)
+
+    postRedirectFrom = case getMaybe "redirect from" of
+                           Nothing -> []
+                           Just x -> T.unpack <$> T.splitOn "\n" x
+
+    postTwitterDescription = getMaybe "twitter description"
 
 eitherVal :: Either a b -> AccValidation [a] b
 eitherVal (Left  x) = AccFailure [x]

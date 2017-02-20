@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module ChrisMartinOrg.Post
     ( getPosts
     , postUrl
@@ -14,15 +16,15 @@ import ChrisMartinOrg.Content (resolveContentAssets, contentToHtml)
 import ChrisMartinOrg.Post.Parse (parsePost)
 
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Sequence        as Seq
 import qualified Data.Text            as T
 import qualified Data.Text.Lazy       as L
 import qualified Data.Text.IO         as TextIO
 import qualified System.Directory     as Dir
 
+import Data.Semigroup
 import System.FilePath.Posix (dropFileName)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
-import Text.Blaze.Html5 (Html, toHtml)
+import Text.Blaze.Html5 (toHtml)
 
 getPosts :: IO [Post]
 getPosts = do
@@ -64,16 +66,28 @@ writePost post = do
     pageInput <- getPageInput post
     LBS.writeFile file $ renderHtml $ Page.html pageInput
   where
-    file = "out" </> (postUrl post)
+    file = "out" </> postUrl post
     dir = dropFileName file
 
 getPageInput :: Post -> IO Page.Input
-getPageInput post = do
-    css <- compileCssFallback $ postCss post
-    body <- resolveContentAssets (postDir post) (postBody post)
-    return $ Page.Input
-        { Page.inputTitle = toHtml $ L.fromStrict $ postTitle post
-        , Page.inputChron = postChron post
-        , Page.inputCss = css
-        , Page.inputBody = contentToHtml body
-        }
+getPageInput Post{..} = do
+    css <- compileCssFallback postCss
+    body <- resolveContentAssets postDir postBody
+
+    let
+      inputTitle = toHtml . L.fromStrict $ postTitle
+      inputChron = postChron
+      inputCss = css
+      inputBody = contentToHtml body
+      inputMeta = catMaybes
+        [ do x <- postTwitterCard
+             pure ("twitter:card", x)
+        , do x <- postTwitterImage
+             pure ("twitter:image", "https://chris-martin.org/" <> T.pack x)
+        , do x <- postTwitterDescription
+             pure ("twitter:description", x)
+        , Just ("twitter:site:id", "18271443")
+        , Just ("twitter:title", postTitle)
+        ]
+
+    return Page.Input{..}

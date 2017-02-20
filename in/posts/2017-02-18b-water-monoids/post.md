@@ -3,7 +3,14 @@ title:    Water Monoids
 date:     2017 Feb 18
 slug:     water-monoids
 css:      water.css
-abstract: ...
+thumbnail: thumb.png
+abstract: Solving that water-puddles problem,
+          using as many monoids as possible.
+
+twitter card:        summary_large_image
+twitter image:       twitter.png
+twitter description: Solving that water-puddles problem,
+                     using as many monoids as possible.
 --------------------------------------------------------------------------------
 
 In the toy problem described by [*I Failed a Twitter Interview*][failed],
@@ -11,10 +18,7 @@ we are given a list of integers
 
   [failed]: https://medium.com/@bearsandsharks/i-failed-a-twitter-interview-52062fbb534b
 
-<div style="text-align: center;">
-  <code>3, 2, 1, 4, 2</code>
-</div>
-
+<div style="text-align: center;">3, 2, 1, 4, 2</div>
 
 representing the heights of walls
 
@@ -102,8 +106,11 @@ Such a small, unassuming thing
 
 ```haskell
 class Monoid a where
-    (<>)   :: a -> a -> a  -- An associative operation
-    mempty :: a            -- Identity of (<>)
+
+    mappend :: a -> a -> a  -- An associative operation,
+                            -- also called (<>)
+
+    mempty :: a             -- Identity of (<>)
 ```
 
 yet it stirs the imagination. If your type has a monoid, you can chain the
@@ -137,7 +144,7 @@ newtype Endo a = Endo { appEndo :: a -> a }
 
 instance Monoid (Endo a) where
     mempty = Endo id
-    Endo f <> Endo g = Endo (f . g)
+    Endo f `mappend` Endo g = Endo (f . g)
 
 f = fold [ Endo (+ 3)
          , Endo (`div` 2)
@@ -155,7 +162,7 @@ For example, if `a` and `b` have monoids, then the tuple `(a, b)` does as well.
 ```haskell
 instance (Monoid a, Monoid b) => Monoid (a, b) where
     mempty = (mempty, mempty)
-    (a1, b1) <> (a2, b2) = (a1 <> a2, b1 <> b2)
+    (a1, b1) `mappend` (a2, b2) = (a1 <> a2, b1 <> b2)
 ```
 
 ## The water monoid
@@ -164,7 +171,7 @@ I woke up one morning recently with the thought that we can define a monoid for
 these water-filled structures. When we place two of them side-by-side, they
 combine like this:
 
-<div class="water-monoid"><img src="${water.png}"/></div>
+<div class="water-monoid"><img src="${structure.png}"></div>
 
 A structure is represented by
 
@@ -183,8 +190,10 @@ A structure is represented by
 
 ```haskell
 data Structure = Structure
-                     LeftFace RightFace -- 1. The outer shape
-                     Area               -- 2. How much water it holds
+    { sLeft  :: LeftFace   -- 1. The outer shape
+    , sRight :: RightFace
+    , sArea  :: Area       -- 2. How much water it holds
+    }
 ```
 
 When filled with water, the structure is convex, so the left and right faces
@@ -196,17 +205,18 @@ instance Monoid Structure where
 
     mempty = Structure mempty mempty mempty
 
-    Structure left right water <> Structure left' right' water' =
+    mappend (Structure left right water)
+            (Structure left' right' water') =
         Structure (left <> left')
                   (right <> right')
                   (water <> water' <> waterBetween right left')
 ```
 
 Not only does `Structure` have a monoid, but so do all of its fields; so
-`mempty` is defined quite simply as `Structure mempty mempty mempty`.
-The definition of `(<>)` is similarly straightforward, with the exception that
-we also have to add in `waterBetween right left'` to include the water that
-puddles in the new gap between the two structures.
+`mempty` is defined quite simply as `Structure mempty mempty mempty`. The
+definition of `mappend` is similarly straightforward, with the exception that we
+also have to add in `waterBetween right left'` to include the water that puddles
+in the new gap between the two structures.
 
 ## Arithmetic
 
@@ -217,7 +227,7 @@ Since there are no negative numbers in this problem, we'll be using the
 import Numeric.Natural (Natural)
 ```
 
-The arithmetic in the default prelude is a bit clumsy, so you want to be
+The arithmetic in Haskell's default prelude is a bit clumsy, so you want to be
 precise, it can be nice to define your own. For example, `Natural` has an
 instance of `Num`, which can get us into trouble because `(-)` is partial.
 
@@ -238,11 +248,16 @@ class Subtraction a where
 instance Subtraction Natural where
     a - b | a >= b    = a Prelude.- b
           | otherwise = b Prelude.- a
-```
 
+instance Subtraction a => Subtraction (Sum a) where
+    Sum a - Sum b = Sum (a - b)
+```
 
 Not all numbers are the same, so let's also define some types to assign meaning
 to the specific sorts of quantities we're dealing with in this problem.
+
+We wrap the numbers in `Sum` so that we can automatically derive monoid
+instances that combine additively.
 
 ```haskell
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -265,7 +280,9 @@ same type.
 (*) :: Num a => a -> a -> a
 ```
 
-So again let's ignore the standard math and invent our own:
+So again let's ignore the standard math and invent our own. Since this
+hetereogeneous multiplication involves more than one type, we need the language
+extension that allows multi-parameter type classes.
 
 ```haskell
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -298,16 +315,20 @@ newtype RightFace = RightFace Corners
 
 instance Monoid LeftFace where
     mempty = emptyFace
-    near <> far = overlapFaces near far
+    mappend near far = overlapFaces near far
 
 instance Monoid RightFace where
     mempty = emptyFace
-    far <> near = overlapFaces near far
+    mappend far near = overlapFaces near far
 ```
 
-Notice the subtle difference between how `(<>)` is defined for each of these
+Notice the subtle difference between how `mappend` is defined for each of these
 types. When we combine two faces, it matters whether we're looking at them from
 the left or from the right.
+
+This is what combining two left faces looks like:
+
+<div class="water-monoid"><img src="${left-face.png}"></div>
 
 The `emptyFace` and `overlapFaces` functions need to be polymorphic so we can
 use them for both the left or right face types. To make this easy, we can take
@@ -323,7 +344,13 @@ forth to `Corners`.
 import Data.Coerce (Coercible, coerce)
 
 type Face a = (Coercible Corners a, Coercible a Corners)
+```
 
+Now we can generically implement the face-combining logic, using `coerce` to
+convert `Corners` to `Face` and vice versa.
+
+
+```haskell
 emptyFace :: Face a => a
 emptyFace = coerce (Map.empty :: Corners)
 
@@ -345,32 +372,60 @@ faceSize face = let corners = coerce face :: Corners
 
 ## Water between two structures
 
+The last nontrivial bit of coding is to compute the area of water between two
+opposing faces. Notice that the entire thing is a `fold`, and that here is where
+we use the `(*)` and `(-)` functions defined above.
+
 ```haskell
 waterBetween :: RightFace -> LeftFace -> Area
-waterBetween face face' = fold $ go (Map.toAscList (coerce face :: Corners))
-                                    (Map.toAscList (coerce face' :: Corners))
-                                    mempty
+waterBetween face face' =
+    fold $ go (Map.toAscList (coerce face :: Corners))
+              (Map.toAscList (coerce face' :: Corners))
+              mempty
   where
     go :: [(Height, Width)]
        -> [(Height, Width)]
        -> Height
        -> [Area]
     go l@((heightL, depthL) : restL)
-       r@((heightR, depthR) : restR) floor = newWater : go l' r' floor'
-      where
-        (floor', l', r') = case compare heightL heightR of
-            LT -> (heightL, restL, r    )
-            GT -> (heightR, l,     restR)
-            EQ -> (heightL, restL, restR)
+       r@((heightR, depthR) : restR)
+       floor =
 
-        newWater = raised * width
-        raised   = floor' - floor
-        width    = depthL <> depthR
+        let area   = raised * width
+            raised = floor' - floor
+            width  = depthL <> depthR
+
+            (floor', l', r') =
+                case compare heightL heightR of
+                    LT -> (heightL, restL, r    )
+                    GT -> (heightR, l,     restR)
+                    EQ -> (heightL, restL, restR)
+
+        in  area : go l' r' floor'
 
     go _ _ _ = []
 ```
 
----
+## Folding it all together
+
+We then define the construction of a structure with a single wall&hellip;
+
+```haskell
+structureSingleton :: Height -> Structure
+structureSingleton height = Structure face face mempty
+  where
+    face :: Face a => a
+    face = coerce (Map.singleton height mempty :: Corners)
+```
+
+And finally, chain all the walls together, using another fold!
+
+```haskell
+collectWater :: [Natural] -> Natural
+collectWater = coerce . sArea . foldMap (structureSingleton . coerce)
+```
+
+## Notes
 
 You can see the complete working code on [GitHub][github].
 
@@ -378,8 +433,31 @@ You can see the complete working code on [GitHub][github].
 
 In this post I don't give much thought to efficiency; I haven't bothered to
 benchmark this code, and I suspect its runtime may be quadratic.
-If you are interested in optimization, check out
+
+In case you are wondering *Does it really take this much code to write a Haskell
+program?* &mdash; No; what I've done here is overkill, just for fun and
+learning.
+
+If you are interested in optimization or brevity, check out
 [Chris Done's][chris-done] work on the subject, which includes a very nice
 concise solution in Haskell using scans.
 
   [chris-done]: http://chrisdone.com/posts/twitter-problem-loeb
+
+To simplify explanation, I avoided mentioning [`Semigroup`][semigroup], but it
+is something you should be aware of. Semigroup complicates things because in
+Haskell it has some historical baggage. Ideally the two classes would look like
+this:
+
+  [semigroup]: https://www.stackage.org/haddock/lts-8.0/base-4.9.1.0/Data-Semigroup.html
+
+```haskell
+class Semigroup a where
+    (<>) :: a -> a -> a
+
+class Semigroup a => Monoid a where
+    mempty :: a
+```
+
+However, because semigroups were added to Haskell after monoids, `Monoid` does
+not have this constraint, and it has a `mappend` method which is redundant to `(<>)`.

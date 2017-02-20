@@ -100,8 +100,10 @@ patchPost :: Maybe CompiledCss -- ^ Default post css
 patchPost defaultPostCssMaybe p = do
     let postCss' = postCss p <> (CssCompiled <$> toList defaultPostCssMaybe)
     postThumb' <- resolveThumbMaybe $ postThumb p
-    return $ p { postCss   = postCss'
-               , postThumb = postThumb' }
+    postTwitterImage' <- resolveTwitterImageMaybe $ postTwitterImage p
+    return p { postCss          = postCss'
+             , postThumb        = postThumb'
+             , postTwitterImage = postTwitterImage'}
 
 resolveThumb :: FilePath -> IO (Either String FilePath)
 resolveThumb path = do
@@ -114,6 +116,22 @@ resolveThumbMaybe :: Maybe FilePath -> IO (Maybe FilePath)
 resolveThumbMaybe Nothing = return Nothing
 resolveThumbMaybe (Just t) = do
     e <- resolveThumb t
+    case e of
+        Left err -> do putStrLn err
+                       return Nothing
+        Right t' -> return $ Just t'
+
+resolveTwitterImage :: FilePath -> IO (Either String FilePath)
+resolveTwitterImage path = do
+    outPathMaybe <- writeHashFile path
+    return $ case outPathMaybe of
+        Nothing -> Left $ "Missing Twitter image: " <> path
+        Just t -> Right t
+
+resolveTwitterImageMaybe :: Maybe FilePath -> IO (Maybe FilePath)
+resolveTwitterImageMaybe Nothing = return Nothing
+resolveTwitterImageMaybe (Just t) = do
+    e <- resolveTwitterImage t
     case e of
         Left err -> do putStrLn err
                        return Nothing

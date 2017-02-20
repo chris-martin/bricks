@@ -73,6 +73,9 @@ data Post = Post
     , postAbstract     :: T.Text
     , postRedirectFrom :: [FilePath]
     , postBody         :: Content
+    , postTwitterCard  :: Maybe T.Text
+    , postTwitterImage :: Maybe FilePath
+    , postTwitterDescription :: Maybe T.Text
     }
 
 

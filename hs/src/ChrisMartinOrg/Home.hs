@@ -9,8 +9,6 @@ import ChrisMartinOrg.Prelude
 import ChrisMartinOrg.Content (contentToHtml)
 import ChrisMartinOrg.Post    (postUrl)
 
-import qualified Data.Text.Lazy              as L
-import qualified Data.Text                   as T
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 

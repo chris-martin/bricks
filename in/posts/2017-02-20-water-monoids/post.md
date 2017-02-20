@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 title:    Water Monoids
-date:     2017 Feb 18
+date:     2017 Feb 20
 slug:     water-monoids
 css:      water.css
 thumbnail: thumb.png

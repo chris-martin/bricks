@@ -22,6 +22,8 @@ pageHtml content css posts = H.docTypeHtml $ do
                ! A.name "viewport"
         H.title "Chris Martin"
         H.link ! A.rel "icon" ! A.href ""
+        H.link ! A.href "https://fonts.googleapis.com/css?family=Inconsolata|Merriweather"
+               ! A.rel "stylesheet"
         mapM_ styleLink css
     H.body $ do
         globalPageHeader HomePage

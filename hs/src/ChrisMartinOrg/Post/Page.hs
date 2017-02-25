@@ -38,6 +38,8 @@ html Input{..} = H.docTypeHtml $ do
         H.link ! A.rel "icon" ! A.href ""
 
         -- Stylesheets
+        H.link ! A.href "https://fonts.googleapis.com/css?family=Inconsolata|Merriweather"
+               ! A.rel "stylesheet"
         mapM_ (styleLink . CompiledCss . (".." </>) . compiledCssPath) inputCss
 
         -- Miscellaneous other meta tags

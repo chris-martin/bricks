@@ -1,8 +1,9 @@
 --------------------------------------------------------------------------------
-title:    Introduction to Nix (for users of Stack)
-date:     2017 Feb 24
-slug:     nix-for-stack-users
-abstract: What Nix is for, and how it can help you as a Haskell developer.
+title:     Introduction to Nix (for users of Stack)
+date:      2017 Feb 24
+slug:      nix-for-stack-users
+thumbnail: thumb.png
+abstract:  What Nix is for, and how it can help you as a Haskell developer.
 --------------------------------------------------------------------------------
 
 ## Install Nix

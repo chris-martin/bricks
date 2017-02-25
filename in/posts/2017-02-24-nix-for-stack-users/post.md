@@ -25,7 +25,7 @@ Stack is there to manage your project's dependencies, and help you run their
 programs and compile stuff with them, but only if the dependencies are Haskell
 packages.
 
-Nix dependencies can be... kinda any software at all.
+Nix dependencies can be… kinda any software at all.
 
 Nix and Stack work together nicely. When you enable [Nix integration for
 Stack][integration], you can add any software as a dependency of your Stack
@@ -57,7 +57,7 @@ pandoc 1.19.2.1
 
 `nix-shell` is like `stack exec`.
 
-So take for example... Let's assume you don't have NPM installed. And let's say
+So take for example… Let's assume you don't have NPM installed. And let's say
 you don't really want to install it permanently or whatever because you're
 probably not going to need it again, but you just want to run it for some
 one-off command.

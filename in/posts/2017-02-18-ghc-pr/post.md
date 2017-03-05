@@ -40,7 +40,7 @@ Here's a command to submit a PR to the `master` branch using
 [Nix](https://nixos.org/nix/):
 
 ```bash
-nix-shell -p arcanist python3 'arc diff master'
+nix-shell -p arcanist python3 --command 'arc diff master'
 ```
 
 Once your PR has been uploaded successfully, Arcanist will print a URL where

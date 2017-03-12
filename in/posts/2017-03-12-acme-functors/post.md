@@ -98,8 +98,8 @@ instance Applicative OrNot where
 ```haskell
 instance Monad OrNot where
 
-  ActuallyYes a  >>= f = f a
-  Nope           >>= _ = Nope
+  ActuallyYes a >>= f = f a
+  Nope          >>= _ = Nope
 ```
 
 If you have value `a` that may not actually be there, and another value `a'`

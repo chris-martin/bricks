@@ -4,4 +4,4 @@ build:
 deploy:
 	rsync -avz -e 'ssh -p 36411' out/ web-deploy@chris-martin.org:~/chris-martin.org/
 
-.PHONY: deploy
+.PHONY: build deploy

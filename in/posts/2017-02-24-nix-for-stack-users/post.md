@@ -64,7 +64,7 @@ probably not going to need it again, but you just want to run it for some
 one-off command.
 
 ```
-> nix-shell -p npm --run 'npm --version'
+> nix-shell -p nodePackages.npm --run 'npm --version'
 4.1.1
 ```
 

@@ -1,3 +1,4 @@
+/cabal.config
 /out
 /hs/dist
 /hs/*.cabal

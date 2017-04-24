@@ -15,9 +15,9 @@ Regarding a *memory leak*, it's natural to ask “Where does the memory go?”
 There's no good answer to that question, because the analogy just doesn't extend
 that far.
 
-Memory is this sort of renewable resource. We use some of it every time we make
-a thunk, and it gets released when we're done with it. You take a little water
-out of the bucket, use it for a while, then the garbage collector puts it back.
+Memory is a sort of renewable resource. We use some of it every time we make a
+thunk, and it gets released when we're done with it. You take a little water out
+of the bucket, use it for a while, then the garbage collector puts it back.
 
 If your program is accidentally written such that it continues to hold
 references to things it doesn't need anymore, then those things don't get

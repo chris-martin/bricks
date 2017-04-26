@@ -17,9 +17,9 @@ but will rarely consider its practical application.
 In the software engineering world, we focus on higher-level architecture, and
 sometimes use the term *clever* pejoratively. The software goal is to abstract
 out the algorithms entirely so we can leave those pesky *implementation details*
-to libraries written by guys with smaller
-[Erdős numbers](http://en.wikipedia.org/wiki/Erd%C5%91s_number) and larger
-[beards](http://en.wikipedia.org/wiki/Richard_Stallman).
+to libraries written by people with smaller
+[Erdős numbers](http://en.wikipedia.org/wiki/Erd%C5%91s_number) and greater
+[eccentricities](http://en.wikipedia.org/wiki/Richard_Stallman).
 
 There is certainly nothing wrong with this mentality. Writing javascript for the
 web without a framework may be more fun for a while, but it is ultimately

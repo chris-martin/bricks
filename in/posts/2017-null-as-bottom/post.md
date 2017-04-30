@@ -193,5 +193,5 @@ billion-dollar mistakes were more serious fundamental flaws — notably, its
 omission of sum types and pattern matching — that drive Java's users to abuse
 tagged bottoms for lack of sufficient means to express themselves properly
 within the normal confines of the type system. We can see from Scala that, with
-this temptation removed, programmers typically choose to relegate null-tagged
+this limitation removed, programmers typically choose to relegate null-tagged
 bottom to a footnote along with the rest of the bottoms.

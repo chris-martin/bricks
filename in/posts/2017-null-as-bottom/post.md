@@ -67,7 +67,7 @@ Haskell:
 
 ```haskell
 fromJust :: forall a. Maybe a -> a
-fromJust (Just a) =
+fromJust =
   \case
     Just a  -> a
     Nothing -> let x = x
@@ -99,8 +99,10 @@ it for the evaluator to either puzzle out or chew on forever. If we *know* that
 an expression will be bottom, let's state that explicitly in our code.
 
 ```haskell
-fromJust Nothing =
-  undefined
+fromJust =
+  \case
+    Just a  -> a
+    Nothing -> undefined
 ```
 
 `fromJust Nothing` is still bottom — it's still an expression of type `a` that
@@ -111,8 +113,10 @@ We can go further than that, though, and provide not only a proclamation of
 bottomness, but an *explanation* for *why* the expression is bottom.
 
 ```haskell
-fromJust Nothing =
-  error "fromJust Nothing"
+fromJust =
+  \case
+    Just a  -> a
+    Nothing -> error "fromJust Nothing"
 ```
 
 Don't be fooled: the expression `fromJust Nothing` is still bottom. But when
@@ -130,8 +134,8 @@ are half truths. In Haskell, bottoms can carry information, and we can even
 inspect them (only in IO):
 
 ```haskell
-try    :: Exception e => IO a -> IO (Either e a)
-catch  :: Exception e => IO a -> (e -> IO a) -> IO a
+try   :: Exception e => IO a -> IO (Either e a)
+catch :: Exception e => IO a -> (e -> IO a) -> IO a
 ```
 
 ## Non-null reasoning is morally correct

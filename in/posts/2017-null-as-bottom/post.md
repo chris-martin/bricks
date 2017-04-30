@@ -28,8 +28,7 @@ like this:
 > *Novice*: “So is *bottom* sort of like *null*?”
 >
 > *Master*: “No, they couldn't be more different! Null is a value; bottom is
-  not. The bottom type is inhabited by precisely 0 values; the null type is
-  inhabited by precisely 1 value.”
+  not. There is one null value; there are no bottom values.”
 
 ## The real bottom
 

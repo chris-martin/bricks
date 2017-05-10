@@ -272,13 +272,13 @@ time I thought I'd do it the right way and implement `showsPrec` instead. This
 locShowsPrec :: Int -> Loc -> ShowS
 locShowsPrec _ (Loc l c) =
   shows l .
-  (showString ":") .
+  showString ":" .
   shows c
 
 spanShowsPrec :: Int -> Span -> ShowS
 spanShowsPrec _ (Span a b) =
   locShowsPrec 10 a .
-  (showString "-") .
+  showString "-" .
   locShowsPrec 10 b
 ```
 

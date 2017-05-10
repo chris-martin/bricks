@@ -10,11 +10,13 @@ twitter image:       twitter.png
 twitter description: A Haskell library for calculations on text file positions.
 --------------------------------------------------------------------------------
 
-I started using [haskell-src-exts] recently to parse Haskell files. I wasn't
-used to this sort of parser that produces an AST that's mapped back to the
-source file by line and column numbers, so it took me a while to wrap my head
-around what to do with its output.
+I started using [haskell-src-exts] recently to parse Haskell files to turn them
+into LaTeX for [*The Joy of Haskell*][joy1]. I wasn't used to this sort of
+parser that produces an AST that's mapped back to the source file by line and
+column numbers, so it took me a while to wrap my head around what to do with its
+output.
 
+  [joy1]: https://joyofhaskell.com/
   [haskell-src-exts]: https://hackage.haskell.org/package/haskell-src-exts
 
 After a while, I settled on some types, invented some terminology, and published
@@ -343,3 +345,8 @@ about doing normal stuff in Haskell. The package is [here] on Hackage if you'd
 like to investigate further.
 
   [here]: https://hackage.haskell.org/package/loc
+
+The build tools for [*The Joy of Haskell*][joy2] are turning into an interesting
+custom reinvention of Literate Haskell; stay tuned for updates on that!
+
+  [joy2]: https://joyofhaskell.com/

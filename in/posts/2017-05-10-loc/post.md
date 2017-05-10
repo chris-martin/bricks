@@ -11,8 +11,8 @@ twitter description: A Haskell library for calculations on text file positions.
 --------------------------------------------------------------------------------
 
 I started using [haskell-src-exts] recently to parse Haskell files to turn them
-into LaTeX for [*The Joy of Haskell*][joy1]. I wasn't used to this sort of
-parser that produces an AST that's mapped back to the source file by line and
+into LaTeX for [*The Joy of Haskell*][joy1]. I wasn’t used to this sort of
+parser that produces an AST that’s mapped back to the source file by line and
 column numbers, so it took me a while to wrap my head around what to do with its
 output.
 
@@ -20,7 +20,7 @@ output.
   [haskell-src-exts]: https://hackage.haskell.org/package/haskell-src-exts
 
 After a while, I settled on some types, invented some terminology, and published
-a library: [loc]. Here's an example to serve as an overview of the concepts:
+a library: [loc]. Here’s an example to serve as an overview of the concepts:
 
   [loc]: https://hackage.haskell.org/package/loc
 
@@ -32,9 +32,9 @@ a library: [loc]. Here's an example to serve as an overview of the concepts:
 
 ## `Pos`
 
-Since all of the numbers we're dealing with in this domain are positive, I
+Since all of the numbers we’re dealing with in this domain are positive, I
 introduced a “positive integer” type. This is a newtype for `Natural` that
-doesn't allow zero.
+doesn’t allow zero.
 
 ```haskell
 newtype Pos = Pos Natural
@@ -54,9 +54,9 @@ checkForUnderflow n =
   if n == 0 then throw Underflow else n
 ```
 
-I'd love to have `toInteger :: Pos -> Integer` from the `Integral` typeclass;
+I’d love to have `toInteger :: Pos -> Integer` from the `Integral` typeclass;
 unfortunately, `Integral` is seriously overburdened class, and that would
-require also implementing `quotRem`. I don't terribly mind that `negate` throws
+require also implementing `quotRem`. I don’t terribly mind that `negate` throws
 `Underflow`, but `quotRem :: Pos -> Pos -> (Pos, Pos)` is a level of nonsense
 that crosses a line for me.
 
@@ -74,7 +74,7 @@ instance ToNat Pos where
 
 ## `Line`, `Column`
 
-We then add some newtypes to be more specific about whether we're talking about
+We then add some newtypes to be more specific about whether we’re talking about
 line or column numbers.
 
 ```haskell
@@ -109,8 +109,8 @@ data Span = Span
 ```
 
 A `Span` is not allowed to be empty; in other words, `start` and `end` must be
-different. I don't have an extremely compelling rationale for this, other than
-that empty spans didn't make sense for my use case. Eliminating empty spans
+different. I don’t have an extremely compelling rationale for this, other than
+that empty spans didn’t make sense for my use case. Eliminating empty spans
 also, in my opinion, seems to eliminate some ambiguity when we describe an
 `Area` as a set of `Span`s.
 
@@ -142,20 +142,20 @@ Haskell. I have two conditions for this, though:
    exception.
 
 In other words, providing a partial function that might be more convenient in
-some cases is fine, but don't *force* a user of your API to use a partial
+some cases is fine, but don’t *force* a user of your API to use a partial
 function.
 
 ## `Area`
 
-An `Area` is conceptually a set of `Span`s, so in my first attempt that's
+An `Area` is conceptually a set of `Span`s, so in my first attempt that’s
 exactly how I defined it.
 
 ```haskell
 newtype Area = Area (Set Span)
 ```
 
-Unfortunately I couldn't manage to write reasonably efficient union and
-difference operations with this representation. Here's what I ended up with
+Unfortunately I couldn’t manage to write reasonably efficient union and
+difference operations with this representation. Here’s what I ended up with
 instead:
 
 ```haskell
@@ -166,15 +166,15 @@ newtype Area = Area (Map Loc Terminus)
   deriving (Eq, Ord)
 ```
 
-Rather than keeping a set of the spans, we keep a set of the spans' start and
+Rather than keeping a set of the spans, we keep a set of the spans’ start and
 end positions, along with a tag indicating whether each is a start or an end.
 You should notice the drawback to this representation: it is now much less
 “correct by construction”. The map must contain an even number of `Loc`s,
 alternating between `Start` and `End`. Any operations we write using the `Area`
 constructor must take care to preserve that property.
 
-I'll only cover one of the algorithms in this blog post: Adding a `Span` to an
-`Area`. We're going to define a function with this type:
+I’ll only cover one of the algorithms in this blog post: Adding a `Span` to an
+`Area`. We’re going to define a function with this type:
 
 ```haskell
 addSpan :: Span -> Area -> Area
@@ -187,9 +187,9 @@ divide a map into keys that are less than and greater than some key:
 split :: Ord k => k -> Map k a -> (Map k a, Map k a)
 ```
 
-We're going to use the `split` function twice: to split the area into `Loc`s
-that come *before the start* of the span we're adding, and `Loc`s that come
-*after the end* of the span we're adding. Then we'll combine the stuff in the
+We’re going to use the `split` function twice: to split the area into `Loc`s
+that come *before the start* of the span we’re adding, and `Loc`s that come
+*after the end* of the span we’re adding. Then we’ll combine the stuff in the
 middle with the new span, and finally `mappend` all the maps back together.
 
 ```haskell
@@ -265,7 +265,7 @@ I defined custom `Show` and `Read` instances to be able to write terse
 ```
 
 I usually just implement `show` when I write a custom `Show` instance, but this
-time I thought I'd do it the right way and implement `showsPrec` instead. This
+time I thought I’d do it the right way and implement `showsPrec` instead. This
 [difference list] construction avoids expensive *O(n)* list concatenations.
 
   [difference list]: https://en.wikipedia.org/wiki/Difference_list
@@ -286,7 +286,7 @@ spanShowsPrec _ (Span a b) =
 
 ## `Read`
 
-This was the first time I really explored `Read` in-depth. It's a little rough,
+This was the first time I really explored `Read` in-depth. It’s a little rough,
 but surprisingly usable (despite not great documentation).
 
 The parser for `Pos` is based on the parser for `Natural`, applying `mfilter (/=
@@ -320,7 +320,7 @@ locReadPrec =
 ```
 
 We used `mfilter` above to introduce failure into the `Pos` parser; for `Span`
-we're going to use `empty`.
+we’re going to use `empty`.
 
 ```haskell
 empty :: Alternative f => f a
@@ -338,11 +338,11 @@ spanReadPrec =
   maybe empty pure (fromToMay a b)
 ```
 
-## That's all folks
+## That’s all folks
 
-This wasn't intensely exciting or weird, but I want to produce more blog posts
-about doing normal stuff in Haskell. The package is [here] on Hackage if you'd
-like to investigate further.
+This wasn’t intensely exciting or weird, but I want to produce more blog posts
+about doing normal stuff in Haskell. The package is called [loc] on Hackage if
+you’d like to investigate further.
 
   [here]: https://hackage.haskell.org/package/loc
 

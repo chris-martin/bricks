@@ -254,8 +254,8 @@ I defined custom `Show` and `Read` instances to be able to write terse
   [doctests]: https://hackage.haskell.org/package/doctest
 
 ```haskell
->>> addSpan (read "1:1-6:1") (read "[1:1-3:1,6:1-6:2]")
-[1:1-6:2]
+>>> addSpan (read "1:1-6:1") (read "[1:1-3:1,6:1-6:2,7:4-7:5]")
+[1:1-6:2,7:4-7:5]
 ```
 
 I usually just implement `show` when I write a custom `Show` instance, but this

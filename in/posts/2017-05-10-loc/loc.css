@@ -1,0 +1,22 @@
+@import '../post.scss';
+
+.example {
+    text-align: center;
+
+    div {
+        display: inline-block;
+        padding: 2em 0;
+
+        @media(min-width: 500px) {
+            background: #f8f8f8;
+            padding: 2em;
+            margin: 1em auto;
+            border: 1px solid #dadada;
+        }
+
+        img {
+            width: 100%;
+            max-width: 467px;
+        }
+    }
+}

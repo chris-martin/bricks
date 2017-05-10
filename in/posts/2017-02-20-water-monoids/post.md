@@ -133,7 +133,7 @@ x = fold [ "one"
 --   = "onetwothree"
 ```
 
-But a monoid operations aren't just ways to merge data structures. My favorite
+But a monoid operations aren’t just ways to merge data structures. My favorite
 example is [`Endo`][endo], which lets you chain together collections of
 functions.
 
@@ -220,14 +220,14 @@ in the new gap between the two structures.
 
 ## Arithmetic
 
-Since there are no negative numbers in this problem, we'll be using the
+Since there are no negative numbers in this problem, we’ll be using the
 `Natural` type, which represents nonnegative integers.
 
 ```haskell
 import Numeric.Natural (Natural)
 ```
 
-The arithmetic in Haskell's default prelude is a bit clumsy, so you want to be
+The arithmetic in Haskell’s default prelude is a bit clumsy, so you want to be
 precise, it can be nice to define your own. For example, `Natural` has an
 instance of `Num`, which can get us into trouble because `(-)` is partial.
 
@@ -236,7 +236,7 @@ instance of `Num`, which can get us into trouble because `(-)` is partial.
 *** Exception: arithmetic underflow
 ```
 
-For the `Natural` type, I'd prefer to have the `(-)` function signify *absolute
+For the `Natural` type, I’d prefer to have the `(-)` function signify *absolute
 difference*. Fortunately we can define our own subtraction class and implement
 it however we want.
 
@@ -253,8 +253,8 @@ instance Subtraction a => Subtraction (Sum a) where
     Sum a - Sum b = Sum (a - b)
 ```
 
-Not all numbers are the same, so let's also define some types to assign meaning
-to the specific sorts of quantities we're dealing with in this problem.
+Not all numbers are the same, so let’s also define some types to assign meaning
+to the specific sorts of quantities we’re dealing with in this problem.
 
 We wrap the numbers in `Sum` so that we can automatically derive monoid
 instances that combine additively.
@@ -272,15 +272,15 @@ newtype Area = Area (Sum Natural)
     deriving (Eq, Monoid, Ord, Semigroup, Subtraction)
 ```
 
-We'll need to multiply a `Width` by a `Height` to get an `Area`. Here we run
-into another limitation of `Num`: It assume we're only multiplying values of the
+We’ll need to multiply a `Width` by a `Height` to get an `Area`. Here we run
+into another limitation of `Num`: It assume we’re only multiplying values of the
 same type.
 
 ```haskell
 (*) :: Num a => a -> a -> a
 ```
 
-So again let's ignore the standard math and invent our own. Since this
+So again let’s ignore the standard math and invent our own. Since this
 hetereogeneous multiplication involves more than one type, we need the language
 extension that allows multi-parameter type classes.
 
@@ -300,8 +300,8 @@ instance Multiplication Height Width Area where
 
 ## Faces
 
-Recall that we defined a structure's shape in terms of its `LeftFace` and its
-`RightFace`. Now we'll define those types and their monoids.
+Recall that we defined a structure’s shape in terms of its `LeftFace` and its
+`RightFace`. Now we’ll define those types and their monoids.
 
 ```haskell
 import Data.Map (Map)
@@ -323,7 +323,7 @@ instance Monoid RightFace where
 ```
 
 Notice the subtle difference between how `mappend` is defined for each of these
-types. When we combine two faces, it matters whether we're looking at them from
+types. When we combine two faces, it matters whether we’re looking at them from
 the left or from the right.
 
 This is what combining two left faces looks like:
@@ -431,15 +431,15 @@ You can see the complete working code on [GitHub][github].
 
   [github]: https://github.com/chris-martin/rain-water/
 
-In this post I don't give much thought to efficiency; I haven't bothered to
+In this post I don’t give much thought to efficiency; I haven’t bothered to
 benchmark this code, and I suspect its runtime may be quadratic.
 
 In case you are wondering *Does it really take this much code to write a Haskell
-program?* &mdash; No; what I've done here is overkill, just for fun and
+program?* &mdash; No; what I’ve done here is overkill, just for fun and
 learning.
 
 If you are interested in optimization or brevity, check out
-[Chris Done's][chris-done] work on the subject, which includes a very nice
+[Chris Done’s][chris-done] work on the subject, which includes a very nice
 concise solution in Haskell using scans.
 
   [chris-done]: http://chrisdone.com/posts/twitter-problem-loeb

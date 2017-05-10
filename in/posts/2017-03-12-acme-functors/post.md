@@ -182,7 +182,7 @@ data AnyNumberOf a =
   deriving (Eq, Functor, Show)
 ```
 
-Here's an alias for `OneAndMaybeMore` which provides some brevity:
+Here’s an alias for `OneAndMaybeMore` which provides some brevity:
 
 ```haskell
 (~~) :: a -> AnyNumberOf a -> AnyNumberOf a

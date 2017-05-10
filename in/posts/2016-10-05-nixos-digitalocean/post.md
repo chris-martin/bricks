@@ -62,7 +62,7 @@ nixos-rebuild switch
 
 <li>
     Use `passwd` to set user passwords. Remember to do this for at least one
-    sudoer so you don't lock yourself out of the machine!
+    sudoer so you don’t lock yourself out of the machine!
 </li>
 
 </ol>

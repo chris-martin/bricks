@@ -16,18 +16,18 @@ abstract:  When bottoms are tagged, we may view bottom more inclusively.
 >
 > — Philip Pullman, *The Amber Spyglass*
 
-I struggle to talk about programming languages that aren't based in some
+I struggle to talk about programming languages that aren’t based in some
 mathematical formalism. I have to choose ways of reasoning about them. I find
-it's often helpful to choose to mentally declare null to be a kind of bottom
-when reasoning about languages that don't provide their own sufficient system of
+it’s often helpful to choose to mentally declare null to be a kind of bottom
+when reasoning about languages that don’t provide their own sufficient system of
 reason.
 
-I'm aware that this is blasphemy. The official Haskell party line goes something
+I’m aware that this is blasphemy. The official Haskell party line goes something
 like this:
 
 > *Novice*: “So is *bottom* sort of like *null*?”
 >
-> *Master*: “No, they couldn't be more different! Null is a value; bottom is
+> *Master*: “No, they couldn’t be more different! Null is a value; bottom is
   not. There is one null value; there are no bottom values.”
 
 ## The real bottom
@@ -85,17 +85,17 @@ def fromSome[A](o: Option[A]): A =
 ```
 
 This approach works, but it is a harsh way to treat the poor evaluator. Remember
-there's no general way to know that you've hit nonterminating recursion. So all
+there’s no general way to know that you’ve hit nonterminating recursion. So all
 we can do with `fromJust Nothing` when executing this sort of program is spin
 indefinitely trying to evaluate it.
 
 ## Tagged bottoms
 
-Once you're in a situation with nonterminating recursion, it's impossible to
-either finish evaluating or know that you'll never finish evaluating. It's a
+Once you’re in a situation with nonterminating recursion, it’s impossible to
+either finish evaluating or know that you’ll never finish evaluating. It’s a
 dreadful state, so it seems unnecessarily cruel to ever *intentionally* produce
 it for the evaluator to either puzzle out or chew on forever. If we *know* that
-an expression will be bottom, let's state that explicitly in our code.
+an expression will be bottom, let’s state that explicitly in our code.
 
 ```haskell
 fromJust =
@@ -104,8 +104,8 @@ fromJust =
     Nothing -> undefined
 ```
 
-`fromJust Nothing` is still bottom — it's still an expression of type `a` that
-does not evaluate to any value of type `a` — but we've added a little metadata
+`fromJust Nothing` is still bottom — it’s still an expression of type `a` that
+does not evaluate to any value of type `a` — but we’ve added a little metadata
 that lets us fail quickly when attempting to evaluate it.
 
 We can go further than that, though, and provide not only a proclamation of
@@ -118,13 +118,13 @@ fromJust =
     Nothing -> error "fromJust Nothing"
 ```
 
-Don't be fooled: the expression `fromJust Nothing` is still bottom. But when
+Don’t be fooled: the expression `fromJust Nothing` is still bottom. But when
 that expression is evaluated, the fact that it is bottom is *known*, and that
 fact *comes with some additional information*.
 
 “Tagged bottom” is a term I just made up, for lack of a better phrase. It refers
 to *the result of determining that an expression cannot be evaluated*, including
-some justification if available, like “this expression can't be evaluated
+some justification if available, like “this expression can’t be evaluated
 because it includes a division by zero”. In the case of `undefined`, the tag
 merely asserts that the expression *is* bottom.
 
@@ -187,10 +187,10 @@ Sometimes the temptation to use bottom tags in unextraordinary circumstances
 leads us to dark places. We can do this by overusing `throw` and `catch` in
 Haskell, and we can do this by overusing `null` as idiomatic Java does.
 
-I do not believe null was Java's billion-dollar mistake. It is no more
+I do not believe null was Java’s billion-dollar mistake. It is no more
 inherently harmful than `???` in Scala or `undefined` in Haskell. The
 billion-dollar mistakes were more serious fundamental flaws — notably, its
-omission of sum types and pattern matching — that drive Java's users to abuse
+omission of sum types and pattern matching — that drive Java’s users to abuse
 tagged bottoms for lack of sufficient means to express themselves properly
 within the normal confines of the type system. We can see from Scala that, with
 this limitation removed, programmers typically choose to relegate null-tagged

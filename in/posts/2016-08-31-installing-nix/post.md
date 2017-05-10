@@ -17,7 +17,7 @@ This is only what you need to know to get a working installation.
 
 This first step requires you to be a sudoer (it will prompt you for your
 password), but *do not* type "sudo" yourself.
-It's important for all of these steps to be performed as your own user,
+It’s important for all of these steps to be performed as your own user,
 not as root.
 
 Run this command:
@@ -36,8 +36,8 @@ Go to [nixos.org/channels](https://nixos.org/channels/)
 and find the highest-numbered channel.
 
 Channels are released every six months. At the time of writing, "nixos-16.03"
-(from March 2016) is the latest channel, so that's what we'll use in the
-following steps; but you should replace `16.03` with the version you're using.
+(from March 2016) is the latest channel, so that’s what we’ll use in the
+following steps; but you should replace `16.03` with the version you’re using.
 
 ## 3. Set up environment variables
 
@@ -49,11 +49,11 @@ source $HOME/.nix-profile/etc/profile.d/nix.sh
 export NIX_PATH="nixpkgs=$HOME/.nix-defexpr/channels/nixos-16.03"
 ```
 
-Remember to replace `16.03` with the actual channel you're using.
+Remember to replace `16.03` with the actual channel you’re using.
 
 ## 4. Add the channel
 
-Run the following commands in a new shell, because you'll need the `.bashrc`
+Run the following commands in a new shell, because you’ll need the `.bashrc`
 changes made by step 3:
 
 ```bash
@@ -61,11 +61,11 @@ nix-channel --add http://nixos.org/channels/nixos-16.03 nixos-16.03
 nix-channel --update
 ```
 
-Again, replace `16.03` with the channel you're using.
+Again, replace `16.03` with the channel you’re using.
 
 ## 5. Play
 
-Run this to show that it's working!
+Run this to show that it’s working!
 
 ```bash
 nix-shell -p rogue --command rogue

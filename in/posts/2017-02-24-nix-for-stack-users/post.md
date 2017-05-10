@@ -22,7 +22,7 @@ Think of [Nix][nix] like [Stack][stack], but with a much broader scope.
   [nix]: https://nixos.org/nix/
   [stack]: https://docs.haskellstack.org/en/stable/README/
 
-Stack is there to manage your project's dependencies, and help you run their
+Stack is there to manage your project’s dependencies, and help you run their
 programs and compile stuff with them, but only if the dependencies are Haskell
 packages.
 
@@ -35,14 +35,14 @@ project.
   [integration]: https://github.com/commercialhaskell/stack/blob/master/doc/nix_integration.md
 
 So if you want to, for example, add a [SASS][sass] compilation step to your
-[Hakyll][hakyll] project, your coworkers don't have to do any work to get the
+[Hakyll][hakyll] project, your coworkers don’t have to do any work to get the
 SASS compiler. Stack will just install it for them.
 
   [sass]: http://sass-lang.com/
   [hakyll]: https://jaspervdj.be/hakyll/
 
 Like Stack keeps a cache of all the stuff it has installed in `~/.stack` in your
-home directory, Nix keeps all of its stuff in `/nix/store`. (It's not in your
+home directory, Nix keeps all of its stuff in `/nix/store`. (It’s not in your
 home directory, but at the root of the filesystem — for *technical reasons* —
 which is why you are prompted to sudo when you install it.)
 
@@ -58,8 +58,8 @@ pandoc 1.19.2.1
 
 `nix-shell` is like `stack exec`.
 
-So take for example… Let's assume you don't have NPM installed. And let's say
-you don't really want to install it permanently or whatever because you're
+So take for example… Let’s assume you don’t have NPM installed. And let’s say
+you don’t really want to install it permanently or whatever because you’re
 probably not going to need it again, but you just want to run it for some
 one-off command.
 
@@ -69,15 +69,15 @@ one-off command.
 ```
 
 `-p npm` is like `--package pandoc`; it tells Nix what packages you want
-available in the sandbox you're going to run a command in. And then `npm
---version` is the command you want to run. So that'll download NPM and run `npm
+available in the sandbox you’re going to run a command in. And then `npm
+--version` is the command you want to run. So that’ll download NPM and run `npm
 --version`, without actually “installing” NPM — without modifying your system
 visibly at all.
 
 ## `shell.nix` is like `stack.yaml`
 
 So then, also like Stack, you can use it in a sort of standalone manner like
-that, or you can have a config file for a project. Here's one I'm using right
+that, or you can have a config file for a project. Here’s one I’m using right
 now:
 
 ```nix
@@ -115,8 +115,8 @@ configuration, which it does by using `nix-shell` under the hood.
 
 ## `nix-env` is like `apt-get`
 
-You can also use Nix as an alternative to Ubuntu's package manager (`apt-get`)
-for a lot of things if you so choose. (I'm assuming you're using Ubuntu.)
+You can also use Nix as an alternative to Ubuntu’s package manager (`apt-get`)
+for a lot of things if you so choose. (I’m assuming you’re using Ubuntu.)
 
 For this we use another command, `nix-env`.
 
@@ -132,4 +132,4 @@ manager at the moment, but it will be important if you ever use [NixOS][nixos].
   [nixos]: https://nixos.org/
 
 An interesting difference between `nix-env` and `apt-get` is that it only
-affects your user, which is why you don't have to sudo to run it.
+affects your user, which is why you don’t have to sudo to run it.

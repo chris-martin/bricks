@@ -4,6 +4,10 @@ date:      2017 May 10
 slug:      loc
 abstract:  A Haskell library for calculations on text file positions.
 css:       loc.css
+thumbnail: thumb.png
+twitter card:        summary_large_image
+twitter image:       twitter.png
+twitter description: A Haskell library for calculations on text file positions.
 --------------------------------------------------------------------------------
 
 I started using [haskell-src-exts] recently to parse Haskell files. I wasn't

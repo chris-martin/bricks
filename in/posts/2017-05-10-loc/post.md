@@ -350,3 +350,23 @@ The build tools for [*The Joy of Haskell*][joy2] are turning into an interesting
 custom reinvention of Literate Haskell; stay tuned for updates on that!
 
   [joy2]: https://joyofhaskell.com/
+
+## Addendum
+
+[George Pollard asks](https://toot.cafe/users/porges/updates/14791):
+
+> would it maybe make it easier to interpret Loc as a character position (à la
+> vim)? then Span with start=end can be a 1-char span and there are no invalid
+> ones
+
+This is a nice suggestion, and “no invalid spans” is an appealing pitch. The
+idea is that we could represent a span using two inclusive bounds *\[start,
+end\]* rather than an inclusive and an exclusive bound *\[start, end)*.
+Unfortunately, it would end up complicating the API a bit.
+
+Currently, the library is entirely agnostic of the text that the positions are
+referring to. This means there is no “plus one” operation on `Loc`, because the
+next `Loc` after *4:17* could be either *4:18* or *5:1* — we can’t tell without
+knowing the line lengths. Therefore, with inclusive ranges, you can’t tell
+whether span *4:16-4:17* abuts span *5:1-5:2* — at least, not without knowing
+whether the character at position *4:17* is a newline.

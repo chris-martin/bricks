@@ -7,4 +7,4 @@
 [GitHub](https://github.com/chris-martin) &middot;
 [Stack Overflow](http://stackoverflow.com/users/402884) &middot;
 [Facebook](https://www.facebook.com/ch.martin) &middot;
-[Email](ch.martin@gmail.com)
+[Email](mailto:ch.martin@gmail.com)

@@ -6,7 +6,7 @@ module ChrisMartinOrg.PostDate
 
 import Control.Applicative (optional)
 import Control.Monad (mfilter)
-import Data.Attoparsec.Text (Parser)
+import Data.Attoparsec.Text (Parser, (<?>))
 import Data.Char (isLetter)
 import Data.Maybe (isJust)
 import Data.Text (Text)
@@ -56,10 +56,11 @@ Right (PostDate {postDateYear = 2008, postDateMonth = 9, postDateDay = Nothing})
 -}
 postDateParser :: Parser PostDate
 postDateParser =
-  mfilter postDateValid $
-  PostDate <$> A.decimal
-           <*> (A.skipSpace *> monthParser)
-           <*> (A.skipSpace *> optional A.decimal)
+    mfilter postDateValid p <?> "post date"
+  where
+    p = PostDate <$> (A.decimal <?> "year")
+                 <*> (A.skipSpace *> monthParser <?> "month")
+                 <*> (A.skipSpace *> optional A.decimal <?> "day")
 
 {- |
 

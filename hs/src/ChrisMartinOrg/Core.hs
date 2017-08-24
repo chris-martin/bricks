@@ -1,37 +1,36 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ChrisMartinOrg.Core
-    (
-    -- * Types
-      Page(..)
-    , Css(..)
-    , CompiledCss(..)
-    , Post(..)
-    , Content(..)
-    , ContentPart(..)
+  (
+  -- * Types
+    Page(..)
+  , Css(..)
+  , CompiledCss(..)
+  , Post(..)
+  , Content(..)
+  , ContentPart(..)
 
-    -- * Functions
-    , markdown
-    , globalPageHeader
-    , singlePartContent
-    , collapseSeqAppend
+  -- * Functions
+  , markdown
+  , globalPageHeader
+  , singlePartContent
+  , collapseSeqAppend
 
-    ) where
+  ) where
 
 import ChrisMartinOrg.PostDate
 
-import Data.Default
-import Data.Semigroup
+import Data.Semigroup (Semigroup ((<>)))
 import Data.Sequence (Seq)
-
-import qualified Data.Sequence               as Seq
-import qualified Data.Text                   as T
-import qualified Data.Text.Lazy              as L
-import qualified Text.Blaze.Html5            as H
-import qualified Text.Blaze.Html5.Attributes as A
-import qualified Text.Markdown               as Markdown
-
 import Text.Blaze.Html5 (Html, toHtml, (!))
+import Text.Markdown (defaultMarkdownSettings)
+
+import qualified Data.Sequence as Seq
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as L
+import qualified Text.Blaze.Html5 as H
+import qualified Text.Blaze.Html5.Attributes as A
+import qualified Text.Markdown as Markdown
 
 
 -----------------------------------------------------------------
@@ -63,7 +62,8 @@ data ContentPart = ContentText T.Text
                  | ContentCode { codeLang :: T.Text
                                , codeBody :: T.Text }
 
-data Post = Post
+data Post =
+  Post
     { postDir          :: FilePath
     , postTitle        :: T.Text
     , postDate         :: PostDate
@@ -84,7 +84,9 @@ data Post = Post
 -----------------------------------------------------------------
 
 markdown :: T.Text -> Html
-markdown = Markdown.markdown def { Markdown.msXssProtect = False } . L.fromStrict
+markdown =
+  Markdown.markdown defaultMarkdownSettings { Markdown.msXssProtect = False } .
+  L.fromStrict
 
 globalPageHeader :: Page -> Html
 globalPageHeader page =

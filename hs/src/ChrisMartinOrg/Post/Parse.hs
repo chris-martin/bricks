@@ -2,8 +2,8 @@
              RecordWildCards #-}
 
 module ChrisMartinOrg.Post.Parse
-    ( parsePost
-    ) where
+  ( parsePost
+  ) where
 
 import ChrisMartinOrg.Core
 import ChrisMartinOrg.Content (parseContent)
@@ -13,7 +13,7 @@ import Control.Applicative ((<*))
 import Control.Arrow (left)
 import Data.Map (Map)
 import Data.Maybe (maybeToList)
-import Data.Semigroup
+import Data.Semigroup (Semigroup, (<>))
 import Data.Text (Text)
 import System.FilePath.Posix ((</>))
 
@@ -25,9 +25,12 @@ import qualified Data.Text as T
 -- >>> :set -XOverloadedStrings
 -- >>> import qualified Data.Text as Text
 
-data AccValidation e a = AccFailure e | AccSuccess a deriving Functor
+data AccValidation e a =
+    AccFailure e | AccSuccess a
+  deriving Functor
 
-instance Semigroup e => Applicative (AccValidation e) where
+instance Semigroup e => Applicative (AccValidation e)
+  where
     pure = AccSuccess
     AccFailure e1 <*> AccFailure e2 = AccFailure (e1 <> e2)
     AccFailure e1 <*> AccSuccess _  = AccFailure e1
@@ -38,10 +41,12 @@ accValidationToEither :: AccValidation e a -> Either e a
 accValidationToEither (AccFailure e) = Left e
 accValidationToEither (AccSuccess a) = Right a
 
-parsePost :: FilePath -- ^ The directory containing the post
-          -> T.Text   -- ^ The content of the post.md file
-          -> Either [Text] Post
-parsePost dir text = accValidationToEither $ do
+parsePost
+  :: FilePath -- ^ The directory containing the post
+  -> T.Text   -- ^ The content of the post.md file
+  -> Either [Text] Post
+parsePost dir text =
+  accValidationToEither $ do
 
     postTitle <- getVal "title"
 

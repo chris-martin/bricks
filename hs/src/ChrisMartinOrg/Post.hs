@@ -1,19 +1,18 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards, ScopedTypeVariables #-}
 
 module ChrisMartinOrg.Post
-    ( getPosts
-    , postUrl
-    , writePost
-    ) where
+  ( getPosts
+  , postUrl
+  , writePost
+  ) where
 
-import ChrisMartinOrg.Core
-
-import qualified ChrisMartinOrg.Post.Page as Page
-
-import ChrisMartinOrg.Css (compileCssFallback)
 import ChrisMartinOrg.Content (resolveContentAssets, contentToHtml)
+import ChrisMartinOrg.Core
+import ChrisMartinOrg.Css (compileCssFallback)
 import ChrisMartinOrg.Post.Parse (parsePost)
 import ChrisMartinOrg.PostDate (PostDate (..))
+
+import qualified ChrisMartinOrg.Post.Page as Page
 
 import Control.Applicative (liftA2)
 import Control.Exception (IOException, try)
@@ -33,7 +32,8 @@ import qualified Data.Text.IO as TextIO
 import qualified System.Directory as Dir
 
 getPosts :: IO [Post]
-getPosts = do
+getPosts =
+  do
     paths <- (reverse . List.sort) <$> listDirectory basePath
     catMaybes <$> sequence ((getPost . (basePath </>)) <$> paths)
   where
@@ -41,7 +41,8 @@ getPosts = do
 
 getPost :: FilePath  -- ^ The directory containing the post
         -> IO (Maybe Post)
-getPost dir = do
+getPost dir =
+  do
     i <- Dir.doesFileExist file
     if i
         then do
@@ -56,18 +57,21 @@ getPost dir = do
                             return Nothing
                         Right post -> return $ Just post
         else pure Nothing
-    where file = dir </> "post.md"
+  where
+    file = dir </> "post.md"
 
 listDirectory :: FilePath -> IO [FilePath]
 listDirectory path =
     mfilter (not . isSpecial) <$> Dir.getDirectoryContents path
-    where isSpecial = liftA2 (||) (== ".") (== "..")
+  where
+    isSpecial = liftA2 (||) (== ".") (== "..")
 
 postUrl :: Post -> FilePath
 postUrl p = (show $ postDateYear $ postDate p) </> (T.unpack $ postSlug p)
 
 writePost :: Post -> IO ()
-writePost post = do
+writePost post =
+  do
     Dir.createDirectoryIfMissing True dir
     pageInput <- getPageInput post
     LBS.writeFile file $ renderHtml $ Page.html pageInput
@@ -76,7 +80,8 @@ writePost post = do
     dir = dropFileName file
 
 getPageInput :: Post -> IO Page.Input
-getPageInput Post{..} = do
+getPageInput Post{..} =
+  do
     css <- compileCssFallback postCss
     body <- resolveContentAssets postDir postBody
 

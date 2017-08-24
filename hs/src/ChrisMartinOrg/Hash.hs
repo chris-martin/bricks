@@ -1,11 +1,11 @@
 module ChrisMartinOrg.Hash
-    ( hash
-    , writeHashBS
-    , writeHashFile
-    ) where
+  ( hash
+  , writeHashBS
+  , writeHashFile
+  ) where
 
 import Data.ByteString (ByteString)
-import Data.Semigroup
+import Data.Semigroup ((<>))
 import System.FilePath.Posix (takeExtension, (<.>), (</>), FilePath)
 
 import qualified Crypto.Hash as Hash

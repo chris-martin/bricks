@@ -33,7 +33,6 @@ dependencies:
   - filepath
   - highlighting-kate
   - hsass
-  - lens
   - markdown
   - safe
   - text

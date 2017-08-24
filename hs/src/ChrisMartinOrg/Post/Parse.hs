@@ -19,7 +19,7 @@ import System.FilePath.Posix ((</>))
 
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Map.Strict as Map
-import qualified Data.Text as T
+import qualified Data.Text as Text
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -43,7 +43,7 @@ accValidationToEither (AccSuccess a) = Right a
 
 parsePost
   :: FilePath -- ^ The directory containing the post
-  -> T.Text   -- ^ The content of the post.md file
+  -> Text   -- ^ The content of the post.md file
   -> Either [Text] Post
 parsePost dir text =
   accValidationToEither $ do
@@ -52,13 +52,13 @@ parsePost dir text =
 
     postDate <- eitherVal $ do
         x <- get "date"
-        left T.pack $ A.parseOnly (postDateParser <* A.endOfInput) x
+        left Text.pack $ A.parseOnly (postDateParser <* A.endOfInput) x
 
     postSlug <- getVal "slug"
 
     postAbstract <- getVal "abstract"
 
-    postBody <- eitherVal (left T.pack (parseContent bodyText))
+    postBody <- eitherVal (left Text.pack (parseContent bodyText))
 
     pure Post{..}
   where
@@ -69,7 +69,7 @@ parsePost dir text =
 
     get :: Text -> Either Text Text
     get key = case getMaybe key of
-                  Nothing -> Left (T.append "Missing: " key)
+                  Nothing -> Left (Text.append "Missing: " key)
                   Just x -> Right x
 
     getVal :: Text -> AccValidation [Text] Text
@@ -81,19 +81,19 @@ parsePost dir text =
     postDir = dir
 
     postThumb = do x <- getMaybe "thumbnail"
-                   pure (dir </> T.unpack x)
+                   pure (dir </> Text.unpack x)
 
     postCss = maybeToList $ do x <- getMaybe "css"
-                               pure (CssSource (dir </> T.unpack x))
+                               pure (CssSource (dir </> Text.unpack x))
 
     postTwitterCard = getMaybe "twitter card"
 
     postTwitterImage = do x <- getMaybe "twitter image"
-                          pure (dir </> T.unpack x)
+                          pure (dir </> Text.unpack x)
 
     postRedirectFrom = case getMaybe "redirect from" of
                            Nothing -> []
-                           Just x -> T.unpack <$> T.splitOn "\n" x
+                           Just x -> Text.unpack <$> Text.splitOn "\n" x
 
     postTwitterDescription = getMaybe "twitter description"
 
@@ -107,10 +107,10 @@ eitherVal (Right x) = AccSuccess  x
 --
 -- >>> splitPost "---\nabc\ndef\n---\nghi\njkl"
 -- ("abc\ndef","ghi\njkl")
-splitPost :: T.Text -> (T.Text, T.Text)
+splitPost :: Text -> (Text, Text)
 splitPost text = splitOn2T sep otherLines where
     (firstLine, otherLines) = splitOn2T "\n" text
-    sep = T.concat ["\n", firstLine, "\n"]
+    sep = Text.concat ["\n", firstLine, "\n"]
 
 -- |
 -- >>> parseMeta "abc: def"
@@ -123,9 +123,9 @@ splitPost text = splitOn2T sep otherLines where
 --                            , "       seven" ]
 -- :}
 -- [("one","two"),("three","four"),("five","six\nseven")]
-parseMeta :: T.Text -> [(T.Text, T.Text)]
+parseMeta :: Text -> [(Text, Text)]
 parseMeta meta = parseMetaKV <$> lineGroups where
-    lineGroups = groupByStart ((/= " ") . T.take 1) $ T.lines meta
+    lineGroups = groupByStart ((/= " ") . Text.take 1) $ Text.lines meta
 
 -- |
 -- >>> parseMetaKV ["abc: def"]
@@ -136,11 +136,11 @@ parseMeta meta = parseMetaKV <$> lineGroups where
 --               , "       ghi" ]
 -- :}
 -- ("abc","def\n ghi")
-parseMetaKV :: [T.Text] -> (T.Text, T.Text)
-parseMetaKV lines@(firstLine:_) = (T.strip k, T.intercalate "\n" vLines) where
+parseMetaKV :: [Text] -> (Text, Text)
+parseMetaKV lines@(firstLine:_) = (Text.strip k, Text.intercalate "\n" vLines) where
     (k, v1) = splitOn2T ":" firstLine
-    startCol = T.length k + 1 + T.length (T.takeWhile (== ' ') v1)
-    vLines = T.drop startCol <$> lines
+    startCol = Text.length k + 1 + Text.length (Text.takeWhile (== ' ') v1)
+    vLines = Text.drop startCol <$> lines
 parseMetaKV [] = ("", "")
 
 -- |
@@ -161,6 +161,6 @@ groupByStart isStart = foldr f [] where
 
 -- Like breakOn, but does not include the pattern in the second piece. Or like
 -- splitOn, but only performing a single split rather than arbitrarily many.
-splitOn2T :: T.Text -> T.Text -> (T.Text, T.Text)
-splitOn2T pat src = case T.breakOn pat src of
-    (x, y) -> (x, T.drop (T.length pat) y)
+splitOn2T :: Text -> Text -> (Text, Text)
+splitOn2T pat src = case Text.breakOn pat src of
+    (x, y) -> (x, Text.drop (Text.length pat) y)

@@ -22,11 +22,11 @@ import ChrisMartinOrg.PostDate
 
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Sequence (Seq)
+import Data.Text (Text)
 import Text.Blaze.Html5 (Html, toHtml, (!))
 import Text.Markdown (defaultMarkdownSettings)
 
 import qualified Data.Sequence as Seq
-import qualified Data.Text as T
 import qualified Data.Text.Lazy as L
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
@@ -57,25 +57,25 @@ instance Semigroup Content where
 
 instance Monoid Content where mempty = Content mempty; mappend = (<>)
 
-data ContentPart = ContentText T.Text
+data ContentPart = ContentText Text
                  | ContentAsset FilePath
-                 | ContentCode { codeLang :: T.Text
-                               , codeBody :: T.Text }
+                 | ContentCode { codeLang :: Text
+                               , codeBody :: Text }
 
 data Post =
   Post
     { postDir          :: FilePath
-    , postTitle        :: T.Text
+    , postTitle        :: Text
     , postDate         :: PostDate
-    , postSlug         :: T.Text
+    , postSlug         :: Text
     , postThumb        :: Maybe FilePath
     , postCss          :: [Css]
-    , postAbstract     :: T.Text
+    , postAbstract     :: Text
     , postRedirectFrom :: [FilePath]
     , postBody         :: Content
-    , postTwitterCard  :: Maybe T.Text
+    , postTwitterCard  :: Maybe Text
     , postTwitterImage :: Maybe FilePath
-    , postTwitterDescription :: Maybe T.Text
+    , postTwitterDescription :: Maybe Text
     }
 
 
@@ -83,7 +83,7 @@ data Post =
 --  Functions
 -----------------------------------------------------------------
 
-markdown :: T.Text -> Html
+markdown :: Text -> Html
 markdown =
   Markdown.markdown defaultMarkdownSettings { Markdown.msXssProtect = False } .
   L.fromStrict

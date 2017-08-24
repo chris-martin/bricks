@@ -26,7 +26,7 @@ import Text.Blaze.Html5 (toHtml)
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.List as List
-import qualified Data.Text as T
+import qualified Data.Text as Text
 import qualified Data.Text.Lazy as L
 import qualified Data.Text.IO as TextIO
 import qualified System.Directory as Dir
@@ -53,7 +53,7 @@ getPost dir =
                     case parsePost dir text of
                         Left errs -> do
                             putStrLn dir
-                            sequence_ ((putStrLn . T.unpack . T.append "  ") <$> errs)
+                            sequence_ ((putStrLn . Text.unpack . Text.append "  ") <$> errs)
                             return Nothing
                         Right post -> return $ Just post
         else pure Nothing
@@ -67,7 +67,7 @@ listDirectory path =
     isSpecial = liftA2 (||) (== ".") (== "..")
 
 postUrl :: Post -> FilePath
-postUrl p = (show $ postDateYear $ postDate p) </> (T.unpack $ postSlug p)
+postUrl p = (show $ postDateYear $ postDate p) </> (Text.unpack $ postSlug p)
 
 writePost :: Post -> IO ()
 writePost post =
@@ -94,7 +94,7 @@ getPageInput Post{..} =
         [ do x <- postTwitterCard
              pure ("twitter:card", x)
         , do x <- postTwitterImage
-             pure ("twitter:image", "https://chris-martin.org/" <> T.pack x)
+             pure ("twitter:image", "https://chris-martin.org/" <> Text.pack x)
         , do x <- postTwitterDescription
              pure ("twitter:description", x)
         , Just ("twitter:site:id", "18271443")

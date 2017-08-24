@@ -12,11 +12,11 @@ library:
     - ChrisMartinOrg.Content
     - ChrisMartinOrg.Content.Parse
     - ChrisMartinOrg.Core
-    - ChrisMartinOrg.Core.Chron
     - ChrisMartinOrg.Css
     - ChrisMartinOrg.Hash
     - ChrisMartinOrg.Home
     - ChrisMartinOrg.Post
+    - ChrisMartinOrg.PostDate
     - ChrisMartinOrg.Post.Page
     - ChrisMartinOrg.Post.Parse
     - ChrisMartinOrg.Redirect

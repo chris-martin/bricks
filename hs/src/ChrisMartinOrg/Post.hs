@@ -13,6 +13,7 @@ import qualified ChrisMartinOrg.Post.Page as Page
 import ChrisMartinOrg.Css (compileCssFallback)
 import ChrisMartinOrg.Content (resolveContentAssets, contentToHtml)
 import ChrisMartinOrg.Post.Parse (parsePost)
+import ChrisMartinOrg.PostDate (PostDate (..))
 
 import Control.Applicative (liftA2)
 import Control.Exception (IOException, try)
@@ -63,7 +64,7 @@ listDirectory path =
     where isSpecial = liftA2 (||) (== ".") (== "..")
 
 postUrl :: Post -> FilePath
-postUrl p = (show $ chronYear $ postChron p) </> (T.unpack $ postSlug p)
+postUrl p = (show $ postDateYear $ postDate p) </> (T.unpack $ postSlug p)
 
 writePost :: Post -> IO ()
 writePost post = do
@@ -81,7 +82,7 @@ getPageInput Post{..} = do
 
     let
       inputTitle = toHtml . L.fromStrict $ postTitle
-      inputChron = postChron
+      inputPostDate = postDate
       inputCss = css
       inputBody = contentToHtml body
       inputMeta = catMaybes

@@ -16,11 +16,9 @@ module ChrisMartinOrg.Core
     , singlePartContent
     , collapseSeqAppend
 
-    , module ChrisMartinOrg.Core.Chron
-
     ) where
 
-import ChrisMartinOrg.Core.Chron
+import ChrisMartinOrg.PostDate
 
 import Data.Default
 import Data.Semigroup
@@ -68,7 +66,7 @@ data ContentPart = ContentText T.Text
 data Post = Post
     { postDir          :: FilePath
     , postTitle        :: T.Text
-    , postChron        :: Chron
+    , postDate         :: PostDate
     , postSlug         :: T.Text
     , postThumb        :: Maybe FilePath
     , postCss          :: [Css]

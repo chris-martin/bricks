@@ -6,8 +6,8 @@ module ChrisMartinOrg.Post.Page
     ) where
 
 import ChrisMartinOrg.Core
-
 import ChrisMartinOrg.Css (styleLink)
+import ChrisMartinOrg.PostDate (PostDate, formatPostDate)
 
 import Control.Monad (forM_)
 import Data.Text (Text)
@@ -19,11 +19,11 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
 data Input = Input
-    { inputTitle :: Html
-    , inputChron :: Chron
-    , inputCss   :: Maybe CompiledCss
-    , inputBody  :: Html
-    , inputMeta  :: [(Text, Text)]
+    { inputTitle    :: Html
+    , inputPostDate :: PostDate
+    , inputCss      :: Maybe CompiledCss
+    , inputBody     :: Html
+    , inputMeta     :: [(Text, Text)]
     }
 
 html :: Input -> Html
@@ -57,6 +57,6 @@ html Input{..} = H.docTypeHtml $ do
                     H.h1 ! A.class_ "post-title" $ do
                         inputTitle
                     H.div ! A.class_ "post-date" $
-                        toHtml $ formatChron inputChron
+                        toHtml $ formatPostDate inputPostDate
                 H.div ! A.class_ "post-body" $ do
                     inputBody

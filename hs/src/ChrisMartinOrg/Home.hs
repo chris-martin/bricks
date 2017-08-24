@@ -4,11 +4,11 @@ module ChrisMartinOrg.Home
     ( pageHtml
     ) where
 
+import ChrisMartinOrg.Content (contentToHtml)
 import ChrisMartinOrg.Core
 import ChrisMartinOrg.Css
-
-import ChrisMartinOrg.Content (contentToHtml)
 import ChrisMartinOrg.Post (postUrl)
+import ChrisMartinOrg.PostDate (formatPostDate)
 
 import Control.Monad (forM_)
 import Data.String (fromString)
@@ -44,7 +44,7 @@ postHtml post = H.div ! A.class_ "post" $ do
         H.a ! A.class_ "post-title" ! A.href (fromString $ postUrl post) $
             toHtml $ postTitle post
         H.div ! A.class_ "post-date" $
-            toHtml $ formatChron $ postChron post
+            toHtml $ formatPostDate $ postDate post
     H.div ! A.class_ "post-abstract" $ do
         forM_ (postThumb post) $ \t ->
             H.img ! A.class_ "post-thumb" ! A.src (fromString t)

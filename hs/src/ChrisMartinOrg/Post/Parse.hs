@@ -6,9 +6,10 @@ module ChrisMartinOrg.Post.Parse
     ) where
 
 import ChrisMartinOrg.Core
-
 import ChrisMartinOrg.Content (parseContent)
+import ChrisMartinOrg.PostDate (postDateParser)
 
+import Control.Applicative ((<*))
 import Control.Arrow (left)
 import Data.Map (Map)
 import Data.Maybe (maybeToList)
@@ -16,6 +17,7 @@ import Data.Semigroup
 import Data.Text (Text)
 import System.FilePath.Posix ((</>))
 
+import qualified Data.Attoparsec.Text as A
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 
@@ -43,8 +45,9 @@ parsePost dir text = accValidationToEither $ do
 
     postTitle <- getVal "title"
 
-    postChron <- eitherVal $ do x <- get "date"
-                                left T.pack (parseChron (T.unpack x))
+    postDate <- eitherVal $ do
+        x <- get "date"
+        left T.pack $ A.parseOnly (postDateParser <* A.endOfInput) x
 
     postSlug <- getVal "slug"
 

@@ -1,3 +1,9 @@
+{- |
+
+Defines 'PostDate', the type we use to represent the date of a blog post, and
+thing for formatting and parsing these dates.
+
+-}
 module ChrisMartinOrg.PostDate
   ( PostDate (..)
   , formatPostDate
@@ -16,6 +22,12 @@ import qualified Data.Text as Text
 import qualified Data.Time.Calendar as Cal
 import qualified Data.Time.Format as TimeF
 
+{- |
+
+Every blog post has at least year-and-month precision. Some posts also have a
+specific day of the month.
+
+-}
 data PostDate =
   PostDate
     { postDateYear  :: Int

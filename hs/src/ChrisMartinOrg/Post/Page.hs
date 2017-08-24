@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings, RecordWildCards #-}
 
 module ChrisMartinOrg.Post.Page
     ( Input(..)
@@ -6,14 +6,16 @@ module ChrisMartinOrg.Post.Page
     ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Css (styleLink)
 
+import Control.Monad (forM_)
+import Data.Text (Text)
+import System.FilePath.Posix ((</>))
 import Text.Blaze.Html5 (Html, toHtml, (!))
 
-import qualified Text.Blaze                  as Blaze
-import qualified Text.Blaze.Html5            as H
+import qualified Text.Blaze as Blaze
+import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
 data Input = Input

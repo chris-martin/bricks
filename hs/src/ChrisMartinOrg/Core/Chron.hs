@@ -4,11 +4,14 @@ module ChrisMartinOrg.Core.Chron
     , parseChron
     ) where
 
-import ChrisMartinOrg.Prelude
+import Control.Monad (mfilter)
+import Data.Maybe (isJust)
+import Data.Text (Text)
 
-import qualified Data.Text          as T
+import qualified Data.List as List
+import qualified Data.Text as T
 import qualified Data.Time.Calendar as Cal
-import qualified Data.Time.Format   as TimeF
+import qualified Data.Time.Format as TimeF
 
 import Text.Read (readMaybe)
 
@@ -18,7 +21,7 @@ data Chron = Chron
     , chronDay   :: Maybe Int
     }
 
-formatChron :: Chron -> T.Text
+formatChron :: Chron -> Text
 formatChron c = T.unwords $ concat [[ yearW, monthW ], maybe [] pure dayWMaybe]
   where yearW = T.pack $ show $ chronYear c
         monthW = T.pack $ fst $ TimeF.months TimeF.defaultTimeLocale !! ((chronMonth c) - 1)
@@ -44,6 +47,6 @@ parseChron t = do
     Right $ Chron year month dayMaybe
   where
     months = snd <$> TimeF.months TimeF.defaultTimeLocale
-    parseMonth mW = (+ 1) <$> findIndex (== take 3 mW) months
+    parseMonth mW = (+ 1) <$> List.findIndex (== take 3 mW) months
     validYMD y m d = isJust $ Cal.fromGregorianValid (fromIntegral y) m d
     parseDay y m dayW = mfilter (validYMD y m) (readMaybe dayW)

@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ChrisMartinOrg.Css
     ( styleLink
     , compileCss
@@ -6,17 +8,17 @@ module ChrisMartinOrg.Css
     ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Hash (writeHashBS)
 
 import Data.Default
 import Data.Semigroup
+import Data.String (fromString)
 
-import qualified System.Directory            as Dir
+import qualified System.Directory as Dir
 import qualified Text.Blaze.Html5.Attributes as A
-import qualified Text.Sass                   as Sass
-import qualified Text.Sass.Compilation       as SassC
+import qualified Text.Sass as Sass
+import qualified Text.Sass.Compilation as SassC
 
 import Text.Blaze.Html5 as H hiding (main)
 import Text.Sass.Options (SassOptions (..), SassOutputStyle (..))

@@ -1,10 +1,6 @@
 module Main (main) where
 
-import qualified Test.DocTest
-
-import Test.Framework
-import Test.Framework.Providers.HUnit
-import Test.HUnit hiding (Test)
+import Test.DocTest (doctest)
 
 main :: IO ()
-main = Test.DocTest.doctest ["src"]
+main = doctest ["src"]

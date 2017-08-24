@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ChrisMartinOrg.Content
     ( parseContent
     , resolveContentAssets
@@ -5,22 +7,23 @@ module ChrisMartinOrg.Content
     ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Content.Parse (parseContent)
 import ChrisMartinOrg.Hash (writeHashFile)
 
+import Control.Monad (when)
+import Data.Maybe (isNothing)
 import Data.Semigroup
+import Data.Sequence (Seq)
+import Data.Text (Text)
+import Text.Blaze.Html5 (Html, (!))
 
-import qualified Data.Sequence               as Seq
-import qualified Data.Text                   as T
-import qualified Data.Text.Lazy              as L
-import qualified Text.Blaze.Html5            as H
+import qualified Data.Sequence as Seq
+import qualified Data.Text as T
+import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
-import qualified Text.Highlighting.Kate      as Kate
+import qualified Text.Highlighting.Kate as Kate
 
-import Text.Blaze.Html5 (Html, preEscapedToHtml, toHtml, (!))
-import Text.Blaze.Html.Renderer.String (renderHtml)
 
 resolveContentAssets :: FilePath -> Content -> IO Content
 resolveContentAssets path xs =

@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings, RecordWildCards, ScopedTypeVariables #-}
 
 module ChrisMartinOrg.Post
     ( getPosts
@@ -7,7 +7,6 @@ module ChrisMartinOrg.Post
     ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Prelude
 
 import qualified ChrisMartinOrg.Post.Page as Page
 
@@ -15,20 +14,26 @@ import ChrisMartinOrg.Css (compileCssFallback)
 import ChrisMartinOrg.Content (resolveContentAssets, contentToHtml)
 import ChrisMartinOrg.Post.Parse (parsePost)
 
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Text            as T
-import qualified Data.Text.Lazy       as L
-import qualified Data.Text.IO         as TextIO
-import qualified System.Directory     as Dir
-
+import Control.Applicative (liftA2)
+import Control.Exception (IOException, try)
+import Control.Monad (mfilter)
+import Data.Functor (($>))
+import Data.Maybe (catMaybes)
 import Data.Semigroup
-import System.FilePath.Posix (dropFileName)
+import System.FilePath.Posix (dropFileName, (</>))
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 import Text.Blaze.Html5 (toHtml)
 
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.List as List
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as L
+import qualified Data.Text.IO as TextIO
+import qualified System.Directory as Dir
+
 getPosts :: IO [Post]
 getPosts = do
-    paths <- (reverse . sort) <$> listDirectory basePath
+    paths <- (reverse . List.sort) <$> listDirectory basePath
     catMaybes <$> sequence ((getPost . (basePath </>)) <$> paths)
   where
     basePath = "in" </> "posts"

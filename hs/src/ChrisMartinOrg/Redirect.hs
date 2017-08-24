@@ -1,7 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ChrisMartinOrg.Redirect (redirectHtml) where
 
-import ChrisMartinOrg.Prelude
-
+import Data.String (fromString)
 import Text.Blaze.Html5 (Html, toHtml, (!))
 
 import qualified Text.Blaze.Html5            as H

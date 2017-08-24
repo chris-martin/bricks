@@ -1,18 +1,23 @@
-{-# LANGUAGE ApplicativeDo, DeriveFunctor, RecordWildCards #-}
+{-# LANGUAGE ApplicativeDo, DeriveFunctor, OverloadedStrings,
+             RecordWildCards #-}
 
 module ChrisMartinOrg.Post.Parse
     ( parsePost
     ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Prelude
 
 import ChrisMartinOrg.Content (parseContent)
 
+import Control.Arrow (left)
+import Data.Map (Map)
+import Data.Maybe (maybeToList)
 import Data.Semigroup
+import Data.Text (Text)
+import System.FilePath.Posix ((</>))
 
-import qualified Data.Map.Strict           as Map
-import qualified Data.Text                 as T
+import qualified Data.Map.Strict as Map
+import qualified Data.Text as T
 
 -- $setup
 -- >>> :set -XOverloadedStrings

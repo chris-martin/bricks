@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ChrisMartinOrg.Core
     (
     -- * Types
@@ -19,10 +21,10 @@ module ChrisMartinOrg.Core
     ) where
 
 import ChrisMartinOrg.Core.Chron
-import ChrisMartinOrg.Prelude
 
 import Data.Default
 import Data.Semigroup
+import Data.Sequence (Seq)
 
 import qualified Data.Sequence               as Seq
 import qualified Data.Text                   as T

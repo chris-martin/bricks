@@ -4,21 +4,24 @@ module ChrisMartinOrg.Hash
     , writeHashFile
     ) where
 
-import ChrisMartinOrg.Prelude
-
-import qualified Crypto.Hash            as Hash
-import qualified Crypto.Hash.Algorithms as HashAlg
-import qualified Data.ByteString        as BS
-import qualified System.Directory       as Dir
-
+import Data.ByteString (ByteString)
 import Data.Semigroup
-import System.FilePath.Posix (takeExtension, (<.>))
+import System.FilePath.Posix (takeExtension, (<.>), (</>), FilePath)
+
+import qualified Crypto.Hash as Hash
+import qualified Crypto.Hash.Algorithms as HashAlg
+import qualified Data.ByteString as BS
+import qualified System.Directory as Dir
 
 hash :: ByteString -> String
-hash bs = take 32 $ show (Hash.hash bs :: Hash.Digest HashAlg.SHA3_256)
+hash bs =
+    take 32 (show h)
+  where
+    h = Hash.hash bs :: Hash.Digest HashAlg.SHA3_256
 
 writeHashBS :: ByteString -> String -> IO FilePath
-writeHashBS bs ext = do
+writeHashBS bs ext =
+  do
     BS.writeFile ("out/" <> url) bs
     return url
   where
@@ -26,7 +29,8 @@ writeHashBS bs ext = do
     url = "hash" </> h <.> ext
 
 writeHashFile :: FilePath -> IO (Maybe FilePath)
-writeHashFile file = do
+writeHashFile file =
+  do
     exists <- Dir.doesFileExist file
     if exists
         then do

@@ -1,7 +1,8 @@
-resolver: 'lts-8.0'
+resolver: lts-9.1
 
 packages:
   - hs
 
 nix:
-  shell-file: 'shell.nix'
+  packages:
+    - zlib

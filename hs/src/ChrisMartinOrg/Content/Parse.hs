@@ -1,26 +1,27 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ChrisMartinOrg.Content.Parse
     ( parseContent
     ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Prelude
 
-import qualified Data.Sequence as Seq
-import qualified Data.Text     as Text
-
+import Control.Applicative
+import Data.Attoparsec.Text (Parser, (<?>))
 import Data.Semigroup
+import Data.Text (Text)
 
-import Data.Attoparsec.Combinator (lookAhead)
-import Data.Attoparsec.Text
-    ( (<?>), Parser, choice, eitherP, takeTill, parseOnly
+import qualified Data.Attoparsec.Combinator as A (lookAhead)
+import qualified Data.Attoparsec.Text as A
+    ( choice, parseOnly
     , endOfInput, char, anyChar, manyTill, takeWhile
     , notInClass, takeWhile1 )
-
+import qualified Data.Text as Text
 
 ---------------------------------------------------------------------
 
 parseContent :: Text -> Either String Content
-parseContent = parseOnly $ atNewBlock <* endOfInput
+parseContent = A.parseOnly $ atNewBlock <* A.endOfInput
 
 
 ---------------------------------------------------------------------
@@ -41,21 +42,21 @@ atInline =
     (stuff   <+> atInline)  <|>
     end
   where
-    newline = singlePartContent . ContentText . Text.singleton <$> char '\n'
+    newline = singlePartContent . ContentText . Text.singleton <$> A.char '\n'
 
 stuff = asset <|> (singlePartContent . ContentText <$> text)
   where
-    text = (takeWhile1 (notInClass "\n$")) <|>
-           (Text.singleton <$> char '$')
+    text = (A.takeWhile1 (A.notInClass "\n$")) <|>
+           (Text.singleton <$> A.char '$')
 
 -- | At least one newline, interpreted as regular text.
 newlines = singlePartContent . ContentText <$> p <?> "newlines"
-  where p = takeWhile1 (== '\n')
+  where p = A.takeWhile1 (== '\n')
 
 asset = singlePartContent . ContentAsset <$> p <?> "asset"
-  where p = "${" *> manyTill anyChar (char '}')
+  where p = "${" *> A.manyTill A.anyChar (A.char '}')
 
-end = mempty <$ endOfInput
+end = mempty <$ A.endOfInput
 
 
 ---------------------------------------------------------------------
@@ -68,15 +69,15 @@ code = singlePartContent
     <?> "code"
 
 codeOpen :: Parser Text
-codeOpen = "```" *> takeWhile (/= '\n') <* char '\n'
+codeOpen = "```" *> A.takeWhile (/= '\n') <* A.char '\n'
 
 -- | In a code block: directly after a line break, or at the start
 --   of the code body.
 codeAtNewline :: Parser Text
 codeAtNewline = end <|> (stuff <+> codeAtNewline)
   where
-    end = "" <$ "```" <* lookAhead endOfBlock
-    stuff = takeWhile (/= '\n') <+> "\n"
+    end = "" <$ "```" <* A.lookAhead endOfBlock
+    stuff = A.takeWhile (/= '\n') <+> "\n"
 
 
 ---------------------------------------------------------------------
@@ -84,10 +85,10 @@ codeAtNewline = end <|> (stuff <+> codeAtNewline)
 ---------------------------------------------------------------------
 
 endOfBlock :: Parser ()
-endOfBlock = choice
+endOfBlock = A.choice
     [ () <$ "\n\n"
-    , () <$ char '\n' <* endOfInput
-    , () <$ endOfInput
+    , () <$ A.char '\n' <* A.endOfInput
+    , () <$ A.endOfInput
     ]
 
 (<+>) :: (Applicative f, Semigroup a) => f a -> f a -> f a

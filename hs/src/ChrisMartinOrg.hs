@@ -1,22 +1,29 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module ChrisMartinOrg (main) where
 
 import ChrisMartinOrg.Core
 import ChrisMartinOrg.Css
-import ChrisMartinOrg.Prelude
 
 import qualified ChrisMartinOrg.Home as Home
 
-import ChrisMartinOrg.Content  (parseContent, resolveContentAssets)
-import ChrisMartinOrg.Hash     (writeHashFile)
-import ChrisMartinOrg.Post     (getPosts, writePost, postUrl)
+import ChrisMartinOrg.Content (parseContent, resolveContentAssets)
+import ChrisMartinOrg.Hash (writeHashFile)
+import ChrisMartinOrg.Post (getPosts, writePost, postUrl)
 import ChrisMartinOrg.Redirect (redirectHtml)
 
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Text.IO         as TextIO
-import qualified System.Directory     as Dir
-
+import Control.Monad (forM_)
+import Data.Functor (($>))
 import Data.Semigroup
+import Data.Text (Text)
+import Safe (lastMay)
+import System.FilePath.Posix ((</>), FilePath, takeDirectory)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
+
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Foldable as Foldable
+import qualified Data.Text.IO as TextIO
+import qualified System.Directory as Dir
 
 defaultPostCssPath, homeDir, homeContentPath, homeCssPath, inDir,
   outDir, hashDir :: FilePath
@@ -98,7 +105,8 @@ ifLeft e f = either (\x -> f x $> ()) (const $ pure ()) e
 patchPost :: Maybe CompiledCss -- ^ Default post css
           -> Post -> IO Post
 patchPost defaultPostCssMaybe p = do
-    let postCss' = postCss p <> (CssCompiled <$> toList defaultPostCssMaybe)
+    let postCss' = postCss p <>
+                   (CssCompiled <$> Foldable.toList defaultPostCssMaybe)
     postThumb' <- resolveThumbMaybe $ postThumb p
     postTwitterImage' <- resolveTwitterImageMaybe $ postTwitterImage p
     return p { postCss          = postCss'

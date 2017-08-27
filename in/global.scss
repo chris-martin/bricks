@@ -51,6 +51,14 @@ blockquote {
     &>*:last-child {
         margin-bottom: 0;
     }
+
+    blockquote {
+        margin: 0;
+        padding: 0.8em 1em;
+        border-radius: 0;
+        border: 1px solid #cce;
+        background: #eef;
+    }
 }
 
 code, pre {

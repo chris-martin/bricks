@@ -9,6 +9,7 @@ library:
   source-dirs: src
   exposed-modules:
     - ChrisMartinOrg
+    - ChrisMartinOrg.CommandLineOpts
     - ChrisMartinOrg.Content
     - ChrisMartinOrg.Core
     - ChrisMartinOrg.Css
@@ -36,13 +37,14 @@ dependencies:
   - hsass
   - markdown
   - memory
+  - optparse-applicative
   - safe
   - text
   - time
   - unix
 
 executables:
-  site:
+  chris-martin-org:
     source-dirs: app
     main: Main.hs
     dependencies:

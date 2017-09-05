@@ -1,4 +1,4 @@
 /cabal.config
 /out
-/hs/dist
-/hs/*.cabal
+/chris-martin-org/dist
+/chris-martin-org/*.cabal

@@ -1,10 +1,11 @@
-resolver: lts-9.1
+resolver: lts-9.3
 
 packages:
-  - hs
+  - chris-martin-org
 
 extra-deps:
   - hnix-0.3.4
+  - optparse-applicative-0.14.0.0
 
 nix:
   packages:

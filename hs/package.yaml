@@ -23,6 +23,7 @@ library:
 dependencies:
   - base
   - attoparsec
+  - base16-bytestring
   - blaze-html
   - blaze-markup
   - bytestring
@@ -34,6 +35,7 @@ dependencies:
   - hnix
   - hsass
   - markdown
+  - memory
   - safe
   - text
   - time

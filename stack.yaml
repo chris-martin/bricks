@@ -3,6 +3,9 @@ resolver: lts-9.1
 packages:
   - hs
 
+extra-deps:
+  - hnix-0.3.4
+
 nix:
   packages:
     - zlib

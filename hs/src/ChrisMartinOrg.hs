@@ -5,7 +5,7 @@ module ChrisMartinOrg
   ) where
 
 import ChrisMartinOrg.Hash (writeHashFile)
-import ChrisMartinOrg.Content (parseContent, resolveContentAssets)
+import ChrisMartinOrg.Content (resolveContentAssets)
 import ChrisMartinOrg.Core
 import ChrisMartinOrg.Css (compileCssSource)
 import ChrisMartinOrg.Post (getPosts, writePost, postUrl)
@@ -79,7 +79,7 @@ main = do
   homeSrc :: Text <- TextIO.readFile homeContentPath
 
   homeContent <-
-    case parseContent homeSrc of
+    case undefined homeSrc of
       Left err -> do
         putStrLn $ homeContentPath <> ": " <> err
         return $ singlePartContent $ ContentText homeSrc

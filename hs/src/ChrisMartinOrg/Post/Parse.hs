@@ -6,7 +6,6 @@ module ChrisMartinOrg.Post.Parse
   ) where
 
 import ChrisMartinOrg.Core
-import ChrisMartinOrg.Content (parseContent)
 import ChrisMartinOrg.PostDate (postDateParser)
 
 import Control.Applicative ((<*))
@@ -58,7 +57,7 @@ parsePost dir text =
 
     postAbstract <- getVal "abstract"
 
-    postBody <- eitherVal (left Text.pack (parseContent bodyText))
+    postBody <- eitherVal (left Text.pack (undefined bodyText))
 
     pure Post{..}
   where

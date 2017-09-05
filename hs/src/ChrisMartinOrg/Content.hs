@@ -1,14 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ChrisMartinOrg.Content
-  ( parseContent
-  , resolveContentAssets
+  ( resolveContentAssets
   , contentToHtml
   ) where
 
 import ChrisMartinOrg.Core
 
-import ChrisMartinOrg.Content.Parse (parseContent)
 import ChrisMartinOrg.Hash (writeHashFile)
 
 import Control.Monad (when)

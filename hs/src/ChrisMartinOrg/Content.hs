@@ -38,7 +38,7 @@ resolveContentPartAssets _ x = pure x
 resolveAsset :: FilePath -> FilePath -> IO (Maybe FilePath)
 resolveAsset path asset =
   do
-    outPathMaybe <- writeHashFile fullPath
+    outPathMaybe <- fmap Text.unpack <$> writeHashFile (Text.pack fullPath)
     when (isNothing outPathMaybe) putError
     return outPathMaybe
   where

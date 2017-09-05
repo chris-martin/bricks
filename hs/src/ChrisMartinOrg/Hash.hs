@@ -37,14 +37,17 @@ writeHashBS bs ext =
   let url = "hash/" <> hash bs <> "." <> ext
   in  BS.writeFile (Text.unpack $ "out/" <> url) bs $> url
 
-writeHashFile :: FilePath -> IO (Maybe FilePath)
+writeHashFile
+  :: Text            -- ^ Path of the source file
+  -> IO (Maybe Text) -- ^ Path of the file that was written,
+                     --   if the source does exist.
 writeHashFile file =
   do
-    exists <- Dir.doesFileExist file
+    exists <- Dir.doesFileExist $ Text.unpack file
     if exists
         then do
-            bs <- BS.readFile file
-            Just . Text.unpack <$> writeHashBS bs (Text.pack ext)
+            bs <- BS.readFile $ Text.unpack file
+            Just <$> writeHashBS bs ext
         else pure Nothing
   where
-    ext = takeExtension file
+    ext = Text.pack $ takeExtension $ Text.unpack file

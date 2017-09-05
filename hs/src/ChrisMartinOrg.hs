@@ -24,6 +24,7 @@ import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.IO as TextIO
+import qualified Data.Text as Text
 import qualified System.Directory as Dir
 
 inDir :: FilePath
@@ -129,7 +130,7 @@ patchPost defaultPostCssMaybe p =
 resolveThumb :: FilePath -> IO (Either String FilePath)
 resolveThumb path =
   do
-    outPathMaybe <- writeHashFile path
+    outPathMaybe <- fmap Text.unpack <$> writeHashFile (Text.pack path)
     return $ case outPathMaybe of
       Nothing -> Left ("Missing thumbnail: " <> path)
       Just t -> Right t
@@ -145,7 +146,7 @@ resolveThumbMaybe (Just t) =
 
 resolveTwitterImage :: FilePath -> IO (Either String FilePath)
 resolveTwitterImage path = do
-    outPathMaybe <- writeHashFile path
+    outPathMaybe <- fmap Text.unpack <$> writeHashFile (Text.pack path)
     return $ case outPathMaybe of
         Nothing -> Left ("Missing Twitter image: " <> path)
         Just t -> Right t

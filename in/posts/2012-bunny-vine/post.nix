@@ -1,13 +1,11 @@
-{ file-path, html, html-tags, markdown }:
+{ file-path, html, markdown }:
 
 let
-  p x = html-tags.p (markdown x);
+  p x = html.p {} (markdown x);
 
-  image x = html ''
-    <div style="max-width: 400px; margin: 0 auto;">
-      <img style="max-width: 100%" src="${file-path x}"/>
-    </div>
-  '';
+  image x =
+    html.div { style = "max-width: 400px; margin: 0 auto;"; }
+      (html.img { style = "max-width: 100%"; src = file-path x; });
 
 in {
   title = "Bunny vine";

@@ -1,8 +1,9 @@
-{ file-path, html-tags, markdown, code }:
+{ file-path, html, markdown, code }:
 
 let
-  p = x: html-tags.p (markdown x);
-  inherit (html-tags) ul li;
+  p = x: html.p {} (markdown x);
+  ul = html.ul {};
+  li = html.li {};
 
 in {
   title = "Adjacency";

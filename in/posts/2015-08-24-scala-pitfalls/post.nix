@@ -1,13 +1,16 @@
-{ code, html-tags, markdown, html }:
+{ code, html, markdown }:
 
 let
-  inherit (html-tags) ol ul;
+  ol = html.ol {};
+  ul = html.ul {};
+  p  = x: html.p {} (markdown x);
+  li = x: html.li {} (markdown x);
 
-  p  = x: html-tags.p  (markdown x);
-  li = x: html-tags.li (markdown x);
-
-  anchor = x: html (''<a name="${x}"></a>'');
-  header = name: text: html-tags.h2 [ (anchor name) (markdown text) ];
+  header = name: text:
+    html.h2 {} [
+      (html.a { name = name; } [])
+      (markdown text)
+    ];
 
   scala = code { language = "scala"; };
 

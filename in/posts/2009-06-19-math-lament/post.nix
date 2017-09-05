@@ -1,9 +1,10 @@
-{ html, html-tags, markdown, file-string }:
+{ html, markdown, file-string }:
 
 let
-  inherit (html-tags) p;
+  p = x: html.p {} (markdown x);
+  hr = html.hr {};
   link = "http://www.maa.org/external_archive/devlin/devlin_03_08.html";
-  quote x = html-tags.blockquote (markdown (file-string x));
+  quote x = html.blockquote {} (markdown (file-string x));
 
 in {
   title = "A Mathematician’s Lament";
@@ -17,11 +18,10 @@ in {
 
   body = [
 
-    (p (html ''
-      Slashdot recently featured
-      <a href="${link}">"A Mathematician’s Lament"</a>
+    (p ''
+      Slashdot recently featured ["A Mathematician’s Lament"](${link})
       by Paul Lockhart.
-    ''))
+    '')
 
     (p ''
       The big question everyone had in middle-to-high school mathematics

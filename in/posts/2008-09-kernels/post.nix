@@ -1,7 +1,7 @@
-{ html-tags, markdown }:
+{ html, markdown }:
 
 let
-  p = x: html-tags.p (markdown x);
+  p = x: html.p {} (markdown x);
 
 in {
   title = "Kernel, vectors, graphs";

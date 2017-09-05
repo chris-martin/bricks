@@ -1,8 +1,10 @@
-{ file-path, file-string, html-tags, markdown, code }:
+{ file-path, file-string, html, markdown, code }:
 
 let
-  inherit (html-tags) h2 ol li;
-  p = x: html-tags.p (markdown x);
+  h2 = html.h2 {};
+  ol = html.ol {};
+  li = html.li {};
+  p = x: html.p {} (markdown x);
 
   bash   = code { language = "bash";   };
   groovy = code { language = "groovy"; };

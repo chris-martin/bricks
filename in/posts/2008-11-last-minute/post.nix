@@ -1,7 +1,7 @@
-{ html-tags }:
+{ html }:
 
 let
-  inherit (html-tags) p;
+  p = html.p {};
 
 in {
   title = "Last-minute math";

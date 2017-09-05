@@ -1,4 +1,4 @@
-{ file-path, file-string, html, html-tags, code }:
+{ file-path, file-string, html, code }:
 
 {
   title = "Unwanted Haskell triangle";
@@ -17,12 +17,14 @@
 
   body = let
     stackoverflow = "https://stackoverflow.com/questions/25091218/print-triangle-pattern-using-java";
-    inherit (html-tags) p h2 h3;
+    p = html.p {};
+    h2 = html.h2 {};
+    h3 = html.h3 {};
     java = code { language = "java"; };
     haskell = code { language = "haskell"; };
   in [
 
-    (html (file-string ./tweet2.html))
+    (html.raw (file-string ./tweet2.html))
 
     (p ''
       It’s getting increasingly painful to read Stack Overflow newb questions,
@@ -178,9 +180,9 @@
 
     (h2 "Do you have a moment to talk about our Lord and Savior Jesus Christ?")
 
-    (html (file-string ./tweet1.html))
+    (html.raw (file-string ./tweet1.html))
 
-    (html (file-string ./tweet2.html))
+    (html.raw (file-string ./tweet2.html))
 
     (p (markdown ''
       I wish we’d do this more often. I wish we’d look at these Java questions
@@ -196,7 +198,7 @@
 
     (p "Here’s a slightly revised program thanks to some feedback.")
 
-    (html (file-string ./tweet-franklinchen.html))
+    (html.raw (file-string ./tweet-franklinchen.html))
 
     (haskell (file-string ./main-revised.hs))
 

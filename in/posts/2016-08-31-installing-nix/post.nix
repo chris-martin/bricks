@@ -1,8 +1,8 @@
-{ html-tags, markdown, code }:
+{ html, markdown, code }:
 
 let
-  p = x: html-tags.p (markdown x);
-  inherit (html-tags) h2;
+  p = x: html.p {} (markdown x);
+  h2 = html.h2 {};
   bash = code { language = "bash"; };
 
 in {

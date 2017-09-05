@@ -1,10 +1,11 @@
-{ html-tags, markdown }:
+{ html, markdown }:
 
 let
-  p x  = html-tags.p  (markdown x);
-  li x = html-tags.li (markdown x);
-
-  inherit (html-tags) ul hr blockquote;
+  p x = html.p {} (markdown x);
+  li x = html.li {} (markdown x);
+  ul = html.ul {};
+  hr = html.hr {};
+  blockquote = html.blockquote {};
 
 in {
   title = "Where do the little libraries belong?";

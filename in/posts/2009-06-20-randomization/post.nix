@@ -1,4 +1,4 @@
-{ file-path, file-string, html-tags, code, markdown }:
+{ file-path, file-string, html, code, markdown, latex }:
 
 let
   erdos  = "http://en.wikipedia.org/wiki/Erd%C5%91s_number";
@@ -9,9 +9,8 @@ let
 
   bash = code { language = "bash"; };
 
-  p = x: html-tags.p (markdown x);
-
-  inherit (html-tags) h2;
+  p = x: html.p {} (markdown x);
+  h2 = html.h2 {};
 
 in {
   title = "Randomization pipeline";

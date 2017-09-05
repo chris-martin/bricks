@@ -1,7 +1,8 @@
-{ file-path, html-tags }:
+{ file-path, html }:
 
 let
-  inherit (html-tags) p hr;
+  p  = html.p  {};
+  hr = html.hr {};
 
 in {
   title = "The Great Macropod Exodus";

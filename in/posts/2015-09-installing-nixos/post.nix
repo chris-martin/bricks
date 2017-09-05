@@ -1,19 +1,19 @@
-{ code, file-path, file-string html-tags, html, scss, markdown }:
+{ code, file-path, file-string, html, scss, markdown }:
 
 let
-  inherit (html-tags) ul h2 h3;
+  ul = html.ul {};
+  h2 = html.h2 {};
+  h3 = html.h3 {};
 
-  p  = x: html-tags.p  (markdown x);
-  li = x: html-tags.li (markdown x);
+  p  = x: html.p {} (markdown x);
+  li = x: html.li {} (markdown x);
 
   bash = code { language = "bash"; };
   nix  = code { language = "nix"; };
 
-  image = style: x: html ''
-    <div style="text-align: center; ${style}">
-      <img src="${file-path x}" style="max-width: 100%;"/>
-    </div>
-  '';
+  image = style: x:
+    html.div { style = "text-align: center; ${style}"; }
+      (html.img { src = file-path x; style = "max-width: 100%;" });
 
   kozar-tweet = "https://twitter.com/iElectric/status/643359273012043776";
   mlabel      = "http://askubuntu.com/a/103695/333663";
@@ -117,22 +117,20 @@ in {
       x86_64 minimal install ISO.
     '')
 
-    (html ''
-      <p style="font-style: italic;">
+    (html.p { style = "font-style: italic; }
+      (markdown ''
         (I first tried the latest stable release, 14.12, and had an error
         installing Grub. I switched to this particular build of NixOS 15.09
-        on <a href="${kozar-tweet}">Domen Kožar’s recommendation</a>.)
-      </p>
-    '')
+        on [Domen Kožar’s recommendation](${kozar-tweet}).)
+      '')
+    )
 
     (p "Load it onto a flash drive using unetbootin.")
 
-    (html ''
-      <p style="font-style: italic;">
-        (I don’t know if there’s a better way to do this. Creating USB install
-        media is still a huge mystery to me; I don’t get why it’s so complicated
-        or why there’s seemingly no authoritative method.)
-      </p>
+    (html.p { style = "font-style: italic; } ''
+      (I don’t know if there’s a better way to do this. Creating USB install
+      media is still a huge mystery to me; I don’t get why it’s so complicated
+      or why there’s seemingly no authoritative method.)
     '')
 
     (p "The volume label must be `NIXOS_ISO`:")
@@ -461,11 +459,9 @@ in {
       };
     '')
 
-    (html ''
-      <p style="font-style: italic;">
-        (I haven’t used KDE in a long time, but I decided on a whim to try it
-        again—and I am delightfully surprised by how it has improved.)
-      </p>
+    (html.p { style = "font-style: italic; } ''
+      (I haven’t used KDE in a long time, but I decided on a whim to try it
+      again—and I am delightfully surprised by how it has improved.)
     '')
 
     ###################################################################
@@ -514,7 +510,7 @@ in {
 
     br br
 
-    (html (file-string ./tweet.html))
+    (html.raw (file-string ./tweet.html))
 
   ];
 }

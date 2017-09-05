@@ -1,4 +1,4 @@
-{ html, html-tags, file-path, scss }:
+{ html, file-path, scss }:
 
 {
   title = "Georgia Tech course history";
@@ -14,18 +14,16 @@
   '';
 
   body = let
-    inherit (html-tags) h2 ul;
     semester = name: courses: [
-      (h2 name)
-      (ul courses)
+      (html.h2 {} name)
+      (html.ul {} courses)
     ];
-    course = number: grade: name: html ''
-      <li class="course">
-        <span class="number">${number}</span>
-        <span class="grade">${grade}</span>
-        <span class="name">${name}</span>
-      </li>
-    '';
+    course = number: grade: name:
+      html.li { class = "course"; } [
+        (html.span { class = "number"; } number)
+        (html.span { class = "grade"; } grade)
+        (html.span { class = "name"; } name)
+      ];
   in [
     (semester "Fall 2013" [
       (course "CS 6210" "A" "Advanced Operating Systems")

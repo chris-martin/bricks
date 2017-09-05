@@ -1,7 +1,7 @@
-{ file-path, file-string, html-tags, markdown, code }:
+{ file-path, file-string, html, markdown, code }:
 
 let
-  p = x: html-tags.p (markdown x);
+  p = x: html.p {} (markdown x);
 
 in {
   title = "Fun with find";

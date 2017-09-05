@@ -1,8 +1,9 @@
-{ html-tags, code }:
+{ html, code }:
 
 let
-  p = x: html-tags.p (markdown x);
-  inherit (html-tags) h2 br;
+  p = x: html.p (markdown x);
+  h2 = html.h2 {};
+  br = html.br {};
   java = code { language = "java"; };
 
 in {

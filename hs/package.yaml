@@ -10,7 +10,6 @@ library:
   exposed-modules:
     - ChrisMartinOrg
     - ChrisMartinOrg.Content
-    - ChrisMartinOrg.Content.Parse
     - ChrisMartinOrg.Core
     - ChrisMartinOrg.Css
     - ChrisMartinOrg.Hash

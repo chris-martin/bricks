@@ -15,6 +15,7 @@ library:
     - ChrisMartinOrg.Css
     - ChrisMartinOrg.Hash
     - ChrisMartinOrg.Home
+    - ChrisMartinOrg.Nix
     - ChrisMartinOrg.Post
     - ChrisMartinOrg.PostDate
     - ChrisMartinOrg.Post.Page
@@ -33,7 +34,6 @@ dependencies:
   - directory
   - filepath
   - highlighting-kate
-  - hnix
   - hsass
   - markdown
   - memory

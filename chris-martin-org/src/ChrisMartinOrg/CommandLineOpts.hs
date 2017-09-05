@@ -1,20 +1,25 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings #-}
 
 module ChrisMartinOrg.CommandLineOpts
   ( Opts (..)
   , Command (..)
+  , Verbosity (..)
   , getOpts
   ) where
 
 import Paths_chris_martin_org (version)
 
+import Control.Applicative ((<|>))
 import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Data.Version (showVersion)
 
-import Options.Applicative (Mod, CommandFields, strArgument, metavar, help, hsubparser, helper, execParser, info, progDesc, long, infoOption, command)
+import Options.Applicative
 
-data Opts = Opts Command
+data Verbosity = VerbosityLow | VerbosityNormal | VerbosityHigh
+  deriving Show
+
+data Opts = Opts Verbosity Command
   deriving Show
 
 data Command = Interpret Text
@@ -26,7 +31,7 @@ interpretCommand =
   where
     parser =
       Interpret <$>
-      strArgument (metavar "FILE" <> help "Path of the .nix file to interpret")
+      strArgument (metavar "NIX_EXPR" <> help "Nix expression to interpret")
 
 getOpts :: IO Opts
 getOpts =
@@ -35,4 +40,15 @@ getOpts =
     parser =
       helper <*>
       infoOption (showVersion version) (long "version" <> help "Show version") <*>
-      (Opts <$> hsubparser interpretCommand)
+      (Opts <$> verbosityParser <*> hsubparser interpretCommand)
+    verbosityParser =
+      option readVerbosity (long "verbosity" <> help "Output level: low, normal, or high") <|>
+      flag' VerbosityLow (short 'q' <> long "quiet" <> help "--verbosity low") <|>
+      flag' VerbosityHigh (long "verbose" <> help "--verbosity high") <|>
+      pure VerbosityNormal
+    readVerbosity =
+      maybeReader $ \case
+        "low"    -> Just VerbosityLow
+        "normal" -> Just VerbosityNormal
+        "high"   -> Just VerbosityHigh
+        _        -> Nothing

@@ -15,6 +15,7 @@ import Data.String (fromString)
 import Text.Blaze.Html5 as H hiding (main)
 import Text.Sass.Options (SassOptions (..), SassOutputStyle (..))
 
+import qualified Data.Text as Text
 import qualified System.Directory as Dir
 import qualified Text.Blaze.Html5.Attributes as A
 import qualified Text.Sass as Sass
@@ -44,7 +45,7 @@ compileCssSource inFile =
         result <- Sass.compileFile inFile sassOpts
         case result of
           Left err -> Left <$> SassC.errorMessage err
-          Right bs -> Right <$> CompiledCss <$> writeHashBS bs "css"
+          Right bs -> Right . CompiledCss . Text.unpack <$> writeHashBS bs "css"
       else do
         return $ Left ("Missing CSS: " <> inFile)
 

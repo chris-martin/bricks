@@ -15,7 +15,7 @@ library:
     - ChrisMartinOrg.Css
     - ChrisMartinOrg.Hash
     - ChrisMartinOrg.Home
-    - ChrisMartinOrg.Nix
+    - ChrisMartinOrg.NixLike
     - ChrisMartinOrg.Post
     - ChrisMartinOrg.PostDate
     - ChrisMartinOrg.Post.Page
@@ -23,8 +23,8 @@ library:
     - ChrisMartinOrg.Redirect
 
 dependencies:
-  - base
   - attoparsec
+  - base
   - base16-bytestring
   - blaze-html
   - blaze-markup
@@ -38,6 +38,7 @@ dependencies:
   - markdown
   - memory
   - optparse-applicative
+  - parsec
   - safe
   - text
   - time
@@ -51,12 +52,10 @@ executables:
       - chris-martin-org
 
 tests:
-  test:
+  doctest:
     source-dirs: test
-    main: test.hs
+    main: doctest.hs
     dependencies:
       - base
-      - HUnit
-      - test-framework
-      - test-framework-hunit
+      - chris-martin-org
       - doctest

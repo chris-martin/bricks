@@ -346,7 +346,7 @@ data StrExprPart
 >>> renderTest [ StrLiteral "escape ${ this and \" this" ]
 "escape \${ this and \" this"
 
->>> renderTest [ StrLiteral "Hello, my name is ", StrAntiquote (expr (BareId "name")), StrLiteral "!" ]
+>>> renderTest [ StrLiteral "Hello, my name is ", StrAntiquote (Expr'Id (BareId "name")), StrLiteral "!" ]
 "Hello, my name is ${name}!"
 
 -}
@@ -532,7 +532,7 @@ data ListLiteral = ListLiteral (Seq Expression)
 
 {- |
 
->>> renderTest = putStrLn . Text.unpack . renderListLiteral . Seq.fromList
+>>> renderTest = putStrLn . Text.unpack . renderListLiteral . ListLiteral . Seq.fromList
 
 >>> renderTest []
 [ ]

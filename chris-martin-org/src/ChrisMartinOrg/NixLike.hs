@@ -153,50 +153,39 @@ identifierP = undefined
 --  Bool
 --------------------------------------------------------------------------------
 
-newtype BoolValue = BoolValue Bool
-  deriving Show
-
 renderTrue :: IsString s => s
 renderTrue = "true"
 
 renderFalse :: IsString s => s
 renderFalse = "false"
 
-renderBoolValue :: BoolValue -> Text
-renderBoolValue =
+renderBool :: Bool -> Text
+renderBool =
   \case
-    BoolValue True  -> renderTrue
-    BoolValue False -> renderFalse
-
-class FromBool a
-  where
-    fromBool :: Bool -> a
-
-instance FromBool BoolValue  where fromBool = BoolValue
-instance FromBool Value      where fromBool = Value'Bool . BoolValue
-instance FromBool Expression where fromBool = Expr'Bool . BoolValue
+    True  -> renderTrue
+    False -> renderFalse
 
 {- |
 
->>> parseTest (boolValueP <* P.eof) "true"
-BoolValue True
+>>> parseTest (boolP <* P.eof) "true"
+True
 
->>> parseTest (boolValueP <* P.eof) "false"
-BoolValue False
+>>> parseTest (boolP <* P.eof) "false"
+False
 
->>> parseTest (boolValueP <* P.eof) "abc"
+>>> parseTest (boolP <* P.eof) "abc"
 parse error at (line 1, column 1):
 unexpected "a"
 expecting bool
 
->>> parseTest (boolValueP <* P.eof) "trueq"
+>>> parseTest (boolP <* P.eof) "trueq"
 parse error at (line 1, column 5):
 unexpected 'q'
 expecting end of input
 
 -}
-boolValueP :: Parser BoolValue
-boolValueP = fmap BoolValue ((trueP $> True) <|> (falseP $> False)) <?> "bool"
+boolP :: Parser Bool
+boolP = ((trueP $> True) <|> (falseP $> False)) <?> "bool"
 
 trueP :: Parser ()
 trueP = void (P.string renderTrue) <?> "true"
@@ -226,13 +215,6 @@ expecting null
 nullP :: Parser ()
 nullP = void (P.string renderNull) <?> "null"
 
-class Null a
-  where
-    null :: a
-
-instance Null Value      where null = Value'Null
-instance Null Expression where null = Expr'Null
-
 
 --------------------------------------------------------------------------------
 --  Expression
@@ -240,7 +222,7 @@ instance Null Expression where null = Expr'Null
 
 data Expression
   = Expr'Null
-  | Expr'Bool BoolValue
+  | Expr'Bool Bool
   | Expr'Str  StrExpr
   | Expr'List ListLiteral
   | Expr'Dict DictLiteral
@@ -255,7 +237,7 @@ class ToExpr a
   where
     expr :: a -> Expression
 
-instance ToExpr BoolValue   where expr = Expr'Bool
+instance ToExpr Bool        where expr = Expr'Bool
 instance ToExpr StrExpr     where expr = Expr'Str
 instance ToExpr DictLiteral where expr = Expr'Dict
 instance ToExpr Dot         where expr = Expr'Dot
@@ -285,19 +267,19 @@ renderExpression c =
 Expr'Null
 
 >>> parseTest (expressionP <* P.eof) "true"
-Expr'Bool (BoolValue True)
+Expr'Bool True
 
 >>> parseTest (expressionP <* P.eof) "false"
-Expr'Bool (BoolValue False)
+Expr'Bool False
 
 >>> parseTest (expressionP <* P.eof) "[ true false ]"
-Expr'List (ListLiteral (fromList [Expr'Bool (BoolValue True), Expr'Bool (BoolValue False)]))
+Expr'List (ListLiteral (fromList [Expr'Bool True, Expr'Bool False]))
 
 >>> parseTest (expressionP <* P.eof) "f x"
 Expr'Call (CallExpr (?) (?))
 
 >>> parseTest (expressionP <* P.eof) "[ true (f x) ]"
-Expr'List (ListLiteral (fromList [Expr'Bool (BoolValue True), Expr'Call (CallExpr (?) (?))]))
+Expr'List (ListLiteral (fromList [Expr'Bool True, Expr'Call (CallExpr (?) (?))]))
 
 -}
 expressionP :: Parser Expression
@@ -330,15 +312,11 @@ data StrExprPart
   | StrAntiquote Expression
   deriving Show
 
-newtype StrValue = StrValue Text
-  deriving Show
-
 class SimpleStr a
   where
     -- | A string literal with no antiquotation.
     str :: Text -> a
 
-instance SimpleStr StrValue   where str = StrValue
 instance SimpleStr StrExpr    where str = StrExpr . Seq.singleton . StrLiteral
 instance SimpleStr Expression where str = Expr'Str . StrExpr . Seq.singleton . StrLiteral
 
@@ -366,19 +344,6 @@ renderStrExpr (StrExpr xs) =
       StrLiteral t -> strEscape t
       StrAntiquote e -> "${" <> render e <> "}"
 
-{- |
-
->>> renderTest (StrValue "abc")
-"abc"
-
->>> renderTest (StrValue "ab\"c")
-"ab\"c"
-
--}
-renderStrValue :: StrValue -> Text
-renderStrValue (StrValue x) =
-  renderQuotedString x
-
 renderQuotedString :: Text -> Text
 renderQuotedString x =
   "\"" <> strEscape x <> "\""
@@ -390,9 +355,6 @@ strEscape =
 
 strExprP :: Parser StrExpr
 strExprP = undefined
-
-strValueP :: Parser StrValue
-strValueP = undefined
 
 
 --------------------------------------------------------------------------------
@@ -537,18 +499,15 @@ dictParamItemP = undefined
 data ListLiteral = ListLiteral (Seq Expression)
   deriving Show
 
-newtype ListValue = ListValue (Seq Value)
-  deriving Show
-
 {- |
 
 >>> renderTest (ListLiteral Seq.empty)
 [ ]
 
->>> renderTest (ListLiteral (Seq.singleton (fromBool True)))
+>>> renderTest (ListLiteral (Seq.singleton (expr True)))
 [ true ]
 
->>> renderTest (ListLiteral (Seq.fromList [fromBool True, fromBool False]))
+>>> renderTest (ListLiteral (Seq.fromList [expr True, expr False]))
 [ true false ]
 
 >>> call = expr (CallExpr (expr (BareId "f")) (expr (BareId "x")))
@@ -556,7 +515,7 @@ newtype ListValue = ListValue (Seq Value)
 >>> renderTest (ListLiteral (Seq.singleton call))
 [ (f x) ]
 
->>> renderTest (ListLiteral (Seq.fromList [call, fromBool True]))
+>>> renderTest (ListLiteral (Seq.fromList [call, expr True]))
 [ (f x) true ]
 
 -}
@@ -569,17 +528,8 @@ renderListLiteral =
 renderEmptyList :: Text
 renderEmptyList = "[ ]"
 
-renderListValue :: ListValue -> Text
-renderListValue =
-  \case
-    ListValue (Foldable.toList -> []) -> renderEmptyList
-    ListValue (Foldable.toList -> values) -> "[ " <> Foldable.foldMap (\v -> render' RenderContext'List v <> " ") values <> "]"
-
 listLiteralP :: Parser ListLiteral
 listLiteralP = undefined
-
-listValueP :: Parser ListValue
-listValueP = undefined
 
 
 --------------------------------------------------------------------------------
@@ -592,9 +542,6 @@ data DictLiteral =
     { dictLiteral'rec :: Bool -- ^ Whether the dict is recursive (denoted by the @rec@ keyword)
     , dictLiteral'bindings :: BindingMap -- ^ The bindings (everything between @{@ and @}@)
     }
-  deriving Show
-
-newtype DictValue = DictValue (Map Text Value)
   deriving Show
 
 -- | An expression that can go on the left-hand side of a 'Dot' and is supposed to reduce to a dict.
@@ -631,20 +578,11 @@ renderDot :: Dot -> Text
 renderDot (Dot a b) =
   render a <> "." <> render b
 
-renderDictValue :: DictValue -> Text
-renderDictValue =
-  \case
-    DictValue (Map.toList -> []) -> renderEmptyDict
-    DictValue (Map.toList -> entries) -> "{ " <> Foldable.foldMap (\(k, v) -> k <> " = " <> render v <> "; ") entries <> "}"
-
 dictExprP :: Parser DictExpr
 dictExprP = undefined
 
 dictLiteralP :: Parser DictLiteral
 dictLiteralP = undefined
-
-dictValueP :: Parser DictValue
-dictValueP = undefined
 
 dotP :: Parser Dot
 dotP = undefined
@@ -709,33 +647,6 @@ bindingMapP = undefined
 
 
 --------------------------------------------------------------------------------
---  Value
---------------------------------------------------------------------------------
-
--- | A subset of the language that contains no variables, functions, or function application. This is similar to JSON.
-data Value
-  = Value'Null
-  | Value'Bool BoolValue
-  | Value'Str  StrValue
-  | Value'Dict DictValue
-  | Value'List ListValue
-  deriving Show
-
-renderValue :: Value -> Text
--- A convenient thing about rendering values: Because there are no functions or application, there is never any need for parentheses.
-renderValue =
-  \case
-    Value'Null   -> renderNull
-    Value'Bool x -> render x
-    Value'Str  x -> render x
-    Value'Dict x -> render x
-    Value'List x -> render x
-
-valueP :: Parser Value
-valueP = undefined
-
-
---------------------------------------------------------------------------------
 --  Render
 --------------------------------------------------------------------------------
 
@@ -759,11 +670,10 @@ class Render a
 instance Render BareId        where render  = renderBareId
 instance Render Binding       where render  = renderBinding
 instance Render BindingMap    where render  = renderBindingMap
-instance Render BoolValue     where render  = renderBoolValue
+instance Render Bool          where render  = renderBool
 instance Render CallExpr      where render' = renderCallExpr
 instance Render DictExpr      where render  = renderDictExpr
 instance Render DictLiteral   where render  = renderDictLiteral
-instance Render DictValue     where render  = renderDictValue
 instance Render DictParam     where render  = renderDictParam
 instance Render DictParamItem where render  = renderDictParamItem
 instance Render Dot           where render  = renderDot
@@ -773,12 +683,9 @@ instance Render Identifier    where render  = renderIdentifier
 instance Render IdExpr        where render  = renderIdExpr
 instance Render LetExpr       where render  = renderLetExpr
 instance Render ListLiteral   where render  = renderListLiteral
-instance Render ListValue     where render  = renderListValue
 instance Render Param         where render  = renderParam
 instance Render ParamDefault  where render  = renderParamDefault
 instance Render StrExpr       where render  = renderStrExpr
-instance Render StrValue      where render  = renderStrValue
-instance Render Value         where render  = renderValue
 
 
 --------------------------------------------------------------------------------
@@ -792,11 +699,10 @@ class HasP a
 instance HasP BareId        where parser = bareIdP
 instance HasP Binding       where parser = bindingP
 instance HasP BindingMap    where parser = bindingMapP
-instance HasP BoolValue     where parser = boolValueP
+instance HasP Bool          where parser = boolP
 instance HasP CallExpr      where parser = callExprP
 instance HasP DictExpr      where parser = dictExprP
 instance HasP DictLiteral   where parser = dictLiteralP
-instance HasP DictValue     where parser = dictValueP
 instance HasP DictParam     where parser = dictParamP
 instance HasP DictParamItem where parser = dictParamItemP
 instance HasP Dot           where parser = dotP
@@ -806,9 +712,6 @@ instance HasP Identifier    where parser = identifierP
 instance HasP IdExpr        where parser = idExprP
 instance HasP LetExpr       where parser = letExprP
 instance HasP ListLiteral   where parser = listLiteralP
-instance HasP ListValue     where parser = listValueP
 instance HasP Param         where parser = paramP
 instance HasP ParamDefault  where parser = paramDefaultP
 instance HasP StrExpr       where parser = strExprP
-instance HasP StrValue      where parser = strValueP
-instance HasP Value         where parser = valueP

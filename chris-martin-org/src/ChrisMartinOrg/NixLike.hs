@@ -24,8 +24,8 @@ import Text.Parsec.Text (Parser)
 import Data.Bool (Bool (..), otherwise, (&&), (||))
 import Data.Char (Char)
 import Data.Eq (Eq (..))
-import Data.Function ((.))
-import Data.Functor (Functor (..), void, ($>))
+import Data.Function ((.), const)
+import Data.Functor (Functor (..), void, ($>), (<$>), (<$))
 import Data.Map (Map)
 import Data.Maybe (Maybe (..))
 import Data.Ord (Ord (..))
@@ -265,23 +265,56 @@ instance ToExpr FuncExpr    where expr = Expr'Func
 instance ToExpr CallExpr    where expr = Expr'Call
 instance ToExpr LetExpr     where expr = Expr'Let
 
-renderExpression :: Expression -> Text
-renderExpression =
+renderExpression :: RenderContext -> Expression -> Text
+renderExpression c =
   \case
     Expr'Null   -> renderNull
-    Expr'Bool x -> render x
-    Expr'Str  x -> render x
-    Expr'Dict x -> render x
-    Expr'List x -> render x
-    Expr'Id   x -> render x
-    Expr'Dot  x -> render x
-    Expr'Func x -> render x
-    Expr'Call x -> render x
-    Expr'Let  x -> render x
+    Expr'Bool x -> render' c x
+    Expr'Str  x -> render' c x
+    Expr'Dict x -> render' c x
+    Expr'List x -> render' c x
+    Expr'Id   x -> render' c x
+    Expr'Dot  x -> render' c x
+    Expr'Func x -> render' c x
+    Expr'Call x -> render' c x
+    Expr'Let  x -> render' c x
 
+{- todo
+
+>>> parseTest (expressionP <* P.eof) "null"
+Expr'Null
+
+>>> parseTest (expressionP <* P.eof) "true"
+Expr'Bool (BoolValue True)
+
+>>> parseTest (expressionP <* P.eof) "false"
+Expr'Bool (BoolValue False)
+
+>>> parseTest (expressionP <* P.eof) "[ true false ]"
+Expr'List (ListLiteral (fromList [Expr'Bool (BoolValue True), Expr'Bool (BoolValue False)]))
+
+>>> parseTest (expressionP <* P.eof) "f x"
+Expr'Call (CallExpr (?) (?))
+
+>>> parseTest (expressionP <* P.eof) "[ true (f x) ]"
+Expr'List (ListLiteral (fromList [Expr'Bool (BoolValue True), Expr'Call (CallExpr (?) (?))]))
+
+-}
 expressionP :: Parser Expression
 expressionP =
+  (Expr'Null <$  nullP ) <|>
+  (Expr'Bool <$> parser) <|>
+  (Expr'List <$> parser) <|>
+  (Expr'Str  <$> parser) <|>
+  (Expr'Let  <$> parser) <|>
   undefined
+  {-
+  | Expr'Dict DictLiteral
+  | Expr'Dot  Dot
+  | Expr'Id   BareId
+  | Expr'Func FuncExpr
+  | Expr'Call CallExpr
+  -}
 
 
 --------------------------------------------------------------------------------
@@ -415,22 +448,20 @@ renderParam =
 
 {- |
 
->>> test = putStrLn . Text.unpack . renderDictParam
-
->>> test (DictParam Map.empty False)
+>>> renderTest (DictParam Map.empty False)
 { }:
 
->>> test (DictParam Map.empty True)
+>>> renderTest (DictParam Map.empty True)
 { ... }:
 
 >>> item1 = (Identifier "x", Nothing)
 >>> item2 = (Identifier "y", Just . ParamDefault . str $ "abc")
 >>> items = Map.fromList [ item1, item2 ]
 
->>> test (DictParam items False)
+>>> renderTest (DictParam items False)
 { x, y ? "abc" }:
 
->>> test (DictParam items True)
+>>> renderTest (DictParam items True)
 { x, y ? "abc", ... }:
 
 -}
@@ -453,13 +484,31 @@ renderParamDefault =
   \case
     ParamDefault x -> "? " <> render x
 
-renderFuncExpr :: FuncExpr -> Text
-renderFuncExpr (FuncExpr a b) =
-  render a <> " " <> render b
+renderFuncExpr :: RenderContext -> FuncExpr -> Text
+renderFuncExpr (funcNeedsParens -> p) (FuncExpr a b) =
+  let x = render a <> " " <> render b
+  in  if p then "(" <> x <> ")" else x
 
-renderCallExpr :: CallExpr -> Text
-renderCallExpr (CallExpr a b) =
-  render a <> " " <> render b
+funcNeedsParens :: RenderContext -> Bool
+funcNeedsParens =
+  \case
+    RenderContext'List         -> True
+    RenderContext'CallFunction -> True
+    RenderContext'CallArgument -> True
+    _                          -> False
+
+renderCallExpr :: RenderContext -> CallExpr -> Text
+renderCallExpr (callNeedsParens -> p) (CallExpr a b) =
+  let x = render' RenderContext'CallFunction a <> " " <>
+          render' RenderContext'CallArgument b
+  in  if p then "(" <> x <> ")" else x
+
+callNeedsParens :: RenderContext -> Bool
+callNeedsParens =
+  \case
+    RenderContext'List         -> True
+    RenderContext'CallArgument -> True
+    _                          -> False
 
 callExprP :: Parser CallExpr
 callExprP = undefined
@@ -491,11 +540,31 @@ data ListLiteral = ListLiteral (Seq Expression)
 newtype ListValue = ListValue (Seq Value)
   deriving Show
 
+{- |
+
+>>> renderTest (ListLiteral Seq.empty)
+[ ]
+
+>>> renderTest (ListLiteral (Seq.singleton (fromBool True)))
+[ true ]
+
+>>> renderTest (ListLiteral (Seq.fromList [fromBool True, fromBool False]))
+[ true false ]
+
+>>> call = expr (CallExpr (expr (BareId "f")) (expr (BareId "x")))
+
+>>> renderTest (ListLiteral (Seq.singleton call))
+[ (f x) ]
+
+>>> renderTest (ListLiteral (Seq.fromList [call, fromBool True]))
+[ (f x) true ]
+
+-}
 renderListLiteral :: ListLiteral -> Text
 renderListLiteral =
   \case
     ListLiteral (Foldable.toList -> []) -> renderEmptyList
-    ListLiteral (Foldable.toList -> values) -> "[ " <> Foldable.foldMap (\v -> render v <> " ") values <> "]"
+    ListLiteral (Foldable.toList -> values) -> "[ " <> Foldable.foldMap (\v -> render' RenderContext'List v <> " ") values <> "]"
 
 renderEmptyList :: Text
 renderEmptyList = "[ ]"
@@ -504,7 +573,7 @@ renderListValue :: ListValue -> Text
 renderListValue =
   \case
     ListValue (Foldable.toList -> []) -> renderEmptyList
-    ListValue (Foldable.toList -> values) -> "[ " <> Foldable.foldMap (\v -> render v <> " ") values <> "]"
+    ListValue (Foldable.toList -> values) -> "[ " <> Foldable.foldMap (\v -> render' RenderContext'List v <> " ") values <> "]"
 
 listLiteralP :: Parser ListLiteral
 listLiteralP = undefined
@@ -530,17 +599,17 @@ newtype DictValue = DictValue (Map Text Value)
 
 -- | An expression that can go on the left-hand side of a 'Dot' and is supposed to reduce to a dict.
 data DictExpr
-  = DictExpr'bareId BareId
-  | DictExpr'lit    DictLiteral
-  | DictExpr'dot    Dot
+  = DictExpr'BareId BareId
+  | DictExpr'Lit    DictLiteral
+  | DictExpr'Dot    Dot
   deriving Show
 
 renderDictExpr :: DictExpr -> Text
 renderDictExpr =
   \case
-    DictExpr'bareId x -> render x
-    DictExpr'lit    x -> render x
-    DictExpr'dot    x -> render x
+    DictExpr'BareId x -> render x
+    DictExpr'Lit    x -> render x
+    DictExpr'Dot    x -> render x
 
 -- | An expression of the form @person.name@ that looks up a key from a dict.
 data Dot = Dot
@@ -670,33 +739,46 @@ valueP = undefined
 --  Render
 --------------------------------------------------------------------------------
 
+data RenderContext
+  = RenderContext'Normal
+  | RenderContext'List
+  | RenderContext'CallFunction
+  | RenderContext'CallArgument
+  deriving Show
+
 class Render a
   where
-    render :: a -> Text
+    {-# MINIMAL render | render' #-}
 
-instance Render BareId        where render = renderBareId
-instance Render Binding       where render = renderBinding
-instance Render BindingMap    where render = renderBindingMap
-instance Render BoolValue     where render = renderBoolValue
-instance Render CallExpr      where render = renderCallExpr
-instance Render DictExpr      where render = renderDictExpr
-instance Render DictLiteral   where render = renderDictLiteral
-instance Render DictValue     where render = renderDictValue
-instance Render DictParam     where render = renderDictParam
-instance Render DictParamItem where render = renderDictParamItem
-instance Render Dot           where render = renderDot
-instance Render Expression    where render = renderExpression
-instance Render FuncExpr      where render = renderFuncExpr
-instance Render Identifier    where render = renderIdentifier
-instance Render IdExpr        where render = renderIdExpr
-instance Render LetExpr       where render = renderLetExpr
-instance Render ListLiteral   where render = renderListLiteral
-instance Render ListValue     where render = renderListValue
-instance Render Param         where render = renderParam
-instance Render ParamDefault  where render = renderParamDefault
-instance Render StrExpr       where render = renderStrExpr
-instance Render StrValue      where render = renderStrValue
-instance Render Value         where render = renderValue
+    render :: a -> Text
+    render = render' RenderContext'Normal
+
+    render' :: RenderContext -> a -> Text
+    render' = const render
+
+instance Render BareId        where render  = renderBareId
+instance Render Binding       where render  = renderBinding
+instance Render BindingMap    where render  = renderBindingMap
+instance Render BoolValue     where render  = renderBoolValue
+instance Render CallExpr      where render' = renderCallExpr
+instance Render DictExpr      where render  = renderDictExpr
+instance Render DictLiteral   where render  = renderDictLiteral
+instance Render DictValue     where render  = renderDictValue
+instance Render DictParam     where render  = renderDictParam
+instance Render DictParamItem where render  = renderDictParamItem
+instance Render Dot           where render  = renderDot
+instance Render Expression    where render' = renderExpression
+instance Render FuncExpr      where render' = renderFuncExpr
+instance Render Identifier    where render  = renderIdentifier
+instance Render IdExpr        where render  = renderIdExpr
+instance Render LetExpr       where render  = renderLetExpr
+instance Render ListLiteral   where render  = renderListLiteral
+instance Render ListValue     where render  = renderListValue
+instance Render Param         where render  = renderParam
+instance Render ParamDefault  where render  = renderParamDefault
+instance Render StrExpr       where render  = renderStrExpr
+instance Render StrValue      where render  = renderStrValue
+instance Render Value         where render  = renderValue
 
 
 --------------------------------------------------------------------------------

@@ -236,20 +236,6 @@ data Expression
   | Expr'Let  LetExpr
   deriving Show
 
-class ToExpr a
-  where
-    expr :: a -> Expression
-
-instance ToExpr Bool        where expr = Expr'Bool
-instance ToExpr StrExpr     where expr = Expr'Str
-instance ToExpr DictLiteral where expr = Expr'Dict
-instance ToExpr Dot         where expr = Expr'Dot
-instance ToExpr ListLiteral where expr = Expr'List
-instance ToExpr BareId      where expr = Expr'Id
-instance ToExpr FuncExpr    where expr = Expr'Func
-instance ToExpr CallExpr    where expr = Expr'Call
-instance ToExpr LetExpr     where expr = Expr'Let
-
 renderExpression :: Context -> Expression -> Text
 renderExpression c =
   \case

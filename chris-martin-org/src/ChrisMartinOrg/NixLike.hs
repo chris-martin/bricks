@@ -333,14 +333,6 @@ data StrExprPart
   | StrAntiquote Expression
   deriving Show
 
-class SimpleStr a
-  where
-    -- | A string literal with no antiquotation.
-    str :: Text -> a
-
-instance SimpleStr StrExpr    where str = StrExpr . Seq.singleton . StrLiteral
-instance SimpleStr Expression where str = Expr'Str . StrExpr . Seq.singleton . StrLiteral
-
 {- |
 
 >>> renderTest = putStrLn . Text.unpack . renderStrExpr . StrExpr . Seq.fromList
@@ -378,6 +370,11 @@ strEscape =
 
 strExprP :: Parser StrExpr
 strExprP = undefined
+
+-- | A simple string literal expression with no antiquotation.
+strExpr :: Text -> Expression
+strExpr =
+  Expr'Str . StrExpr . Seq.singleton . StrLiteral
 
 
 --------------------------------------------------------------------------------
@@ -442,7 +439,7 @@ renderParam =
 { ... }:
 
 >>> item1 = (Identifier "x", Nothing)
->>> item2 = (Identifier "y", Just . ParamDefault . str $ "abc")
+>>> item2 = (Identifier "y", Just . ParamDefault . strExpr $ "abc")
 >>> items = Map.fromList [ item1, item2 ]
 
 >>> renderTest items False

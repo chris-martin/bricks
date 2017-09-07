@@ -35,6 +35,7 @@ import Data.Set (Set)
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Tuple (uncurry)
+import Prelude (undefined)
 import Text.Show (Show)
 
 import qualified Text.Parsec as P
@@ -138,6 +139,15 @@ isAsciiLetter :: Char -> Bool
 isAsciiLetter c =
   Char.isAsciiUpper c || Char.isAsciiLower c
 
+bareIdP :: Parser BareId
+bareIdP = undefined
+
+idExprP :: Parser IdExpr
+idExprP = undefined
+
+identifierP :: Parser Identifier
+identifierP = undefined
+
 
 --------------------------------------------------------------------------------
 --  Bool
@@ -168,25 +178,25 @@ instance FromBool Expression where fromBool = Expr'Bool . BoolValue
 
 {- |
 
->>> parseTest (boolP <* P.eof) "true"
+>>> parseTest (boolValueP <* P.eof) "true"
 BoolValue True
 
->>> parseTest (boolP <* P.eof) "false"
+>>> parseTest (boolValueP <* P.eof) "false"
 BoolValue False
 
->>> parseTest (boolP <* P.eof) "abc"
+>>> parseTest (boolValueP <* P.eof) "abc"
 parse error at (line 1, column 1):
 unexpected "a"
 expecting bool
 
->>> parseTest (boolP <* P.eof) "trueq"
+>>> parseTest (boolValueP <* P.eof) "trueq"
 parse error at (line 1, column 5):
 unexpected 'q'
 expecting end of input
 
 -}
-boolP :: Parser BoolValue
-boolP = fmap BoolValue ((trueP $> True) <|> (falseP $> False)) <?> "bool"
+boolValueP :: Parser BoolValue
+boolValueP = fmap BoolValue ((trueP $> True) <|> (falseP $> False)) <?> "bool"
 
 trueP :: Parser ()
 trueP = void (P.string renderTrue) <?> "true"
@@ -269,6 +279,10 @@ renderExpression =
     Expr'Call x -> render x
     Expr'Let  x -> render x
 
+expressionP :: Parser Expression
+expressionP =
+  undefined
+
 
 --------------------------------------------------------------------------------
 --  String
@@ -340,6 +354,12 @@ strEscape :: Text -> Text
 strEscape =
   Text.replace "\"" "\\\"" .
   Text.replace "${" "\\${"
+
+strExprP :: Parser StrExpr
+strExprP = undefined
+
+strValueP :: Parser StrValue
+strValueP = undefined
 
 
 --------------------------------------------------------------------------------
@@ -441,6 +461,24 @@ renderCallExpr :: CallExpr -> Text
 renderCallExpr (CallExpr a b) =
   render a <> " " <> render b
 
+callExprP :: Parser CallExpr
+callExprP = undefined
+
+funcExprP :: Parser FuncExpr
+funcExprP = undefined
+
+paramP :: Parser Param
+paramP = undefined
+
+paramDefaultP :: Parser ParamDefault
+paramDefaultP = undefined
+
+dictParamP :: Parser DictParam
+dictParamP = undefined
+
+dictParamItemP :: Parser DictParamItem
+dictParamItemP = undefined
+
 
 --------------------------------------------------------------------------------
 --  List
@@ -467,6 +505,12 @@ renderListValue =
   \case
     ListValue (Foldable.toList -> []) -> renderEmptyList
     ListValue (Foldable.toList -> values) -> "[ " <> Foldable.foldMap (\v -> render v <> " ") values <> "]"
+
+listLiteralP :: Parser ListLiteral
+listLiteralP = undefined
+
+listValueP :: Parser ListValue
+listValueP = undefined
 
 
 --------------------------------------------------------------------------------
@@ -524,6 +568,18 @@ renderDictValue =
     DictValue (Map.toList -> []) -> renderEmptyDict
     DictValue (Map.toList -> entries) -> "{ " <> Foldable.foldMap (\(k, v) -> k <> " = " <> render v <> "; ") entries <> "}"
 
+dictExprP :: Parser DictExpr
+dictExprP = undefined
+
+dictLiteralP :: Parser DictLiteral
+dictLiteralP = undefined
+
+dictValueP :: Parser DictValue
+dictValueP = undefined
+
+dotP :: Parser Dot
+dotP = undefined
+
 
 --------------------------------------------------------------------------------
 --  Let
@@ -541,6 +597,9 @@ renderLetExpr :: LetExpr -> Text
 renderLetExpr (LetExpr bs x)
   | noBindings bs = "let in " <> render x
   | otherwise = "let " <> render bs <> " in " <> render x
+
+letExprP :: Parser LetExpr
+letExprP = undefined
 
 
 --------------------------------------------------------------------------------
@@ -573,6 +632,12 @@ renderBindingMap =
     (bindings -> []) -> ""
     (bindings -> bs) -> Text.intercalate " " (fmap render bs)
 
+bindingP :: Parser Binding
+bindingP = undefined
+
+bindingMapP :: Parser BindingMap
+bindingMapP = undefined
+
 
 --------------------------------------------------------------------------------
 --  Value
@@ -596,6 +661,9 @@ renderValue =
     Value'Str  x -> render x
     Value'Dict x -> render x
     Value'List x -> render x
+
+valueP :: Parser Value
+valueP = undefined
 
 
 --------------------------------------------------------------------------------
@@ -629,3 +697,36 @@ instance Render ParamDefault  where render = renderParamDefault
 instance Render StrExpr       where render = renderStrExpr
 instance Render StrValue      where render = renderStrValue
 instance Render Value         where render = renderValue
+
+
+--------------------------------------------------------------------------------
+--  Parsers
+--------------------------------------------------------------------------------
+
+class HasP a
+  where
+    parser :: Parser a
+
+instance HasP BareId        where parser = bareIdP
+instance HasP Binding       where parser = bindingP
+instance HasP BindingMap    where parser = bindingMapP
+instance HasP BoolValue     where parser = boolValueP
+instance HasP CallExpr      where parser = callExprP
+instance HasP DictExpr      where parser = dictExprP
+instance HasP DictLiteral   where parser = dictLiteralP
+instance HasP DictValue     where parser = dictValueP
+instance HasP DictParam     where parser = dictParamP
+instance HasP DictParamItem where parser = dictParamItemP
+instance HasP Dot           where parser = dotP
+instance HasP Expression    where parser = expressionP
+instance HasP FuncExpr      where parser = funcExprP
+instance HasP Identifier    where parser = identifierP
+instance HasP IdExpr        where parser = idExprP
+instance HasP LetExpr       where parser = letExprP
+instance HasP ListLiteral   where parser = listLiteralP
+instance HasP ListValue     where parser = listValueP
+instance HasP Param         where parser = paramP
+instance HasP ParamDefault  where parser = paramDefaultP
+instance HasP StrExpr       where parser = strExprP
+instance HasP StrValue      where parser = strValueP
+instance HasP Value         where parser = valueP

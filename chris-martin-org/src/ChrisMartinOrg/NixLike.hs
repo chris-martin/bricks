@@ -287,12 +287,11 @@ renderParam =
 
 -}
 renderDictParam :: DictParam -> Text
-renderDictParam (DictParam (Foldable.toList -> items) ellipsis) =
-  case (items, ellipsis) of
-    ([], False) -> "{ }:"
-    ([], True)  -> "{ ... }:"
-    (xs, False) -> "{ " <> Text.intercalate ", " (fmap renderDictParamItem xs) <> " }:"
-    (xs, True)  -> "{ " <> Text.intercalate ", " (fmap renderDictParamItem xs) <> ", ... }:"
+renderDictParam (DictParam items ellipsis) =
+  case Foldable.toList items of
+    [] -> if ellipsis then "{ ... }:" else "{ }:"
+    xs -> "{ " <> Text.intercalate ", " (fmap renderDictParamItem xs) <>
+          (if ellipsis then ", ... }:" else " }:")
 
 renderDictParamItem :: DictParamItem -> Text
 renderDictParamItem =

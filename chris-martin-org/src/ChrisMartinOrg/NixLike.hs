@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, OverloadedStrings, ViewPatterns #-}
+{-# LANGUAGE ApplicativeDo, LambdaCase, NoImplicitPrelude, OverloadedStrings, ScopedTypeVariables, ViewPatterns #-}
 
 {- |
 
@@ -9,7 +9,7 @@ This module parses and evaluates a Nix-like language. I don't claim that it /is/
 
 Notable differences from Nix:
 
-- No integer type
+- No built-in null, integer, or boolean types
 - No @with@ keyword
 - No @\@@ keyword
 - All variables are bound; no @builtins@ and no infix operators (@+@, @-@, @//@)
@@ -19,39 +19,38 @@ Notable differences from Nix:
 module ChrisMartinOrg.NixLike where
 
 import Control.Applicative ((<|>), (<*), (*>), (<*>), pure)
+import Control.Arrow ((>>>))
 import Control.Monad ((>>=))
 import Text.Parsec ((<?>))
 import Text.Parsec.Text (Parser)
-import Data.Bool (Bool (..), otherwise, (&&), (||))
+import Data.Bool (Bool (..), (&&), (||))
 import Data.Char (Char)
 import Data.Eq (Eq (..))
-import Data.Foldable (asum, foldMap)
-import Data.Function (($), (.), const)
-import Data.Functor (Functor (..), void, ($>), (<$>), (<$))
-import Data.Map (Map)
+import Data.Foldable (Foldable, asum, foldMap, foldl)
+import Data.Function (($), (.))
+import Data.Functor (Functor (..), (<$>))
 import Data.Maybe (Maybe (..))
-import Data.Ord (Ord (..))
 import Data.Semigroup ((<>))
-import Data.Sequence (Seq)
-import Data.Set (Set)
-import Data.String (IsString)
 import Data.Text (Text)
-import Data.Tuple (uncurry)
 import Prelude (undefined)
-import Text.Show (Show)
 
 import qualified Text.Parsec as P
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import qualified Data.Map as Map
-import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 
 {- $setup
 
->>> import Prelude (($), putStrLn)
->>> import Text.Parsec (parseTest)
+>>> import Prelude (($), putStrLn, putStr, print, IO, Either (..))
+
+>>> :{
+>>> parseTest :: Parser Text -> Text -> IO ()
+>>> parseTest p input =
+>>>   case P.parse p "" input of
+>>>     Left err -> putStr "parse error at " *> print err
+>>>     Right x -> putStrLn (Text.unpack x)
+>>> :}
 
 -}
 
@@ -61,263 +60,97 @@ import qualified Data.Text as Text
 --------------------------------------------------------------------------------
 
 -- | An identifier which /must/ be unquoted. For example, in a binding @x = y;@, the @x@ may be quoted, but the @y@ must be a bare identifier. The bare identifiers are a subset of the identifiers.
-newtype BareId = BareId Text
-  deriving Show
-
--- | The general type representing the value of an identifier. An identifier can be /any/ string, including strings which cannot grammatically appear in code without being quoted. This makes them unsuitable for contexts in which string literals are permissible, since it would be ambiguous whether the quoted expression is an identifier or a string; for those contexts we use 'BareId' instead.
-newtype Identifier = Identifier Text
-  deriving (Eq, Ord, Show)
-
--- | An expression which evaluates to an 'Identifier'. This more general form of an identifier is permitted on the left-hand side of a 'Binding' (in the expression @x = y;@, @x@ may be an 'IdExpr'), and on the right-hand side of a 'Dot' (in the expression @x.y@, @y@ may be an 'IdExpr').
-newtype IdExpr = IdExpr StrExpr
-  deriving Show
+newtype BareId =
+  BareId
+    { bareIdText :: Text
+    }
 
 {- | An identifier can be /any/ string. In some cases this means we need to render it in quotes; see 'isUnquotableText'.
 
->>> renderTest = putStrLn . Text.unpack . renderIdentifier . Identifier
+>>> test = putStrLn . Text.unpack . renderIdentifier
 
->>> renderTest "abc"
+>>> test "abc"
 abc
 
->>> renderTest "a\"b"
+>>> test "a\"b"
 "a\"b"
 
->>> renderTest "-ab"
+>>> test "-ab"
 "-ab"
 
->>> renderTest ""
+>>> test ""
 ""
 
 -}
-renderIdentifier :: Identifier -> Text
-renderIdentifier (Identifier x) =
+renderIdentifier :: Text -> Text
+renderIdentifier x =
   if isBareIdentifierName x then x else renderQuotedString x
 
 renderBareId :: BareId -> Text
 renderBareId (BareId x) = x
 
-renderIdExpr :: IdExpr -> Text
+renderIdExpr :: StrExpr -> Text
 renderIdExpr =
   \case
-    IdExpr (StrExpr (Foldable.toList -> [StrLiteral x])) | isBareIdentifierName x -> x
-    IdExpr x -> renderStrExpr x
+    StrExpr (Foldable.toList -> [StrLiteral x]) | isBareIdentifierName x -> x
+    x -> renderStrExpr x
 
-{- | Whether an identifier having this name can be rendered without quoting it. We allow a name to be a bare identifier, and thus to render unquoted, if both of the following are true:
+{- | Whether an identifier having this name can be rendered without quoting it. We allow a name to be a bare identifier, and thus to render unquoted, if all these conditions are met:
 
-1. It starts with an ASCII letter or @_@ (safeIdChar1).
-2. It contains only ASCII letters, numbers, @-@, and @_@ ('safeIdCharN').
+- The string is nonempty
+- All characters satify 'isBareIdentifierChar'
+- The string is not a keyword
 
->>> isBareIdentifierName "abc"
+>>> isBareIdentifierName "-ab_c"
 True
-
->>> isBareIdentifierName "_abc"
-True
-
->>> isBareIdentifierName "a\"b"
-False
-
->>> isBareIdentifierName "-ab"
-False
 
 >>> isBareIdentifierName ""
 False
 
--}
-isBareIdentifierName :: Text -> Bool
-isBareIdentifierName (Text.uncons -> Nothing) = False
-isBareIdentifierName (Text.uncons -> Just (x, xs)) =
-  bareIdChar1 x && Text.all bareIdCharN xs
-
-bareIdChar1 :: Char -> Bool
-bareIdChar1 c =
-  isAsciiLetter c || c == '_'
-
--- | Whether the character is an ASCII letters, number, @-@, or @_@.
-bareIdCharN :: Char -> Bool
-bareIdCharN c =
-  isAsciiLetter c || c == '-' || c == '_'
-
--- | Whether a character matches @[a-zA-Z]@.
-isAsciiLetter :: Char -> Bool
-isAsciiLetter c =
-  Char.isAsciiUpper c || Char.isAsciiLower c
-
-bareIdP :: Parser BareId
-bareIdP = undefined
-
-idExprP :: Parser IdExpr
-idExprP = undefined
-
-identifierP :: Parser Identifier
-identifierP = undefined
-
-
---------------------------------------------------------------------------------
---  Bool
---------------------------------------------------------------------------------
-
-renderTrue :: IsString s => s
-renderTrue = "true"
-
-renderFalse :: IsString s => s
-renderFalse = "false"
-
-renderBool :: Bool -> Text
-renderBool =
-  \case
-    True  -> renderTrue
-    False -> renderFalse
-
-{- |
-
->>> parseTest (boolP <* P.eof) "true"
-True
-
->>> parseTest (boolP <* P.eof) "false"
+>>> isBareIdentifierName "a\"b"
 False
 
->>> parseTest (boolP <* P.eof) "abc"
-parse error at (line 1, column 1):
-unexpected "a"
-expecting bool
-
->>> parseTest (boolP <* P.eof) "trueq"
-parse error at (line 1, column 5):
-unexpected 'q'
-expecting end of input
+>>> isBareIdentifierName "let"
+False
 
 -}
-boolP :: Parser Bool
-boolP = ((trueP $> True) <|> (falseP $> False)) <?> "bool"
+isBareIdentifierName :: Text -> Bool
+isBareIdentifierName x =
+  Text.all isBareIdentifierChar x
+  && List.all (/= x) ("" : keywords)
 
-trueP :: Parser ()
-trueP = void (P.string renderTrue) <?> "true"
+keywords :: [Text]
+keywords = ["rec", "let", "in"]
 
-falseP :: Parser ()
-falseP = void (P.string renderFalse) <?> "false"
-
-
---------------------------------------------------------------------------------
---  Null
---------------------------------------------------------------------------------
-
-renderNull :: IsString s => s
-renderNull = "null"
+{- | Letters, @-@, and @_@. -}
+isBareIdentifierChar :: Char -> Bool
+isBareIdentifierChar c =
+  Char.isLetter c || c == '-' || c == '_'
 
 {- |
 
->>> parseTest (nullP <* P.eof) "null"
-()
+>>> test = parseTest (bareIdText <$> bareIdP <* P.eof)
 
->>> parseTest (nullP <* P.eof) "abc"
-parse error at (line 1, column 1):
-unexpected "a"
-expecting null
+>>> test "-ab_c"
+-ab_c
 
--}
-nullP :: Parser ()
-nullP = void (P.string renderNull) <?> "null"
+>>> test ""
+failure
 
-
---------------------------------------------------------------------------------
---  Expression
---------------------------------------------------------------------------------
-
-data Expression
-  = Expr'Null
-  | Expr'Bool Bool
-  | Expr'Str  StrExpr
-  | Expr'List ListLiteral
-  | Expr'Dict DictLiteral
-  | Expr'Dot  Dot
-  | Expr'Id   BareId
-  | Expr'Func FuncExpr
-  | Expr'Call CallExpr
-  | Expr'Let  LetExpr
-  deriving Show
-
-renderExpression :: Context -> Expression -> Text
-renderExpression c =
-  \case
-    Expr'Null   -> renderNull
-    Expr'Bool x -> renderBool x
-    Expr'Str  x -> renderStrExpr x
-    Expr'Dict x -> renderDictLiteral x
-    Expr'List x -> renderListLiteral x
-    Expr'Id   x -> renderBareId x
-    Expr'Dot  x -> renderDot x
-    Expr'Func x -> renderFuncExpr c x
-    Expr'Call x -> renderCallExpr c x
-    Expr'Let  x -> renderLetExpr x
-
-{- todo
-
->>> parseTest (expressionP <* P.eof) "null"
-Expr'Null
-
->>> parseTest (expressionP <* P.eof) "(null)"
-Expr'Null
-
->>> parseTest (expressionP <* P.eof) "true"
-Expr'Bool True
-
->>> parseTest (expressionP <* P.eof) "false"
-Expr'Bool False
-
->>> parseTest (expressionP <* P.eof) "[ true false ]"
-Expr'List (ListLiteral (fromList [Expr'Bool True, Expr'Bool False]))
-
->>> parseTest (expressionP <* P.eof) "f x"
-Expr'Call (CallExpr (?) (?))
-
->>> parseTest (expressionP <* P.eof) "[ true (f x) ]"
-Expr'List (ListLiteral (fromList [Expr'Bool True, Expr'Call (CallExpr (?) (?))]))
+>>> test "a\"b"
+failure
 
 -}
-expressionP :: Parser Expression
-expressionP =
-  optionalParens $ asum
-    [ Expr'Null <$ nullP
-    , Expr'Bool <$> boolP
-    , Expr'List <$> listLiteralP
-    , Expr'Str <$> strExprP
-    , Expr'Let <$> letExprP
-    , expressionP'fromBareId
-    , expressionP'fromDictLiteral
+bareIdP :: Parser BareId
+bareIdP =
+  fmap (BareId . Text.pack) (P.many1 (P.satisfy isBareIdentifierChar))
+
+idExprP :: Parser StrExpr
+idExprP =
+  asum
+    [ strExprP
+    , fmap (strExpr . bareIdText) bareIdP
     ]
-
-expressionP'fromBareId :: Parser Expression
-expressionP'fromBareId =
-  bareIdP >>= \a -> asum
-    [ pure (Expr'Id a)
-    , Expr'Func <$> funcExprP' (Param'Id a)
-    , Expr'Call <$> callExprP' (Expr'Id a)
-    , Expr'Dot <$> dotP' (DictExpr'BareId a)
-    ]
-
-expressionP'fromDictLiteral =
-  dictLiteralP >>= \a -> asum
-    [ pure (Expr'Dict a)
-    , Expr'Dot <$> dotP' (DictExpr'Lit a)
-    ]
-
-  {-
-  | Expr'Dict DictLiteral
-  | Expr'Dot  Dot
-  | Expr'Id   BareId
-  | Expr'Func FuncExpr
-  | Expr'Call CallExpr
-  -}
-
-  -- Dot: can turn into a Dot
-  -- Func: can turn into Call
-
-optionalParens :: Parser a -> Parser a
-optionalParens p =
-    withParens <|> p
-  where
-    withParens =
-      P.char '(' *> P.spaces *> optionalParens p <* P.spaces <* P.char ')'
 
 
 --------------------------------------------------------------------------------
@@ -325,17 +158,15 @@ optionalParens p =
 --------------------------------------------------------------------------------
 
 -- | A quoted string expression, which may be a simple string like @"hello"@ or a more complex string containing antiquotation like @"Hello, my name is ${name}!"@.
-newtype StrExpr = StrExpr (Seq StrExprPart)
-  deriving Show
+newtype StrExpr = StrExpr [StrExprPart]
 
 data StrExprPart
   = StrLiteral Text
   | StrAntiquote Expression
-  deriving Show
 
 {- |
 
->>> renderTest = putStrLn . Text.unpack . renderStrExpr . StrExpr . Seq.fromList
+>>> renderTest = putStrLn . Text.unpack . renderStrExpr . StrExpr
 
 >>> renderTest []
 ""
@@ -357,7 +188,7 @@ renderStrExpr (StrExpr xs) =
     f :: StrExprPart -> Text
     f = \case
       StrLiteral t -> strEscape t
-      StrAntiquote e -> "${" <> renderExpression Context'Normal e <> "}"
+      StrAntiquote e -> "${" <> renderExpression RenderContext'Normal e <> "}"
 
 renderQuotedString :: Text -> Text
 renderQuotedString x =
@@ -369,12 +200,24 @@ strEscape =
   Text.replace "${" "\\${"
 
 strExprP :: Parser StrExpr
-strExprP = undefined
+strExprP = (strExprP'1 <|> strExprP'2) <?> "string"
+
+strExprP'1 :: Parser StrExpr
+strExprP'1 =
+  do
+    _ <- P.char '"'
+    undefined
+
+strExprP'2 :: Parser StrExpr
+strExprP'2 =
+  do
+    _ <- P.string "''"
+    undefined
 
 -- | A simple string literal expression with no antiquotation.
-strExpr :: Text -> Expression
+strExpr :: Text -> StrExpr
 strExpr =
-  Expr'Str . StrExpr . Seq.singleton . StrLiteral
+  StrExpr . (\x -> [x]) . StrLiteral
 
 
 --------------------------------------------------------------------------------
@@ -387,7 +230,6 @@ data FuncExpr =
     { funcExpr'param :: Param -- ^ A declaration of the function's parameter
     , funcExpr'expression :: Expression -- ^ The body of the function; what it evaluates to
     }
-  deriving Show
 
 -- | A function call expression.
 data CallExpr =
@@ -395,32 +237,27 @@ data CallExpr =
     { callExpr'function :: Expression -- ^ The function being called
     , calExpr'expression :: Expression -- ^ The argument to the function
     }
-  deriving Show
 
 -- | The parameter to a function. All functions have a single parameter, but it's more complicated than that because it may also include dict destructuring.
 data Param
   = Param'Id BareId -- ^ A simple single-parameter function
   | Param'Dict DictParam -- ^ Dict destructuring, which gives you something resembling multiple named parameters with default values
-  deriving Show
 
 -- | A function parameter that does dict destructuring. See 'Param'.
 data DictParam =
   DictParam
-    { dictParam'items :: Map Identifier (Maybe ParamDefault) -- ^ The set of destructured identifiers, along with any default value each may have
+    { dictParam'items :: [DictParamItem] -- ^ The set of destructured identifiers, along with any default value each may have
     , dictParam'ellipsis :: Bool -- ^ Whether to allow additional keys beyond what is listed in the items, corresponding to the @...@ keyword
     }
-  deriving Show
 
 data DictParamItem =
   DictParamItem
-    { dictParamItem'variable :: Identifier -- ^ The bound variable
+    { dictParamItem'variable :: Text -- ^ The bound variable
     , dictParamItem'default :: Maybe ParamDefault -- ^ The default value to be used if the key is not present in the dict
     }
-  deriving Show
 
 -- | A default expression to use for a variable bound by a dict destructuring expression (see 'DictParamItem') if the key is not present in the dict.
 newtype ParamDefault = ParamDefault Expression
-  deriving Show
 
 renderParam :: Param -> Text
 renderParam =
@@ -439,7 +276,7 @@ renderParam =
 { ... }:
 
 >>> item1 = (Identifier "x", Nothing)
->>> item2 = (Identifier "y", Just . ParamDefault . strExpr $ "abc")
+>>> item2 = (Identifier "y", Just . ParamDefault . Expr'Str. strExpr $ "abc")
 >>> items = Map.fromList [ item1, item2 ]
 
 >>> renderTest items False
@@ -450,7 +287,7 @@ renderParam =
 
 -}
 renderDictParam :: DictParam -> Text
-renderDictParam (DictParam (fmap (uncurry DictParamItem) . Map.toList -> items) ellipsis) =
+renderDictParam (DictParam (Foldable.toList -> items) ellipsis) =
   case (items, ellipsis) of
     ([], False) -> "{ }:"
     ([], True)  -> "{ ... }:"
@@ -460,54 +297,49 @@ renderDictParam (DictParam (fmap (uncurry DictParamItem) . Map.toList -> items) 
 renderDictParamItem :: DictParamItem -> Text
 renderDictParamItem =
   \case
-    DictParamItem a Nothing -> renderIdentifier a
-    DictParamItem a (Just b) -> renderIdentifier a <> " " <> renderParamDefault b
+    DictParamItem a Nothing  -> renderIdentifier a
+    DictParamItem a (Just b) -> renderIdentifier a <> " " <>
+                                renderParamDefault b
 
 renderParamDefault :: ParamDefault -> Text
-renderParamDefault =
-  \case
-    ParamDefault x -> "? " <> renderExpression Context'Normal x
+renderParamDefault (ParamDefault x) =
+  "? " <> renderExpression RenderContext'Normal x
 
-renderFuncExpr :: Context -> FuncExpr -> Text
-renderFuncExpr (funcNeedsParens -> p) (FuncExpr a b) =
-  let x = renderParam a <> " " <> renderExpression Context'Normal b
-  in  if p then "(" <> x <> ")" else x
+renderFuncExpr :: RenderContext -> FuncExpr -> Text
+renderFuncExpr cx (FuncExpr a b) =
+  if p then "(" <> x <> ")" else x
 
-funcNeedsParens :: Context -> Bool
-funcNeedsParens =
-  \case
-    Context'List         -> True
-    Context'CallFunction -> True
-    Context'CallArgument -> True
-    _                    -> False
+  where
+    x = renderParam a <> " " <>
+        renderExpression RenderContext'Normal b
 
-renderCallExpr :: Context -> CallExpr -> Text
-renderCallExpr (callNeedsParens -> p) (CallExpr a b) =
-  let x = renderExpression Context'CallFunction a <> " " <>
-          renderExpression Context'CallArgument b
-  in  if p then "(" <> x <> ")" else x
+    p = case cx of
+      RenderContext'Normal -> False
+      RenderContext'List   -> True
+      RenderContext'Call1  -> True
+      RenderContext'Call2  -> False
+      RenderContext'Dot1   -> True
 
-callNeedsParens :: Context -> Bool
-callNeedsParens =
-  \case
-    Context'List         -> True
-    Context'CallArgument -> True
-    _                    -> False
+renderCallExpr :: RenderContext -> CallExpr -> Text
+renderCallExpr cx (CallExpr a b) =
+  if p then "(" <> x <> ")" else x
 
-callExprP :: Parser CallExpr
-callExprP = undefined
+  where
+    x = renderExpression RenderContext'Call1 a <> " " <>
+        renderExpression RenderContext'Call2 b
 
--- | Parser for the second half of a call expression, starting after the function.
-callExprP' :: Expression -> Parser CallExpr
-callExprP' a = undefined
+    p = case cx of
+      RenderContext'Normal -> False
+      RenderContext'List   -> True
+      RenderContext'Call1  -> False
+      RenderContext'Call2  -> True
+      RenderContext'Dot1   -> True
 
 funcExprP :: Parser FuncExpr
 funcExprP = undefined
 
--- | Parser for the second half of a function expression, starting after the parameter.
-funcExprP' :: Param -> Parser FuncExpr
-funcExprP' a =
-  FuncExpr a <$> (P.spaces *> P.char ':' *> P.spaces *> expressionP)
+callExprP :: Parser CallExpr
+callExprP = undefined
 
 paramP :: Parser Param
 paramP = undefined
@@ -521,14 +353,17 @@ dictParamP = undefined
 dictParamItemP :: Parser DictParamItem
 dictParamItemP = undefined
 
+applyArgs:: Expression -> [Expression] -> Expression
+applyArgs =
+  foldl (\acc b -> Expr'Call (CallExpr acc b))
+
 
 --------------------------------------------------------------------------------
 --  List
 --------------------------------------------------------------------------------
 
 -- | A list literal expression, starting with @[@ and ending with @]@.
-data ListLiteral = ListLiteral (Seq Expression)
-  deriving Show
+data ListLiteral = ListLiteral [Expression]
 
 {- |
 
@@ -537,10 +372,10 @@ data ListLiteral = ListLiteral (Seq Expression)
 >>> renderTest []
 [ ]
 
->>> renderTest [ Expr'Bool True ]
+>>> renderTest [ Expr'Id (BareId "true") ]
 [ true ]
 
->>> renderTest [ Expr'Bool True, Expr'Bool False ]
+>>> renderTest [ Expr'Id (BareId "true"), Expr'Id (BareId "false") ]
 [ true false ]
 
 >>> call = Expr'Call (CallExpr (Expr'Id (BareId "f")) (Expr'Id (BareId "x")))
@@ -548,7 +383,7 @@ data ListLiteral = ListLiteral (Seq Expression)
 >>> renderTest [ call ]
 [ (f x) ]
 
->>> renderTest [ call, Expr'Bool True ]
+>>> renderTest [ call, Expr'Id (BareId "true") ]
 [ (f x) true ]
 
 -}
@@ -556,13 +391,20 @@ renderListLiteral :: ListLiteral -> Text
 renderListLiteral =
   \case
     ListLiteral (Foldable.toList -> []) -> renderEmptyList
-    ListLiteral (Foldable.toList -> values) -> "[ " <> foldMap (\v -> renderExpression Context'List v <> " ") values <> "]"
+    ListLiteral (Foldable.toList -> values) -> "[ " <> foldMap (\v -> renderExpression RenderContext'List v <> " ") values <> "]"
 
 renderEmptyList :: Text
 renderEmptyList = "[ ]"
 
 listLiteralP :: Parser ListLiteral
-listLiteralP = undefined
+listLiteralP =
+  p <?> "list"
+  where
+    p = do
+      _ <- P.char '[' *> P.spaces
+      x <- expressionListP
+      _ <- P.spaces <* P.char ']'
+      pure (ListLiteral x)
 
 
 --------------------------------------------------------------------------------
@@ -573,56 +415,63 @@ listLiteralP = undefined
 data DictLiteral =
   DictLiteral
     { dictLiteral'rec :: Bool -- ^ Whether the dict is recursive (denoted by the @rec@ keyword)
-    , dictLiteral'bindings :: BindingMap -- ^ The bindings (everything between @{@ and @}@)
+    , dictLiteral'bindings :: [Binding] -- ^ The bindings (everything between @{@ and @}@)
     }
-  deriving Show
-
--- | An expression that can go on the left-hand side of a 'Dot' and is supposed to reduce to a dict.
-data DictExpr
-  = DictExpr'BareId BareId
-  | DictExpr'Lit DictLiteral
-  | DictExpr'Dot Dot
-  deriving Show
-
-renderDictExpr :: DictExpr -> Text
-renderDictExpr =
-  \case
-    DictExpr'BareId x -> renderBareId x
-    DictExpr'Lit x -> renderDictLiteral x
-    DictExpr'Dot x -> renderDot x
 
 -- | An expression of the form @person.name@ that looks up a key from a dict.
 data Dot = Dot
-  { dot'dict :: DictExpr
-  , dot'key  :: IdExpr
-  } deriving Show
+  { dot'dict :: Expression
+  , dot'key :: StrExpr
+  }
 
 renderDictLiteral :: DictLiteral -> Text
 renderDictLiteral =
   \case
-    DictLiteral _ bs | noBindings bs -> renderEmptyDict
-    DictLiteral True bs -> "rec { " <> renderBindingMap bs <> " }"
-    DictLiteral False bs -> "{ " <> renderBindingMap bs <> " }"
+    DictLiteral _ [] -> renderEmptyDict
+    DictLiteral True bs -> "rec { " <> renderBindingList bs <> " }"
+    DictLiteral False bs -> "{ " <> renderBindingList bs <> " }"
 
 renderEmptyDict :: Text
 renderEmptyDict = "{ }"
 
 renderDot :: Dot -> Text
 renderDot (Dot a b) =
-  renderDictExpr a <> "." <> renderIdExpr b
-
-dictExprP :: Parser DictExpr
-dictExprP = undefined
+  renderExpression RenderContext'Dot1 a <> "." <> renderIdExpr b
 
 dictLiteralP :: Parser DictLiteral
-dictLiteralP = undefined
+dictLiteralP =
+  asum
+    [ DictLiteral False <$> dictLiteralP'noRec
+    , DictLiteral True <$> (P.string "rec" *> P.spaces *> dictLiteralP'noRec)
+    ]
 
-dotP :: Parser Dot
-dotP = undefined
+dictLiteralP'noRec :: Parser [Binding]
+dictLiteralP'noRec =
+  do
+    _ <- P.char '{' *> P.spaces
+    a <- P.sepBy1 bindingP P.spaces
+    _ <- P.spaces *> P.char '}'
+    pure a
 
--- | Parser for the second half of a dot expression, including the dot.
-dotP' :: DictExpr -> Parser Dot
-dotP' = undefined
+{- | Parser for a chain of dict lookups (like @.a.b.c@).
+
+>>> parseTest $ dotsP "" <* eof
+[]
+
+>>> parseTest $ dotsP ".a" <* eof
+[IdExpr'BareId (BareId "a")]
+
+>>> parseTest $ dotsP ".a . b" <* eof
+[IdExpr'BareId (BareId "a"), IdExpr'BareId (BareId "b")]
+
+-}
+dotsP :: Parser [StrExpr]
+dotsP =
+  P.sepBy (P.char '.' *> P.spaces *> idExprP) P.spaces
+
+applyDots :: Expression -> [StrExpr] -> Expression
+applyDots =
+  foldl (\acc b -> Expr'Dot (Dot acc b))
 
 
 --------------------------------------------------------------------------------
@@ -632,16 +481,17 @@ dotP' = undefined
 -- | A @let@-@in@ expression.
 data LetExpr =
   LetExpr
-    { letExpr'bindings :: BindingMap -- ^ The bindings (everything between the @let@ and @in@ keywords)
+    { letExpr'bindings :: [Binding] -- ^ The bindings (everything between the @let@ and @in@ keywords)
     , letExpr'value :: Expression -- ^ The value (everything after the @in@ keyword)
     }
-  deriving Show
 
 renderLetExpr :: LetExpr -> Text
-renderLetExpr (LetExpr bs x)
-  | noBindings bs = "let in " <> body
-  | otherwise = "let " <> renderBindingMap bs <> " in " <> body
-  where body = renderExpression Context'Normal x
+renderLetExpr (LetExpr bs x) =
+  if List.null bs
+    then "let in " <> body
+    else "let " <> renderBindingList bs <> " in " <> body
+  where
+    body = renderExpression RenderContext'Normal x
 
 letExprP :: Parser LetExpr
 letExprP = undefined
@@ -652,45 +502,176 @@ letExprP = undefined
 --------------------------------------------------------------------------------
 
 -- | A binding of the form @x = y;@ within a 'DictLiteral' or 'LetExpr'.
-data Binding = Binding IdExpr Expression
-  deriving Show
-
--- | You'll often want to consume this by using 'bindings' to convert it to @['Binding']@.
-newtype BindingMap = BindingMap (Map IdExpr Expression)
-  deriving Show
-
-bindings :: BindingMap -> [Binding]
-bindings (BindingMap x) =
-  fmap (\(a, b) -> Binding a b) (Map.toList x)
-
-noBindings :: BindingMap -> Bool
-noBindings (BindingMap m) =
-  Map.null m
+data Binding = Binding StrExpr Expression
 
 renderBinding :: Binding -> Text
 renderBinding (Binding a b) =
-  renderIdExpr a <> " = " <> renderExpression Context'Normal b <> ";"
+  renderIdExpr a <> " = " <> renderExpression RenderContext'Normal b <> ";"
 
-renderBindingMap :: BindingMap -> Text
-renderBindingMap =
-  \case
-    (bindings -> []) -> ""
-    (bindings -> bs) -> Text.intercalate " " (fmap renderBinding bs)
+renderBindingList :: Foldable f => f Binding -> Text
+renderBindingList =
+  Foldable.toList >>> \case
+    [] -> ""
+    bs -> Text.intercalate " " (fmap renderBinding bs)
 
 bindingP :: Parser Binding
 bindingP = undefined
 
-bindingMapP :: Parser BindingMap
+bindingMapP :: Parser [Binding]
 bindingMapP = undefined
 
 
 --------------------------------------------------------------------------------
---  Context
+--  Expression
 --------------------------------------------------------------------------------
 
-data Context
-  = Context'Normal
-  | Context'List
-  | Context'CallFunction
-  | Context'CallArgument
-  deriving Show
+data Expression
+  = Expr'Str  StrExpr
+  | Expr'List ListLiteral
+  | Expr'Dict DictLiteral
+  | Expr'Dot  Dot
+  | Expr'Id   BareId
+  | Expr'Func FuncExpr
+  | Expr'Call CallExpr
+  | Expr'Let  LetExpr
+
+renderExpression :: RenderContext -> Expression -> Text
+renderExpression c =
+  \case
+    Expr'Str  x -> renderStrExpr x
+    Expr'Dict x -> renderDictLiteral x
+    Expr'List x -> renderListLiteral x
+    Expr'Id   x -> renderBareId x
+    Expr'Dot  x -> renderDot x
+    Expr'Func x -> renderFuncExpr c x
+    Expr'Call x -> renderCallExpr c x
+    Expr'Let  x -> renderLetExpr x
+
+{- | The primary, top-level expression parser. This is what you use to parse a @.nix@ file.
+
+>>> :{
+>>> test input =
+>>>   case parse (expressionP <* P.eof) "" input of
+>>>     Left err -> do putStr "parse error at "
+>>>                    print err
+>>>     Right x -> putStrLn . Text.unpack . renderExpression $ x
+>>> :}
+
+>>> test "[ true false ]"
+[ true false ]
+
+>>> test "f x"
+f x
+
+>>> test "[ true (f x) ]"
+"[ true (f x) ]"
+
+>>> [ 123 "abc" (f { x = y; }) ]
+[ 123 "abc" (f { x = y; }) ]
+
+>>> [ 123 "abc" f { x = y; } ]
+[ 123 "abc" f { x = y; } ]
+
+-}
+expressionP :: Parser Expression
+expressionP =
+  asum
+    [ fmap Expr'Func funcExprP
+    , expressionListP >>= \case
+        [] -> P.parserZero
+        f : args -> pure $ applyArgs f args
+    ]
+
+{- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a chain of function arguments (@f x y z@).
+
+>>> test = parseTest (Text.unlines . fmap (renderExpression RenderContext'Normal) <$> expressionListP <* P.eof)
+
+>>> test ""
+
+>>> test "x y z"
+x
+y
+z
+
+>>> test "(a)b c(d)"
+a
+b
+c
+d
+
+>>> test "a.\"b\"c"
+a.b
+c
+
+>>> test "123 ./foo.nix \"abc\" (f { x = y; })"
+123
+./foo.nix
+"abc"
+(f { x = y; })
+
+-}
+expressionListP :: Parser [Expression]
+-- An item in an expression list can be surrounded by no parens (@a@), two parens (@(a)@), or one paren on the left (@(a).b@). Not just parens, but straight braces and curly braces.
+expressionListP =
+  P.sepBy expressionP'listItem P.spaces
+
+{- | Parser for a single item within an expression list ('expressionListP'). This expression is not a function, a function application, or a let binding.
+
+>>> test = parseTest (renderExpression RenderContext'Normal <$> expressionP'listItem)
+
+>>> test "abc def"
+abc
+
+>>> test "a.b c"
+a.b
+
+>>> test "a.\"b\"c"
+a.b
+
+>>> test "(a.b)c"
+a.b
+
+>>> test "a.b(c)"
+a.b
+
+>>> test "[ a b ]c"
+[ a b ]
+
+>>> test "a[ b c ]"
+a
+
+>>> test "\"a\"b"
+"a"
+
+-}
+expressionP'listItem :: Parser Expression
+expressionP'listItem =
+  applyDots <$> expressionP'listItem'noDot <*> dotsP
+
+-- | Like 'expressionP'listItem', but with the further restriction that the expression may not be a dot.
+expressionP'listItem'noDot :: Parser Expression
+expressionP'listItem'noDot =
+  asum
+    [ fmap Expr'Str strExprP
+    , fmap Expr'List listLiteralP
+    , fmap Expr'Dict dictLiteralP
+    , fmap Expr'Id bareIdP
+    , expressionP'paren
+    ]
+
+-- | Parser for a parenthesized expression, from opening parenthesis to closing parenthesis.
+expressionP'paren :: Parser Expression
+expressionP'paren =
+  P.char '(' *> P.spaces *> expressionP <* P.spaces <* P.char ')'
+
+
+--------------------------------------------------------------------------------
+--  RenderContext
+--------------------------------------------------------------------------------
+
+data RenderContext
+  = RenderContext'Normal
+  | RenderContext'List
+  | RenderContext'Call1
+  | RenderContext'Call2
+  | RenderContext'Dot1

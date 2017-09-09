@@ -797,13 +797,11 @@ dictLiteralP =
     , DictLiteral True <$> (P.string "rec" *> P.spaces *> dictLiteralP'noRec)
     ]
 
+{- | Parser for a non-recursive (no @rec@ keyword) dict literal.
+-}
 dictLiteralP'noRec :: Parser [Binding]
 dictLiteralP'noRec =
-  do
-    _ <- P.char '{' *> P.spaces
-    a <- bindingP `sepBy1` P.spaces
-    _ <- P.spaces *> P.char '}'
-    pure a
+  P.char '{' *> P.spaces *> P.manyTill (bindingP <* P.spaces) (P.char '}')
 
 {- | Parser for a chain of dict lookups (like @.a.b.c@).
 

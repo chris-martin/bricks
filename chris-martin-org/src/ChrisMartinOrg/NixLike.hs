@@ -23,7 +23,7 @@ module ChrisMartinOrg.NixLike where
 
 import Control.Applicative ((<|>), (<*), (*>), (<*>), pure)
 import Control.Arrow ((>>>))
-import Control.Monad ((>>=))
+import Control.Monad ((>>=), fail)
 import Text.Parsec ((<?>))
 import Text.Parsec.Text (Parser)
 import Data.Bool (Bool (..), (&&), (||), not)
@@ -37,7 +37,7 @@ import Data.Ord (Ord (..))
 import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Numeric.Natural (Natural)
-import Prelude (fromIntegral, Num (..), undefined)
+import Prelude (fromIntegral, Num (..))
 
 import qualified Text.Parsec as P
 import qualified Data.Char as Char
@@ -687,23 +687,21 @@ renderCallExpr cx (CallExpr a b) =
       RenderContext'Call2  -> True
       RenderContext'Dot1   -> True
 
-funcExprP :: Parser FuncExpr
-funcExprP = undefined
-
-callExprP :: Parser CallExpr
-callExprP = undefined
-
 paramP :: Parser Param
-paramP = undefined
+paramP =
+  a <|> b
+  where
+    a = Param'Id <$> (bareIdP <* P.char ':')
+    b = Param'Dict <$> dictParamP
 
 paramDefaultP :: Parser ParamDefault
-paramDefaultP = undefined
+paramDefaultP = fail "not implemented"
 
 dictParamP :: Parser DictParam
-dictParamP = undefined
+dictParamP = fail "not implemented"
 
 dictParamItemP :: Parser DictParamItem
-dictParamItemP = undefined
+dictParamItemP = fail "not implemented"
 
 applyArgs:: Expression -> [Expression] -> Expression
 applyArgs =
@@ -879,7 +877,7 @@ renderLetExpr (LetExpr bs x) =
     body = renderExpression RenderContext'Normal x
 
 letExprP :: Parser LetExpr
-letExprP = undefined
+letExprP = fail "not implemented"
 
 
 --------------------------------------------------------------------------------
@@ -900,10 +898,13 @@ renderBindingList =
     bs -> Text.intercalate " " (fmap renderBinding bs)
 
 bindingP :: Parser Binding
-bindingP = undefined
-
-bindingMapP :: Parser [Binding]
-bindingMapP = undefined
+bindingP =
+  do
+    a <- idExprP
+    _ <- P.spaces *> P.char '=' *> P.spaces
+    b <- expressionP
+    _ <- P.spaces *> P.char ';'
+    pure $ Binding a b
 
 
 --------------------------------------------------------------------------------
@@ -944,23 +945,35 @@ renderExpression c =
 f x
 
 >>> test "[ true (f x) ]"
-"[ true (f x) ]"
+[ true (f x) ]
 
->>> [ 123 "abc" (f { x = y; }) ]
-[ 123 "abc" (f { x = y; }) ]
+>>> test "{ x = y; }"
+{ x = y; }
 
->>> [ 123 "abc" f { x = y; } ]
-[ 123 "abc" f { x = y; } ]
+>>> test "{x=y;}"
+{ x = y; }
+
+>>> test "{ x = y ; a = b; }"
+{ x = y; a = b; }
+
+>>> test "{x=y;a=b;}"
+{ x = y; a = b; }
+
+>>> test "[ \"abc\" (f { x = y; }) ]"
+[ "abc" (f { x = y; }) ]
+
+>> test "[ \"abc\" f { x = y; } ]"
+[ "abc" f { x = y; } ]
 
 -}
 expressionP :: Parser Expression
 expressionP =
-  asum
-    [ fmap Expr'Func funcExprP
-    , expressionListP >>= \case
-        [] -> P.parserZero
-        f : args -> pure $ applyArgs f args
-    ]
+  a <|> b
+  where
+    a = Expr'Func <$> (FuncExpr <$> P.try paramP <*> expressionP)
+    b = expressionListP >>= \case
+          [] -> P.parserZero
+          f : args -> pure $ applyArgs f args
 
 {- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
 chain of function arguments (@f x y z@).
@@ -989,11 +1002,9 @@ d
 a.b
 c
 
->>> test "123 ./foo.nix \"abc\" (f { x = y; })"
-123
-./foo.nix
+>>> test "\"abc\" (f { x = y; })"
 "abc"
-(f { x = y; })
+f { x = y; }
 
 -}
 expressionListP :: Parser [Expression]

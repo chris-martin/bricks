@@ -1,19 +1,22 @@
-{-# LANGUAGE ApplicativeDo, LambdaCase, NoImplicitPrelude, OverloadedStrings, ScopedTypeVariables, ViewPatterns #-}
+{-# LANGUAGE ApplicativeDo, LambdaCase, NamedFieldPuns, NoImplicitPrelude,
+             OverloadedStrings, ScopedTypeVariables, ViewPatterns #-}
 
-{- |
-
-This module parses and evaluates a Nix-like language. I don't claim that it /is/ Nix, for two reasons:
+{- | This module parses and evaluates a Nix-like language. I don't claim that it
+/is/ Nix, for two reasons:
 
 1. Nix doesn't actually have a specification.
-2. In the interest of laziness, I have only built out enough of it for my purpose at hand.
+2. In the interest of laziness, I have only built out enough of it for my
+   purpose at hand.
 
 Notable differences from Nix:
 
 - No built-in null, integer, or boolean types
-- No @with@ keyword
 - No @\@@ keyword
-- All variables are bound; no @builtins@ and no infix operators (@+@, @-@, @//@)
-- The concept of "set" is referred to as "dict"
+- No @builtins@ and no infix operators (@+@, @-@, @//@)
+- The concept of "set" is referred to as "dict" (this is not actually a language
+  difference, I just use a different word to talk about the same concept)
+- No @with@ keyword (todo)
+- No comments (todo)
 
 -}
 module ChrisMartinOrg.NixLike where
@@ -28,11 +31,13 @@ import Data.Char (Char)
 import Data.Eq (Eq (..))
 import Data.Foldable (Foldable, asum, foldMap, foldl)
 import Data.Function (($), (.))
-import Data.Functor (Functor (..), (<$>))
+import Data.Functor (Functor (..), (<$>), void)
 import Data.Maybe (Maybe (..))
+import Data.Ord (Ord (..))
 import Data.Semigroup ((<>))
 import Data.Text (Text)
-import Prelude (undefined)
+import Numeric.Natural (Natural)
+import Prelude (fromIntegral, Num (..), undefined)
 
 import qualified Text.Parsec as P
 import qualified Data.Char as Char
@@ -42,14 +47,18 @@ import qualified Data.Text as Text
 
 {- $setup
 
->>> import Prelude (($), putStrLn, putStr, print, IO, Either (..))
+>>> import Prelude (putStrLn, putStr, print, Show, show, IO, Either (..))
+
+We'll use the @parseTest@ function a lot to test parsers. It's a lot like
+'P.parseTest' from the parsec library, but it works on parsers of type 'Text'
+rather than @'Show' a => a@.
 
 >>> :{
 >>> parseTest :: Parser Text -> Text -> IO ()
 >>> parseTest p input =
 >>>   case P.parse p "" input of
 >>>     Left err -> putStr "parse error at " *> print err
->>>     Right x -> putStrLn (Text.unpack x)
+>>>     Right x -> putStr (Text.unpack x)
 >>> :}
 
 -}
@@ -59,13 +68,16 @@ import qualified Data.Text as Text
 --  Identifiers
 --------------------------------------------------------------------------------
 
--- | An identifier which /must/ be unquoted. For example, in a binding @x = y;@, the @x@ may be quoted, but the @y@ must be a bare identifier. The bare identifiers are a subset of the identifiers.
+{- | An identifier which /must/ be unquoted. For example, in a binding @x = y;@,
+the @x@ may be quoted, but the @y@ must be a bare identifier. The bare
+identifiers are a subset of the identifiers. -}
 newtype BareId =
   BareId
     { bareIdText :: Text
     }
 
-{- | An identifier can be /any/ string. In some cases this means we need to render it in quotes; see 'isUnquotableText'.
+{- | An identifier can be /any/ string. In some cases this means we need to
+render it in quotes; see 'isUnquotableText'.
 
 >>> test = putStrLn . Text.unpack . renderIdentifier
 
@@ -76,7 +88,7 @@ abc
 "a\"b"
 
 >>> test "-ab"
-"-ab"
+-ab
 
 >>> test ""
 ""
@@ -92,10 +104,12 @@ renderBareId (BareId x) = x
 renderIdExpr :: StrExpr -> Text
 renderIdExpr =
   \case
-    StrExpr (Foldable.toList -> [StrLiteral x]) | isBareIdentifierName x -> x
+    StrExpr (Foldable.toList -> [StrExprPart'Literal x]) | isBareIdentifierName x -> x
     x -> renderStrExpr x
 
-{- | Whether an identifier having this name can be rendered without quoting it. We allow a name to be a bare identifier, and thus to render unquoted, if all these conditions are met:
+{- | Whether an identifier having this name can be rendered without quoting it.
+We allow a name to be a bare identifier, and thus to render unquoted, if all
+these conditions are met:
 
 - The string is nonempty
 - All characters satify 'isBareIdentifierChar'
@@ -122,62 +136,81 @@ isBareIdentifierName x =
 keywords :: [Text]
 keywords = ["rec", "let", "in"]
 
-{- | Letters, @-@, and @_@. -}
+-- | Letters, @-@, and @_@.
 isBareIdentifierChar :: Char -> Bool
 isBareIdentifierChar c =
   Char.isLetter c || c == '-' || c == '_'
 
 {- |
 
->>> test = parseTest (bareIdText <$> bareIdP <* P.eof)
+>>> test = parseTest (bareIdText <$> bareIdP)
 
 >>> test "-ab_c"
 -ab_c
 
 >>> test ""
-failure
+parse error at (line 1, column 1):
+unexpected end of input
+expecting bare identifier
 
 >>> test "a\"b"
-failure
+a
 
 -}
 bareIdP :: Parser BareId
 bareIdP =
-  fmap (BareId . Text.pack) (P.many1 (P.satisfy isBareIdentifierChar))
+  p <?> "bare identifier"
+  where
+    p = BareId . Text.pack <$> P.many1 (P.satisfy isBareIdentifierChar)
 
+{- |
+
+>>> test = parseTest (renderStrExpr <$> idExprP)
+
+>>> test "a"
+"a"
+
+>>> test "\"a\""
+"a"
+
+-}
 idExprP :: Parser StrExpr
 idExprP =
-  asum
-    [ strExprP
-    , fmap (strExpr . bareIdText) bareIdP
-    ]
+  strExprP <|> (strExpr . bareIdText <$> bareIdP)
 
 
 --------------------------------------------------------------------------------
 --  String
 --------------------------------------------------------------------------------
 
--- | A quoted string expression, which may be a simple string like @"hello"@ or a more complex string containing antiquotation like @"Hello, my name is ${name}!"@.
+{- | A quoted string expression, which may be a simple string like @"hello"@ or
+a more complex string containing antiquotation like @"Hello, my name is
+${name}!"@. -}
 newtype StrExpr = StrExpr [StrExprPart]
 
 data StrExprPart
-  = StrLiteral Text
-  | StrAntiquote Expression
+  = StrExprPart'Literal Text
+  | StrExprPart'Antiquote Expression
 
 {- |
 
->>> renderTest = putStrLn . Text.unpack . renderStrExpr . StrExpr
+>>> test = putStrLn . Text.unpack . renderStrExpr . StrExpr
 
->>> renderTest []
+>>> test []
 ""
 
->>> renderTest [ StrLiteral "hello" ]
+>>> test [ StrExprPart'Literal "hello" ]
 "hello"
 
->>> renderTest [ StrLiteral "escape ${ this and \" this" ]
+>>> test [ StrExprPart'Literal "escape ${ this and \" this" ]
 "escape \${ this and \" this"
 
->>> renderTest [ StrLiteral "Hello, my name is ", StrAntiquote (Expr'Id (BareId "name")), StrLiteral "!" ]
+>>> :{
+>>> test [ StrExprPart'Literal "Hello, my name is "
+>>>      , StrExprPart'Antiquote (Expr'Id (BareId "name"))
+         , StrExprPart'Literal "!"
+>>>      ]
+>>> :}
 "Hello, my name is ${name}!"
 
 -}
@@ -187,8 +220,9 @@ renderStrExpr (StrExpr xs) =
   where
     f :: StrExprPart -> Text
     f = \case
-      StrLiteral t -> strEscape t
-      StrAntiquote e -> "${" <> renderExpression RenderContext'Normal e <> "}"
+      StrExprPart'Literal t -> strEscape t
+      StrExprPart'Antiquote e ->
+        "${" <> renderExpression RenderContext'Normal e <> "}"
 
 renderQuotedString :: Text -> Text
 renderQuotedString x =
@@ -197,27 +231,224 @@ renderQuotedString x =
 strEscape :: Text -> Text
 strEscape =
   Text.replace "\"" "\\\"" .
-  Text.replace "${" "\\${"
-
-strExprP :: Parser StrExpr
-strExprP = (strExprP'1 <|> strExprP'2) <?> "string"
-
-strExprP'1 :: Parser StrExpr
-strExprP'1 =
-  do
-    _ <- P.char '"'
-    undefined
-
-strExprP'2 :: Parser StrExpr
-strExprP'2 =
-  do
-    _ <- P.string "''"
-    undefined
+  Text.replace "${" "\\${" .
+  Text.replace "\n" "\\n" .
+  Text.replace "\r" "\\r" .
+  Text.replace "\t" "\\t"
 
 -- | A simple string literal expression with no antiquotation.
 strExpr :: Text -> StrExpr
 strExpr =
-  StrExpr . (\x -> [x]) . StrLiteral
+  StrExpr . (\x -> [x]) . StrExprPart'Literal
+
+{- | Parser for any kind of string literal. This includes "normal" string
+literals delimited by one double-quote @"@ ('strExprP'normal') and "indented"
+string literals delimited by two single-quotes @''@ ('strExprP'indented'). -}
+strExprP :: Parser StrExpr
+strExprP =
+  (strExprP'normal <|> strExprP'indented) <?> "string"
+
+
+--------------------------------------------------------------------------------
+--  Parsing normal strings
+--------------------------------------------------------------------------------
+
+{- | Parser for a "normal" string literal, delimited by one double-quote (@"@).
+Normal string literals have antiquotation and backslash escape sequences. They
+may span multiple lines.
+
+>>> test = parseTest (renderStrExpr <$> strExprP)
+
+>>> test "\"a\""
+"a"
+
+-}
+strExprP'normal :: Parser StrExpr
+strExprP'normal =
+  p <?> "normal string literal"
+  where
+    p = fmap StrExpr $ dP *> P.many (antiquoteP <|> aP) <* dP
+
+    dP = P.char '"'
+
+    aP :: Parser StrExprPart
+    aP = StrExprPart'Literal . Text.concat <$> P.many1 bP
+
+    bP :: Parser Text
+    bP = asum
+      [ strEscapeP
+      , Text.singleton <$> (P.try (P.char '$' <* P.notFollowedBy (P.char '{')))
+      , Text.singleton <$> P.satisfy (\c -> c /= '$' && c /= '"')
+      ]
+
+strEscapeP :: Parser Text
+strEscapeP =
+  P.char '\\' *> asum
+    [ "\\" <$ P.char '\\'
+    , "\"" <$ P.char '"'
+    , "\n" <$ P.char 'n'
+    , "\r" <$ P.char 'r'
+    , "\t" <$ P.char 't'
+    , "${" <$ P.string "${"
+    ]
+
+antiquoteP :: Parser StrExprPart
+antiquoteP =
+  StrExprPart'Antiquote
+    <$> braced (P.string "${") (P.char '}') expressionP
+    <?> "antiquoted string"
+
+
+--------------------------------------------------------------------------------
+--  Parsing indented strings
+--------------------------------------------------------------------------------
+
+{- | Parser for an "indented string literal," delimited by two single-quotes
+@''@ ('strExprP'indented'). Indented string literals have antiquotation but no
+backslash escape sequences.
+
+This type of literal is called "indented" because leading whitespace is
+intelligently stripped from the string ('stripIndentation'), which makes it
+convenient to use these literals for multi-line strings within an indented
+expression without the whitespace from indentation ending up as part of the
+string.
+
+>>> test = parseTest (renderStrExpr <$> (P.spaces *> strExprP'indented))
+
+>>> test "''hello''"
+"hello"
+
+todo - The 'r' quasiquoter from raw-strings-qq might read better here.
+
+>>> :{
+>>> test "  ''\n\
+>>>      \    one\n\
+>>>      \    two\n\
+>>>      \  ''"
+>>> :}
+"one\ntwo"
+
+>>> :{
+>>> test "  ''\n\
+>>>      \    one\n\
+>>>      \\n\
+>>>      \    two\n\
+>>>      \  ''"
+>>> :}
+"one\n\ntwo"
+
+-}
+strExprP'indented :: Parser StrExpr
+strExprP'indented =
+  p <?> "indented string literal"
+  where
+    p = indentedString'joinLines . stripIndentation <$> indentedStringP
+
+{- | An "indented string literal," delimited by two single-quotes @''@. This is
+parsed with 'indentedStringP', which is used to implement 'strExprP'indented'.
+-}
+newtype IndentedString = IndentedString [IndentedStringLine]
+
+-- | One line of an 'IndentedString'. This is parsed with 'indentedStringLineP'.
+data IndentedStringLine =
+  IndentedStringLine
+    { indentedStringLine'leadingSpaces :: Natural
+        -- ^ The number of leading space characters. We store this separately
+        -- for easier implementation of 'stripIndentation'.
+    , indentedStringLine'str :: StrExpr
+        -- ^ The rest of the line after any leading spaces.
+    }
+
+{- | Parser for a single line of an 'IndentedString'. -}
+indentedStringLineP :: Parser IndentedStringLine
+indentedStringLineP =
+  P.notFollowedBy (P.try (P.string "''")) *> (
+    IndentedStringLine
+      <$> spaceCountP
+      <*> (fmap StrExpr $ P.many $ antiquoteP <|> lP)
+      <*  (void (P.char '\n') <|> void (P.try (P.lookAhead (P.string "''"))))
+      <?> "line of an indented string literal"
+  )
+
+  where
+    lP = StrExprPart'Literal . Text.pack <$> P.many1 mP
+    mP = asum
+      [ P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
+      , P.try $ P.char '$' <* P.notFollowedBy (P.char '{')
+      , P.satisfy (\c -> c /= '\'' && c /= '$' && c /= '\n')
+      ]
+
+{- | Reads zero or more space characters and produces the number of them.
+
+>>> test = parseTest (Text.pack . show <$> spaceCountP)
+
+>>> test ""
+0
+
+>>> test "a"
+0
+
+>>> test "  a  b"
+2
+
+-}
+spaceCountP :: Parser Natural
+spaceCountP =
+  fromIntegral . List.length <$> P.many P.space
+
+{- | Parse an indented string, /without/ stripping the indentation. For a
+similar parser that does strip indentation, see 'strExprP'indented'. -}
+indentedStringP :: Parser IndentedString
+indentedStringP =
+  fmap IndentedString $
+  P.between (P.string "''") (P.string "''") $
+  P.many indentedStringLineP
+
+-- | Join 'IndentedStringLine's with newlines interspersed.
+indentedString'joinLines :: IndentedString -> StrExpr
+indentedString'joinLines (IndentedString xs) =
+  StrExpr $ List.concat $ List.intersperse [newline] (f <$> xs)
+  where
+    newline = StrExprPart'Literal "\n"
+    f :: IndentedStringLine -> [StrExprPart]
+    f (IndentedStringLine n (StrExpr parts)) =
+      StrExprPart'Literal (Text.replicate (fromIntegral n) " ") : parts
+
+{- | Determines whether an 'IndentedStringLine' contains any non-space
+characters. This is used to determine whether this line should be considered
+when calculating the number of space characters to strip in 'stripIndentation'.
+-}
+indentedStringLine'nonEmpty :: IndentedStringLine -> Bool
+indentedStringLine'nonEmpty =
+  \case
+    IndentedStringLine{ indentedStringLine'str = StrExpr [] } -> False
+    _ -> True
+
+{- | Determine how many characters of whitespace to strip from an indented
+string. -}
+indentedString'indentationSize :: IndentedString -> Natural
+indentedString'indentationSize (IndentedString xs) =
+  case List.filter indentedStringLine'nonEmpty xs of
+    [] -> 0
+    ys -> List.minimum (indentedStringLine'leadingSpaces <$> ys)
+
+{- | Modify an 'IndentedStringLine' by applying a function to its number of
+leading spaces. -}
+indentedStringLine'modifyLeadingSpaces
+  :: (Natural -> Natural) -> IndentedStringLine -> IndentedStringLine
+indentedStringLine'modifyLeadingSpaces
+  f x@IndentedStringLine{indentedStringLine'leadingSpaces = a} =
+  x{ indentedStringLine'leadingSpaces = f a }
+
+{- | Determine the minimum indentation of any nonempty line, and remove that
+many space characters from the front of every line. -}
+stripIndentation :: IndentedString -> IndentedString
+stripIndentation is@(IndentedString xs) =
+  let
+    b = indentedString'indentationSize is
+    f a = if a >= b then a - b else 0
+  in
+    IndentedString (indentedStringLine'modifyLeadingSpaces f <$> xs)
 
 
 --------------------------------------------------------------------------------
@@ -227,36 +458,52 @@ strExpr =
 -- | A function expression.
 data FuncExpr =
   FuncExpr
-    { funcExpr'param :: Param -- ^ A declaration of the function's parameter
-    , funcExpr'expression :: Expression -- ^ The body of the function; what it evaluates to
+    { funcExpr'param :: Param
+        -- ^ A declaration of the function's parameter
+    , funcExpr'expression :: Expression
+        -- ^ The body of the function; what it evaluates to
     }
 
 -- | A function call expression.
 data CallExpr =
   CallExpr
-    { callExpr'function :: Expression -- ^ The function being called
-    , calExpr'expression :: Expression -- ^ The argument to the function
+    { callExpr'function :: Expression
+        -- ^ The function being called
+    , callExpr'expression :: Expression
+        -- ^ The argument to the function
     }
 
--- | The parameter to a function. All functions have a single parameter, but it's more complicated than that because it may also include dict destructuring.
+{- | The parameter to a function. All functions have a single parameter, but
+it's more complicated than that because it may also include dict destructuring.
+-}
 data Param
-  = Param'Id BareId -- ^ A simple single-parameter function
-  | Param'Dict DictParam -- ^ Dict destructuring, which gives you something resembling multiple named parameters with default values
+  = Param'Id BareId
+      -- ^ A simple single-parameter function
+  | Param'Dict DictParam
+      -- ^ Dict destructuring, which gives you something resembling multiple
+      -- named parameters with default values
 
 -- | A function parameter that does dict destructuring. See 'Param'.
 data DictParam =
   DictParam
-    { dictParam'items :: [DictParamItem] -- ^ The set of destructured identifiers, along with any default value each may have
-    , dictParam'ellipsis :: Bool -- ^ Whether to allow additional keys beyond what is listed in the items, corresponding to the @...@ keyword
+    { dictParam'items :: [DictParamItem]
+        -- ^ The set of destructured identifiers, along with any default value
+        -- each may have
+    , dictParam'ellipsis :: Bool
+        -- ^ Whether to allow additional keys beyond what is listed in the
+        -- items, corresponding to the @...@ keyword
     }
 
 data DictParamItem =
   DictParamItem
-    { dictParamItem'variable :: Text -- ^ The bound variable
-    , dictParamItem'default :: Maybe ParamDefault -- ^ The default value to be used if the key is not present in the dict
+    { dictParamItem'variable :: Text
+        -- ^ The bound variable
+    , dictParamItem'default :: Maybe ParamDefault
+        -- ^ The default value to be used if the key is not present in the dict
     }
 
--- | A default expression to use for a variable bound by a dict destructuring expression (see 'DictParamItem') if the key is not present in the dict.
+{- | A default expression to use for a variable bound by a dict destructuring
+expression (see 'DictParamItem') if the key is not present in the dict. -}
 newtype ParamDefault = ParamDefault Expression
 
 renderParam :: Param -> Text
@@ -267,22 +514,21 @@ renderParam =
 
 {- |
 
->>> renderTest a b = putStrLn . Text.unpack . renderDictParam $ DictParam a b
+>>> test a b = putStrLn . Text.unpack . renderDictParam $ DictParam a b
 
->>> renderTest Map.empty False
+>>> test [] False
 { }:
 
->>> renderTest Map.empty True
+>>> test [] True
 { ... }:
 
->>> item1 = (Identifier "x", Nothing)
->>> item2 = (Identifier "y", Just . ParamDefault . Expr'Str. strExpr $ "abc")
->>> items = Map.fromList [ item1, item2 ]
+>>> item1 = DictParamItem "x" Nothing
+>>> item2 = DictParamItem "y", Just . ParamDefault . Expr'Str . strExpr $ "abc")
 
->>> renderTest items False
+>>> renderTest [ item1, item2 ] False
 { x, y ? "abc" }:
 
->>> renderTest items True
+>>> renderTest [ item1, item2 ] True
 { x, y ? "abc", ... }:
 
 -}
@@ -366,7 +612,10 @@ data ListLiteral = ListLiteral [Expression]
 
 {- |
 
->>> renderTest = putStrLn . Text.unpack . renderListLiteral . ListLiteral . Seq.fromList
+>>> :{
+>>> renderTest =
+>>>   putStrLn . Text.unpack . renderListLiteral . ListLiteral
+>>> :}
 
 >>> renderTest []
 [ ]
@@ -390,31 +639,30 @@ renderListLiteral :: ListLiteral -> Text
 renderListLiteral =
   \case
     ListLiteral (Foldable.toList -> []) -> renderEmptyList
-    ListLiteral (Foldable.toList -> values) -> "[ " <> foldMap (\v -> renderExpression RenderContext'List v <> " ") values <> "]"
+    ListLiteral (Foldable.toList -> values) ->
+      "[ " <>
+      foldMap (\v -> renderExpression RenderContext'List v <> " ") values <>
+      "]"
 
 renderEmptyList :: Text
 renderEmptyList = "[ ]"
 
 listLiteralP :: Parser ListLiteral
 listLiteralP =
-  p <?> "list"
-  where
-    p = do
-      _ <- P.char '[' *> P.spaces
-      x <- expressionListP
-      _ <- P.spaces <* P.char ']'
-      pure (ListLiteral x)
-
+  ListLiteral <$> braced (P.char '[') (P.char ']') expressionListP <?> "list"
 
 --------------------------------------------------------------------------------
 --  Dict
 --------------------------------------------------------------------------------
 
--- | A dict literal expression, starting with @{@ or @rec {@ and ending with @}@.
+{- | A dict literal expression, starting with @{@ or @rec {@ and ending with
+@}@. -}
 data DictLiteral =
   DictLiteral
-    { dictLiteral'rec :: Bool -- ^ Whether the dict is recursive (denoted by the @rec@ keyword)
-    , dictLiteral'bindings :: [Binding] -- ^ The bindings (everything between @{@ and @}@)
+    { dictLiteral'rec :: Bool
+        -- ^ Whether the dict is recursive (denoted by the @rec@ keyword)
+    , dictLiteral'bindings :: [Binding]
+        -- ^ The bindings (everything between @{@ and @}@)
     }
 
 -- | An expression of the form @person.name@ that looks up a key from a dict.
@@ -448,25 +696,54 @@ dictLiteralP'noRec :: Parser [Binding]
 dictLiteralP'noRec =
   do
     _ <- P.char '{' *> P.spaces
-    a <- P.sepBy1 bindingP P.spaces
+    a <- bindingP `sepBy1` P.spaces
     _ <- P.spaces *> P.char '}'
     pure a
 
 {- | Parser for a chain of dict lookups (like @.a.b.c@).
 
->>> parseTest $ dotsP "" <* eof
-[]
+>>> test = parseTest (Text.intercalate "\n" . fmap renderStrExpr <$> dotsP)
 
->>> parseTest $ dotsP ".a" <* eof
-[IdExpr'BareId (BareId "a")]
+>>> test ""
 
->>> parseTest $ dotsP ".a . b" <* eof
-[IdExpr'BareId (BareId "a"), IdExpr'BareId (BareId "b")]
+>>> test ".a"
+"a"
+
+>>> test ".\"a\""
+"a"
+
+>>> test ".a . b c"
+"a"
+"b"
+
+>>> test ".a.\"b\""
+"a"
+"b"
 
 -}
 dotsP :: Parser [StrExpr]
-dotsP =
-  P.sepBy (P.char '.' *> P.spaces *> idExprP) P.spaces
+dotsP = dotP `sepBy` P.spaces <?> "dots"
+
+{- |
+
+>>> test = parseTest (renderStrExpr <$> dotP)
+
+>>> test ".a"
+"a"
+
+>>> test ". a . b"
+"a"
+
+>>> test ". \"a\""
+"a"
+
+>>> test ". \"a\".b"
+"a"
+
+-}
+dotP :: Parser StrExpr
+dotP =
+  P.char '.' *> P.spaces *> idExprP
 
 applyDots :: Expression -> [StrExpr] -> Expression
 applyDots =
@@ -480,8 +757,10 @@ applyDots =
 -- | A @let@-@in@ expression.
 data LetExpr =
   LetExpr
-    { letExpr'bindings :: [Binding] -- ^ The bindings (everything between the @let@ and @in@ keywords)
-    , letExpr'value :: Expression -- ^ The value (everything after the @in@ keyword)
+    { letExpr'bindings :: [Binding]
+        -- ^ The bindings (everything between the @let@ and @in@ keywords)
+    , letExpr'value :: Expression
+        -- ^ The value (everything after the @in@ keyword)
     }
 
 renderLetExpr :: LetExpr -> Text
@@ -546,15 +825,10 @@ renderExpression c =
     Expr'Call x -> renderCallExpr c x
     Expr'Let  x -> renderLetExpr x
 
-{- | The primary, top-level expression parser. This is what you use to parse a @.nix@ file.
+{- | The primary, top-level expression parser. This is what you use to parse a
+@.nix@ file.
 
->>> :{
->>> test input =
->>>   case parse (expressionP <* P.eof) "" input of
->>>     Left err -> do putStr "parse error at "
->>>                    print err
->>>     Right x -> putStrLn . Text.unpack . renderExpression $ x
->>> :}
+>>> test = parseTest (renderExpression RenderContext'Normal <$> expressionP)
 
 >>> test "[ true false ]"
 [ true false ]
@@ -581,9 +855,15 @@ expressionP =
         f : args -> pure $ applyArgs f args
     ]
 
-{- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a chain of function arguments (@f x y z@).
+{- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
+chain of function arguments (@f x y z@).
 
->>> test = parseTest (Text.unlines . fmap (renderExpression RenderContext'Normal) <$> expressionListP <* P.eof)
+>>> :{
+>>> test = parseTest $
+>>>   fmap
+>>>     (Text.intercalate "\n" . fmap (renderExpression RenderContext'Normal))
+>>>     expressionListP
+>>> :}
 
 >>> test ""
 
@@ -610,13 +890,18 @@ c
 
 -}
 expressionListP :: Parser [Expression]
--- An item in an expression list can be surrounded by no parens (@a@), two parens (@(a)@), or one paren on the left (@(a).b@). Not just parens, but straight braces and curly braces.
 expressionListP =
-  P.sepBy expressionP'listItem P.spaces
+  p <?> "expression list"
+  where
+    p = expressionP'listItem `sepBy` P.spaces
 
-{- | Parser for a single item within an expression list ('expressionListP'). This expression is not a function, a function application, or a let binding.
+{- | Parser for a single item within an expression list ('expressionListP').
+This expression is not a function, a function application, or a let binding.
 
->>> test = parseTest (renderExpression RenderContext'Normal <$> expressionP'listItem)
+>>> :{
+>>> test = parseTest
+>>>   (renderExpression RenderContext'Normal <$> expressionP'listItem)
+>>> :}
 
 >>> test "abc def"
 abc
@@ -645,9 +930,24 @@ a
 -}
 expressionP'listItem :: Parser Expression
 expressionP'listItem =
-  applyDots <$> expressionP'listItem'noDot <*> dotsP
+  p <?> "expression list item"
+  where
+    p = applyDots
+          <$> expressionP'listItem'noDot
+          <*> dotsP
 
--- | Like 'expressionP'listItem', but with the further restriction that the expression may not be a dot.
+{- | Like 'expressionP'listItem', but with the further restriction that the
+expression may not be a dot.
+
+>>> :{
+>>> test = parseTest
+>>>   (renderExpression RenderContext'Normal <$> expressionP'listItem'noDot)
+>>> :}
+
+>>> test "a.b c"
+a
+
+-}
 expressionP'listItem'noDot :: Parser Expression
 expressionP'listItem'noDot =
   asum
@@ -657,11 +957,14 @@ expressionP'listItem'noDot =
     , fmap Expr'Id bareIdP
     , expressionP'paren
     ]
+    <?> "expression list item without a dot"
 
--- | Parser for a parenthesized expression, from opening parenthesis to closing parenthesis.
+{- | Parser for a parenthesized expression, from opening parenthesis to closing
+parenthesis. -}
 expressionP'paren :: Parser Expression
 expressionP'paren =
-  P.char '(' *> P.spaces *> expressionP <* P.spaces <* P.char ')'
+  braced (P.char '(') (P.char ')') expressionP
+
 
 
 --------------------------------------------------------------------------------
@@ -674,3 +977,20 @@ data RenderContext
   | RenderContext'Call1
   | RenderContext'Call2
   | RenderContext'Dot1
+
+
+--------------------------------------------------------------------------------
+--  General parsing stuff
+--------------------------------------------------------------------------------
+
+sepBy :: Parser a -> Parser b -> Parser [a]
+p `sepBy` by =
+  (p `sepBy1` by) <|> pure []
+
+sepBy1 :: Parser a -> Parser b -> Parser [a]
+p `sepBy1` by =
+  (:) <$> p <*> P.many (P.try (by *> p))
+
+braced :: Parser x -> Parser y -> Parser a -> Parser a
+braced x y =
+  P.between (x *> P.spaces) (P.spaces *> y)

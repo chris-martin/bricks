@@ -26,12 +26,12 @@ import Control.Arrow ((>>>))
 import Control.Monad ((>>=))
 import Text.Parsec ((<?>))
 import Text.Parsec.Text (Parser)
-import Data.Bool (Bool (..), (&&), (||))
+import Data.Bool (Bool (..), (&&), (||), not)
 import Data.Char (Char)
 import Data.Eq (Eq (..))
 import Data.Foldable (Foldable, asum, foldMap, foldl)
 import Data.Function (($), (.))
-import Data.Functor (Functor (..), (<$>), void)
+import Data.Functor (Functor (..), (<$>))
 import Data.Maybe (Maybe (..))
 import Data.Ord (Ord (..))
 import Data.Semigroup ((<>))
@@ -104,7 +104,8 @@ renderBareId (BareId x) = x
 renderIdExpr :: StrExpr -> Text
 renderIdExpr =
   \case
-    StrExpr (Foldable.toList -> [StrExprPart'Literal x]) | isBareIdentifierName x -> x
+    StrExpr (Foldable.toList -> [StrExprPart'Literal x])
+      | isBareIdentifierName x -> x
     x -> renderStrExpr x
 
 {- | Whether an identifier having this name can be rendered without quoting it.
@@ -192,6 +193,17 @@ data StrExprPart
   = StrExprPart'Literal Text
   | StrExprPart'Antiquote Expression
 
+
+-- | A simple string literal expression with no antiquotation.
+strExpr :: Text -> StrExpr
+strExpr =
+  StrExpr . (\x -> [x]) . StrExprPart'Literal
+
+
+--------------------------------------------------------------------------------
+--  String rendering
+--------------------------------------------------------------------------------
+
 {- |
 
 >>> test = putStrLn . Text.unpack . renderStrExpr . StrExpr
@@ -216,13 +228,20 @@ data StrExprPart
 -}
 renderStrExpr :: StrExpr -> Text
 renderStrExpr (StrExpr xs) =
-    "\"" <> foldMap f xs <> "\""
-  where
-    f :: StrExprPart -> Text
-    f = \case
-      StrExprPart'Literal t -> strEscape t
-      StrExprPart'Antiquote e ->
-        "${" <> renderExpression RenderContext'Normal e <> "}"
+  "\"" <> renderStrExprParts xs <> "\""
+
+renderStrExprParts :: [StrExprPart] -> Text
+renderStrExprParts = foldMap renderStrExprPart
+
+renderStrExprPart :: StrExprPart -> Text
+renderStrExprPart =
+  \case
+    StrExprPart'Literal t -> strEscape t
+    StrExprPart'Antiquote e -> renderAntiquote e
+
+renderAntiquote :: Expression -> Text
+renderAntiquote e =
+  "${" <> renderExpression RenderContext'Normal e <> "}"
 
 renderQuotedString :: Text -> Text
 renderQuotedString x =
@@ -236,10 +255,10 @@ strEscape =
   Text.replace "\r" "\\r" .
   Text.replace "\t" "\\t"
 
--- | A simple string literal expression with no antiquotation.
-strExpr :: Text -> StrExpr
-strExpr =
-  StrExpr . (\x -> [x]) . StrExprPart'Literal
+
+--------------------------------------------------------------------------------
+--  String parsing
+--------------------------------------------------------------------------------
 
 {- | Parser for any kind of string literal. This includes "normal" string
 literals delimited by one double-quote @"@ ('strExprP'normal') and "indented"
@@ -250,7 +269,7 @@ strExprP =
 
 
 --------------------------------------------------------------------------------
---  Parsing normal strings
+--  Normal strings
 --------------------------------------------------------------------------------
 
 {- | Parser for a "normal" string literal, delimited by one double-quote (@"@).
@@ -300,8 +319,23 @@ antiquoteP =
 
 
 --------------------------------------------------------------------------------
---  Parsing indented strings
+--  Indented strings
 --------------------------------------------------------------------------------
+
+{- | An "indented string literal," delimited by two single-quotes @''@. This is
+parsed with 'indentedStringP', which is used to implement 'strExprP'indented'.
+-}
+newtype IndentedString = IndentedString [IndentedStringLine]
+
+-- | One line of an 'IndentedString'. This is parsed with 'indentedStringLineP'.
+data IndentedStringLine =
+  IndentedStringLine
+    { indentedStringLine'leadingSpaces :: Natural
+        -- ^ The number of leading space characters. We store this separately
+        -- for easier implementation of 'stripIndentation'.
+    , indentedStringLine'str :: StrExpr
+        -- ^ The rest of the line after any leading spaces.
+    }
 
 {- | Parser for an "indented string literal," delimited by two single-quotes
 @''@ ('strExprP'indented'). Indented string literals have antiquotation but no
@@ -342,36 +376,101 @@ strExprP'indented :: Parser StrExpr
 strExprP'indented =
   p <?> "indented string literal"
   where
-    p = indentedString'joinLines . stripIndentation <$> indentedStringP
+    p = indentedString'joinLines . stripIndentation . trimEmptyLines <$> indentedStringP
 
-{- | An "indented string literal," delimited by two single-quotes @''@. This is
-parsed with 'indentedStringP', which is used to implement 'strExprP'indented'.
+{- | Parse an indented string. This parser produces unprocessed lines, /without/
+stripping the indentation or removing leading/trailing empty lines. For a parser
+that does those things, see 'strExprP'indented'.
+
+>>> :{
+>>> test = P.parseTest $
+>>>        fmap (\(IndentedString xs) -> renderIndentedStringLine <$> xs) $
+>>>        (P.spaces *> indentedStringP)
+>>> :}
+
+>>> :{
+>>> test "  ''\n\
+>>>      \    one\n\
+>>>      \    two\n\
+>>>      \  ''"
+>>> :}
+["","    one","    two","  "]
+
+>>> :{
+>>> test "  ''\n\
+>>>      \    one\n\
+>>>      \\n\
+>>>      \    two\n\
+>>>      \  ''"
+>>> :}
+["","    one","","    two","  "]
+
 -}
-newtype IndentedString = IndentedString [IndentedStringLine]
+indentedStringP :: Parser IndentedString
+indentedStringP =
+  fmap IndentedString $
+  P.between (P.string "''") (P.string "''") $
+  indentedStringLineP `P.sepBy` P.char '\n'
 
--- | One line of an 'IndentedString'. This is parsed with 'indentedStringLineP'.
-data IndentedStringLine =
-  IndentedStringLine
-    { indentedStringLine'leadingSpaces :: Natural
-        -- ^ The number of leading space characters. We store this separately
-        -- for easier implementation of 'stripIndentation'.
-    , indentedStringLine'str :: StrExpr
-        -- ^ The rest of the line after any leading spaces.
-    }
+{- |
 
-{- | Parser for a single line of an 'IndentedString'. -}
+>>> test n xs = renderIndentedStringLine $ IndentedStringLine n (StrExpr xs)
+
+>>> :{
+>>> test 2 [ StrExprPart'Literal "abc"
+>>>        , StrExprPart'Antiquote (Expr'Id $ BareId "x")
+>>>        ]
+>>> :}
+"  abc${x}"
+
+-}
+renderIndentedStringLine :: IndentedStringLine -> Text
+renderIndentedStringLine (IndentedStringLine n (StrExpr xs)) =
+  Text.replicate (fromIntegral n) " " <> renderStrExprParts xs
+
+renderIndentedStringLines :: [IndentedStringLine] -> Text
+renderIndentedStringLines =
+  foldMap renderIndentedStringLine
+
+{- | Parser for a single line of an 'IndentedString'.
+
+>>> test = P.parseTest (renderIndentedStringLine <$> indentedStringLineP)
+
+>>> test "abc"
+parse error at (line 1, column 4):
+unexpected end of input
+expecting line content or end of line
+
+>>> test "\n"
+""
+
+>>> test "  \n"
+"  "
+
+>>> test "   abc\ndef"
+"   abc"
+
+>>> test "   abc''x"
+"   abc"
+
+-}
 indentedStringLineP :: Parser IndentedStringLine
 indentedStringLineP =
-  P.notFollowedBy (P.try (P.string "''")) *> (
-    IndentedStringLine
-      <$> spaceCountP
-      <*> (fmap StrExpr $ P.many $ antiquoteP <|> lP)
-      <*  (void (P.char '\n') <|> void (P.try (P.lookAhead (P.string "''"))))
-      <?> "line of an indented string literal"
-  )
+  IndentedStringLine
+    <$> spaceCountP <*> body <* end
+    <?> "line of an indented string literal"
 
   where
+    body =
+      let p = (antiquoteP <|> lP) <?> "line content"
+      in  StrExpr <$> P.many p
+
+    end =
+      let p = P.try $ P.lookAhead (P.string "''" <|> P.string "\n")
+      in  p <?> "end of line"
+
     lP = StrExprPart'Literal . Text.pack <$> P.many1 mP
+
     mP = asum
       [ P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
       , P.try $ P.char '$' <* P.notFollowedBy (P.char '{')
@@ -391,18 +490,13 @@ indentedStringLineP =
 >>> test "  a  b"
 2
 
+>>> test "  \n  "
+2
+
 -}
 spaceCountP :: Parser Natural
 spaceCountP =
-  fromIntegral . List.length <$> P.many P.space
-
-{- | Parse an indented string, /without/ stripping the indentation. For a
-similar parser that does strip indentation, see 'strExprP'indented'. -}
-indentedStringP :: Parser IndentedString
-indentedStringP =
-  fmap IndentedString $
-  P.between (P.string "''") (P.string "''") $
-  P.many indentedStringLineP
+  fromIntegral . List.length <$> P.many (P.char ' ')
 
 -- | Join 'IndentedStringLine's with newlines interspersed.
 indentedString'joinLines :: IndentedString -> StrExpr
@@ -415,14 +509,20 @@ indentedString'joinLines (IndentedString xs) =
       StrExprPart'Literal (Text.replicate (fromIntegral n) " ") : parts
 
 {- | Determines whether an 'IndentedStringLine' contains any non-space
-characters. This is used to determine whether this line should be considered
-when calculating the number of space characters to strip in 'stripIndentation'.
--}
+characters. The opposite of 'indentedStringLine'nonEmpty'.
+
+This is used to determine whether this line should be considered when
+calculating the number of space characters to strip in 'stripIndentation'. -}
 indentedStringLine'nonEmpty :: IndentedStringLine -> Bool
 indentedStringLine'nonEmpty =
   \case
     IndentedStringLine{ indentedStringLine'str = StrExpr [] } -> False
     _ -> True
+
+-- | The opposite of 'indentedStringLine'nonEmpty'.
+indentedStringLine'empty :: IndentedStringLine -> Bool
+indentedStringLine'empty =
+  not . indentedStringLine'nonEmpty
 
 {- | Determine how many characters of whitespace to strip from an indented
 string. -}
@@ -449,6 +549,13 @@ stripIndentation is@(IndentedString xs) =
     f a = if a >= b then a - b else 0
   in
     IndentedString (indentedStringLine'modifyLeadingSpaces f <$> xs)
+
+-- | Remove any empty lines from the beginning or end of an indented string.
+trimEmptyLines :: IndentedString -> IndentedString
+trimEmptyLines (IndentedString xs) =
+  IndentedString (trimWhile indentedStringLine'empty xs)
+  where
+    trimWhile f = List.dropWhileEnd f . List.dropWhile f
 
 
 --------------------------------------------------------------------------------
@@ -523,12 +630,12 @@ renderParam =
 { ... }:
 
 >>> item1 = DictParamItem "x" Nothing
->>> item2 = DictParamItem "y", Just . ParamDefault . Expr'Str . strExpr $ "abc")
+>>> item2 = DictParamItem "y" (Just . ParamDefault . Expr'Str . strExpr $ "abc")
 
->>> renderTest [ item1, item2 ] False
+>>> test [ item1, item2 ] False
 { x, y ? "abc" }:
 
->>> renderTest [ item1, item2 ] True
+>>> test [ item1, item2 ] True
 { x, y ? "abc", ... }:
 
 -}

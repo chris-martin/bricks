@@ -858,8 +858,8 @@ idParamP = P.try $ do
 
 dictParamP :: Parser DictParam
 dictParamP =
-  -- todo: we don't need this entire parser to backtrack
-  P.try $ do
+  do
+    _ <- P.try . P.lookAhead $ dictParamStartP
     _ <- P.char '{'
     _ <- P.spaces
     go id
@@ -881,8 +881,22 @@ dictParamP =
             go (previousItems . (DictParamItem a b :))
         ]
 
-dictParamItemP :: Parser DictParamItem
-dictParamItemP = fail "TODO"
+-- | This is used in a lookahead by 'dictParamP' to determine whether we're
+-- about to start parsing a 'DictParam'.
+dictParamStartP :: Parser ()
+dictParamStartP =
+  do
+    _ <- P.char '{'
+    _ <- P.spaces
+    asum
+      [ void $ P.string "..."
+      , void $ bareIdP *>
+          asum
+            [ P.char ','
+            , P.char '?'
+            , P.char '}'
+            ]
+      ]
 
 paramDefaultP :: Parser ParamDefault
 paramDefaultP = fail "TODO"

@@ -857,7 +857,7 @@ dotsP =
 
 dotsP'1 :: Parser [StrExpr]
 dotsP'1 =
-  (:) <$> dotP <*> P.many (dotP'leadingSpaces)
+  (:) <$> dotP <*> P.many dotP'leadingSpaces
 
 {- |
 

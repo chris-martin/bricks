@@ -13,6 +13,7 @@ Notable differences from Nix:
 - No built-in null, integer, or boolean types
 - No @\@@ keyword
 - No @builtins@ and no infix operators (@+@, @-@, @//@)
+- No URI literals
 - The concept of "set" is referred to as "dict" (this is not actually a language
   difference, I just use a different word to talk about the same concept)
 - No @with@ keyword (todo)
@@ -21,23 +22,23 @@ Notable differences from Nix:
 -}
 module ChrisMartinOrg.NixLike where
 
-import Control.Applicative ((<|>), (<*), (*>), (<*>), pure)
+import Control.Applicative ((<|>), (<*), (*>), pure)
 import Control.Arrow ((>>>))
-import Control.Monad ((>>=), fail, mfilter)
+import Control.Monad (fail, guard)
 import Text.Parsec ((<?>))
 import Text.Parsec.Text (Parser)
 import Data.Bool (Bool (..), (&&), (||), not)
 import Data.Char (Char)
 import Data.Eq (Eq (..))
 import Data.Foldable (Foldable, asum, foldMap, foldl)
-import Data.Function (($), (.))
-import Data.Functor (Functor (..), (<$>))
+import Data.Function (($), (.), id)
+import Data.Functor (Functor (..), (<$>), ($>), void)
 import Data.Maybe (Maybe (..))
 import Data.Ord (Ord (..))
 import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Numeric.Natural (Natural)
-import Prelude (fromIntegral, Num (..))
+import Prelude (fromIntegral, Num (..), succ)
 
 import qualified Text.Parsec as P
 import qualified Data.Char as Char
@@ -48,7 +49,7 @@ import qualified Data.Text as Text
 {- $setup
 
 >>> import Data.Either (Either (..), either)
->>> import Data.Function (id, const)
+>>> import Data.Function (const)
 >>> import Prelude (putStrLn, putStr, print, Show, show, IO, String)
 
 We'll use the @parseTest@ function a lot to test parsers. It's a lot like
@@ -97,6 +98,12 @@ keywords =
   , keyword'let
   , keyword'in
   ]
+
+keywordP :: Text -> Parser ()
+keywordP k = do
+  _ <- P.string (Text.unpack k)
+  _ <- P.notFollowedBy (P.satisfy isBareIdentifierChar)
+  pure ()
 
 
 --------------------------------------------------------------------------------
@@ -192,15 +199,20 @@ remaining input: ""
 a
 remaining input: "\"b"
 
+>>> test "a b"
+a
+remaining input: "b"
+
 -}
 bareIdP :: Parser BareId
 bareIdP =
   p <?> "bare identifier"
   where
-    p = fmap BareId
-      $ mfilter (not . (`List.elem` keywords))
-      $ fmap Text.pack
-      $ P.many1 (P.satisfy isBareIdentifierChar)
+    p = do
+      a <- Text.pack <$> P.many1 (P.satisfy isBareIdentifierChar)
+      guard $ not (a `List.elem` keywords)
+      _ <- P.spaces
+      pure $ BareId a
 
 {- |
 
@@ -214,10 +226,19 @@ remaining input: ""
 "a"
 remaining input: ""
 
+>>> test "a b"
+"a"
+remaining input: "b"
+
 -}
 idExprP :: Parser StrExpr
 idExprP =
-  strExprP <|> (strExpr . bareIdText <$> bareIdP)
+  asum
+    [ strExprP
+    , do
+        a <- bareIdP
+        pure $ strExpr (bareIdText a)
+    ]
 
 
 --------------------------------------------------------------------------------
@@ -307,6 +328,15 @@ strExprP :: Parser StrExpr
 strExprP =
   (strExprP'normal <|> strExprP'indented) <?> "string"
 
+antiquoteP :: Parser Expression
+antiquoteP =
+  do
+    _ <- P.try (P.string "${")
+    _ <- P.spaces
+    a <- expressionP
+    _ <- P.char '}'
+    pure a
+
 
 --------------------------------------------------------------------------------
 --  Normal strings
@@ -322,41 +352,71 @@ may span multiple lines.
 "a"
 remaining input: ""
 
+>>> test "\"a\" x"
+"a"
+remaining input: "x"
+
+>>> test "\"a ${b} c\""
+"a ${b} c"
+remaining input: ""
+
+>>> test "\"a${ b }c\""
+"a${b}c"
+remaining input: ""
+
+>>> test "\"$\""
+"$"
+remaining input: ""
+
+>>> test "\"a$\""
+"a$"
+remaining input: ""
+
+>>> test "\"\\${\""
+"\${"
+remaining input: ""
+
+>>> test "\"a\\${\""
+"a\${"
+remaining input: ""
+
 -}
 strExprP'normal :: Parser StrExpr
 strExprP'normal =
-  p <?> "normal string literal"
+  (P.char '"' *> go id) <?> "normal string literal"
   where
-    p = fmap StrExpr $ dP *> P.many (antiquoteP <|> aP) <* dP
-
-    dP = P.char '"'
-
-    aP :: Parser StrExprPart
-    aP = StrExprPart'Literal . Text.concat <$> P.many1 bP
-
-    bP :: Parser Text
-    bP = asum
-      [ strEscapeP
-      , Text.singleton <$> (P.try (P.char '$' <* P.notFollowedBy (P.char '{')))
-      , Text.singleton <$> P.satisfy (\c -> c /= '$' && c /= '"')
-      ]
-
-strEscapeP :: Parser Text
-strEscapeP =
-  P.char '\\' *> asum
-    [ "\\" <$ P.char '\\'
-    , "\"" <$ P.char '"'
-    , "\n" <$ P.char 'n'
-    , "\r" <$ P.char 'r'
-    , "\t" <$ P.char 't'
-    , "${" <$ P.string "${"
-    ]
-
-antiquoteP :: Parser StrExprPart
-antiquoteP =
-  StrExprPart'Antiquote
-    <$> braced (P.string "${") (P.char '}') expressionP
-    <?> "antiquoted string"
+    go :: ([StrExprPart] -> [StrExprPart]) -> Parser StrExpr
+    go previousParts =
+      asum
+        [ do
+            _ <- P.char '"'
+            _ <- P.spaces
+            pure $ StrExpr (previousParts [])
+        , do
+            xs <- P.many1 $ asum
+              [ do
+                  c <- P.satisfy (\c -> c /= '$' && c /= '"' && c /= '\\')
+                  pure $ Text.singleton c
+              , P.try $ do
+                  c <- P.char '$'
+                  _ <- P.notFollowedBy (P.char '{')
+                  pure $ Text.singleton c
+              , do
+                  _ <- P.char '\\'
+                  asum
+                    [ P.char '\\' $> "\\"
+                    , P.char '"' $> "\""
+                    , P.char 'n' $> "\n"
+                    , P.char 'r' $> "\r"
+                    , P.char 't' $> "\t"
+                    , P.string "${" $> "${"
+                    ]
+              ]
+            go $ previousParts . (StrExprPart'Literal (Text.concat xs) :)
+        , do
+            a <- antiquoteP
+            go $ previousParts . (StrExprPart'Antiquote a :)
+        ]
 
 
 --------------------------------------------------------------------------------
@@ -388,9 +448,17 @@ convenient to use these literals for multi-line strings within an indented
 expression without the whitespace from indentation ending up as part of the
 string.
 
->>> test = parseTest (renderStrExpr <$> (P.spaces *> strExprP'indented))
+>>> :{
+>>> test = parseTest
+>>>      $ fmap renderStrExpr
+>>>      $ P.spaces *> strExprP'indented
+>>> :}
 
 >>> test "''hello''x"
+"hello"
+remaining input: "x"
+
+>>> test "''hello'' x"
 "hello"
 remaining input: "x"
 
@@ -420,7 +488,9 @@ strExprP'indented :: Parser StrExpr
 strExprP'indented =
   p <?> "indented string literal"
   where
-    p = indentedString'joinLines . stripIndentation . trimEmptyLines <$> indentedStringP
+    p = do
+      a <- indentedStringP
+      pure $ indentedString'joinLines . stripIndentation . trimEmptyLines $ a
 
 {- | Parse an indented string. This parser produces unprocessed lines, /without/
 stripping the indentation or removing leading/trailing empty lines. For a parser
@@ -452,32 +522,47 @@ remaining input: "x"
 ["","    one","","    two","  "]
 remaining input: "x"
 
+>>> test "'''' x"
+[""]
+remaining input: "x"
+
+>>> test "''abc''"
+["abc"]
+remaining input: ""
+
+>>> test "''\n''"
+["",""]
+remaining input: ""
+
+>>> test "''  \n''"
+["  ",""]
+remaining input: ""
+
+>>> test "''   abc\ndef''"
+["   abc","def"]
+remaining input: ""
+
 -}
 indentedStringP :: Parser IndentedString
 indentedStringP =
-  fmap IndentedString $
-  P.between (P.string "''") (P.string "''") $
-  indentedStringLineP `P.sepBy` P.char '\n'
-
-{- |
-
->>> test n xs = renderIndentedStringLine $ IndentedStringLine n (StrExpr xs)
-
->>> :{
->>> test 2 [ StrExprPart'Literal "abc"
->>>        , StrExprPart'Antiquote (Expr'Id $ BareId "x")
->>>        ]
->>> :}
-"  abc${x}"
-
--}
-renderIndentedStringLine :: IndentedStringLine -> Text
-renderIndentedStringLine (IndentedStringLine n (StrExpr xs)) =
-  Text.replicate (fromIntegral n) " " <> renderStrExprParts xs
-
-renderIndentedStringLines :: [IndentedStringLine] -> Text
-renderIndentedStringLines =
-  foldMap renderIndentedStringLine
+  do
+    _ <- P.string "''"
+    go id
+  where
+    go :: ([IndentedStringLine] -> [IndentedStringLine])
+       -> Parser IndentedString
+    go previousLines =
+      do
+        line <- indentedStringLineP
+        asum
+          [ do
+              _ <- P.string "''"
+              _ <- P.spaces
+              pure $ IndentedString (previousLines [line])
+          , do
+              _ <- P.char '\n'
+              go $ previousLines . (line :)
+          ]
 
 {- | Parser for a single line of an 'IndentedString'.
 
@@ -490,7 +575,7 @@ renderIndentedStringLines =
 >>> test "abc"
 parse error at (line 1, column 4):
 unexpected end of input
-expecting line content or end of line
+expecting "$", "'", "\n", "''" or "${"
 remaining input: ""
 
 >>> test "\n"
@@ -512,51 +597,56 @@ remaining input: "''x"
 -}
 indentedStringLineP :: Parser IndentedStringLine
 indentedStringLineP =
-  IndentedStringLine
-    <$> spaceCountP <*> body <* end
-    <?> "line of an indented string literal"
-
+  do
+    a <- counterP (P.char ' ')
+    b <- go id
+    pure $ IndentedStringLine a b
   where
-    body =
-      let p = (antiquoteP <|> lP) <?> "line content"
-      in  StrExpr <$> P.many p
+    go :: ([StrExprPart] -> [StrExprPart]) -> Parser StrExpr
+    go previousParts =
+      asum
+        [ do
+            _ <- P.lookAhead $ void (P.char '\n') <|> void (P.try (P.string "''"))
+            pure $ StrExpr (previousParts [])
+        , do
+            xs <- P.many1 $ asum
+              [ do
+                  c <- P.satisfy (\c -> c /= '$' && c /= '\'' && c /= '\n')
+                  pure $ Text.singleton c
+              , P.try $ do
+                  c <- P.char '$'
+                  _ <- P.notFollowedBy (P.char '{')
+                  pure $ Text.singleton c
+              , P.try $ do
+                  c <- P.char '\''
+                  _ <- P.notFollowedBy (P.char '\'')
+                  pure $ Text.singleton c
+              ]
+            go $ previousParts . (StrExprPart'Literal (Text.concat xs) :)
+        , do
+            a <- antiquoteP
+            go $ previousParts . (StrExprPart'Antiquote a :)
+        ]
 
-    end =
-      let p = P.try $ P.lookAhead (P.string "''" <|> P.string "\n")
-      in  p <?> "end of line"
+{- |
 
-    lP = StrExprPart'Literal . Text.pack <$> P.many1 mP
+>>> test n xs = renderIndentedStringLine $ IndentedStringLine n (StrExpr xs)
 
-    mP = asum
-      [ P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
-      , P.try $ P.char '$' <* P.notFollowedBy (P.char '{')
-      , P.satisfy (\c -> c /= '\'' && c /= '$' && c /= '\n')
-      ]
-
-{- | Reads zero or more space characters and produces the number of them.
-
->>> test = parseTest (Text.pack . show <$> spaceCountP)
-
->>> test ""
-0
-remaining input: ""
-
->>> test "a"
-0
-remaining input: "a"
-
->>> test "  a  b"
-2
-remaining input: "a  b"
-
->>> test "  \n  "
-2
-remaining input: "\n  "
+>>> :{
+>>> test 2 [ StrExprPart'Literal "abc"
+>>>        , StrExprPart'Antiquote (Expr'Id $ BareId "x")
+>>>        ]
+>>> :}
+"  abc${x}"
 
 -}
-spaceCountP :: Parser Natural
-spaceCountP =
-  fromIntegral . List.length <$> P.many (P.char ' ')
+renderIndentedStringLine :: IndentedStringLine -> Text
+renderIndentedStringLine (IndentedStringLine n (StrExpr xs)) =
+  Text.replicate (fromIntegral n) " " <> renderStrExprParts xs
+
+renderIndentedStringLines :: [IndentedStringLine] -> Text
+renderIndentedStringLines =
+  foldMap renderIndentedStringLine
 
 -- | Join 'IndentedStringLine's with newlines interspersed.
 indentedString'joinLines :: IndentedString -> StrExpr
@@ -663,7 +753,7 @@ data DictParam =
 
 data DictParamItem =
   DictParamItem
-    { dictParamItem'variable :: Text
+    { dictParamItem'variable :: BareId
         -- ^ The bound variable
     , dictParamItem'default :: Maybe ParamDefault
         -- ^ The default value to be used if the key is not present in the dict
@@ -689,8 +779,12 @@ renderParam =
 >>> test [] True
 { ... }:
 
->>> item1 = DictParamItem "x" Nothing
->>> item2 = DictParamItem "y" (Just . ParamDefault . Expr'Str . strExpr $ "abc")
+>>> item1 = DictParamItem (BareId "x") Nothing
+
+>>> :{
+>>> item2 = DictParamItem (BareId "y")
+>>>   (Just . ParamDefault . Expr'Str . strExpr $ "abc")
+>>> :}
 
 >>> test [ item1, item2 ] False
 { x, y ? "abc" }:
@@ -709,8 +803,8 @@ renderDictParam (DictParam items ellipsis) =
 renderDictParamItem :: DictParamItem -> Text
 renderDictParamItem =
   \case
-    DictParamItem a Nothing  -> renderIdentifier a
-    DictParamItem a (Just b) -> renderIdentifier a <> " " <>
+    DictParamItem a Nothing  -> renderBareId a
+    DictParamItem a (Just b) -> renderBareId a <> " " <>
                                 renderParamDefault b
 
 renderParamDefault :: ParamDefault -> Text
@@ -749,19 +843,49 @@ renderCallExpr cx (CallExpr a b) =
 
 paramP :: Parser Param
 paramP =
-  a <|> b
-  where
-    a = Param'Id <$> (bareIdP <* P.char ':')
-    b = Param'Dict <$> dictParamP
+  asum
+    [ Param'Id   <$> idParamP
+    , Param'Dict <$> dictParamP
+    ]
 
-paramDefaultP :: Parser ParamDefault
-paramDefaultP = fail "TODO"
+idParamP :: Parser BareId
+idParamP = P.try $ do
+  a <- bareIdP
+  _ <- P.spaces
+  _ <- P.char ':'
+  _ <- P.spaces
+  pure a
 
 dictParamP :: Parser DictParam
-dictParamP = fail "TODO"
+dictParamP =
+  -- todo: we don't need this entire parser to backtrack
+  P.try $ do
+    _ <- P.char '{'
+    _ <- P.spaces
+    go id
+  where
+    go :: ([DictParamItem] -> [DictParamItem]) -> Parser DictParam
+    go previousItems =
+      asum
+        [ do
+            _ <- P.char '}'
+            pure (DictParam (previousItems []) False)
+        , do
+            _ <- P.string "..."
+            _ <- P.spaces
+            _ <- P.char '}'
+            pure (DictParam (previousItems []) True)
+        , do
+            a <- bareIdP <* P.spaces
+            b <- P.optionMaybe paramDefaultP
+            go (previousItems . (DictParamItem a b :))
+        ]
 
 dictParamItemP :: Parser DictParamItem
 dictParamItemP = fail "TODO"
+
+paramDefaultP :: Parser ParamDefault
+paramDefaultP = fail "TODO"
 
 applyArgs:: Expression -> [Expression] -> Expression
 applyArgs =
@@ -782,19 +906,25 @@ data ListLiteral = ListLiteral [Expression]
 >>> test []
 [ ]
 
->>> test [ Expr'Id (BareId "true") ]
-[ true ]
+>>> test [ Expr'Id (BareId "a") ]
+[ a ]
 
->>> test [ Expr'Id (BareId "true"), Expr'Id (BareId "false") ]
-[ true false ]
+>>> :{
+>>> test [ Expr'Id (BareId "a")
+>>>      , Expr'Id (BareId "b") ]
+>>> :}
+[ a b ]
 
->>> call = Expr'Call (CallExpr (Expr'Id (BareId "f")) (Expr'Id (BareId "x")))
+>>> :{
+>>> call = Expr'Call $ CallExpr (Expr'Id (BareId "f"))
+>>>                             (Expr'Id (BareId "x"))
+>>> :}
 
 >>> test [ call ]
 [ (f x) ]
 
->>> test [ call, Expr'Id (BareId "true") ]
-[ (f x) true ]
+>>> test [ call, Expr'Id (BareId "a") ]
+[ (f x) a ]
 
 -}
 renderListLiteral :: ListLiteral -> Text
@@ -811,7 +941,16 @@ renderEmptyList = "[ ]"
 
 listLiteralP :: Parser ListLiteral
 listLiteralP =
-  ListLiteral <$> braced (P.char '[') (P.char ']') expressionListP <?> "list"
+  p <?> "list"
+  where
+    p = do
+      _ <- P.char '['
+      _ <- P.spaces
+      xs <- expressionListP
+      _ <- P.char ']'
+      _ <- P.spaces
+      pure $ ListLiteral xs
+
 
 --------------------------------------------------------------------------------
 --  Dict
@@ -850,21 +989,35 @@ renderDot (Dot a b) =
 
 dictLiteralP :: Parser DictLiteral
 dictLiteralP =
-  (noRec <|> rec) <?> "dict literal"
+  p <?> "dict literal"
   where
-    noRec = DictLiteral False <$> dictLiteralP'noRec
+    p = asum
+      [ do
+          a <- dictLiteralP'noRec
+          pure $ DictLiteral False a
+      , do
+          _ <- P.try (keywordP keyword'rec)
+          _ <- P.spaces
+          a <- dictLiteralP'noRec
+          pure $ DictLiteral True a
+      ]
 
-    rec = DictLiteral True <$>
-          (P.try keywordP'rec *> P.spaces *> dictLiteralP'noRec)
-
-    keywordP'rec =
-      P.string (Text.unpack keyword'rec) <* P.lookAhead (P.space <|> P.char '{')
-
-{- | Parser for a non-recursive (no @rec@ keyword) dict literal.
--}
+-- | Parser for a non-recursive (no @rec@ keyword) dict literal.
 dictLiteralP'noRec :: Parser [Binding]
 dictLiteralP'noRec =
-  P.char '{' *> P.spaces *> P.manyTill (bindingP <* P.spaces) (P.char '}')
+  P.char '{' *> P.spaces *> go id
+  where
+    go :: ([Binding] -> [Binding]) -> Parser [Binding]
+    go previousBindings =
+      asum
+        [ do
+            _ <- P.char '}'
+            _ <- P.spaces
+            pure $ previousBindings []
+        , do
+            a <- bindingP
+            go $ previousBindings . (a :)
+        ]
 
 {- | Parser for a chain of dict lookups (like @.a.b.c@).
 
@@ -876,23 +1029,17 @@ This parser /does/ match the empty string.
 <BLANKLINE>
 remaining input: ""
 
-If it is given only whitespace, it does not consume it.
-
->>> test "  "
-<BLANKLINE>
-remaining input: "  "
-
 The simplest nonempty dot list.
 
 >>> test ".a"
 "a"
 remaining input: ""
 
-This parser should not consume any trailing whitespace beyond the dot list.
+This parser consumes any trailing whitespace beyond the dot list.
 
 >>> test ".a "
 "a"
-remaining input: " "
+remaining input: ""
 
 Dot attributes are usually bare identifiers, but they may also be quoted.
 
@@ -906,7 +1053,7 @@ and some extra stuff onto the end, which does not get consumed.
 >>> test ".a . b c"
 "a"
 "b"
-remaining input: " c"
+remaining input: "c"
 
 Another example of a quoted dot, this time following an unquoted dot.
 
@@ -936,12 +1083,7 @@ remaining input: "(x)"
 -}
 dotsP :: Parser [StrExpr]
 dotsP =
-  P.option [] dotsP'lhs <?> "dots"
-
--- | Like 'dotsP', but fails unless it can parse at least one dot.
-dotsP'lhs :: Parser [StrExpr]
-dotsP'lhs =
-  (:) <$> dotP <*> P.many dotP'leadingSpaces
+  P.many dotP <?> "dots"
 
 {- |
 
@@ -953,7 +1095,7 @@ remaining input: ""
 
 >>> test ". a . b"
 "a"
-remaining input: " . b"
+remaining input: ". b"
 
 >>> test ". \"a\""
 "a"
@@ -966,11 +1108,12 @@ remaining input: ".b"
 -}
 dotP :: Parser StrExpr
 dotP =
-  P.try (P.char '.') *> P.spaces *> idExprP
-
-dotP'leadingSpaces :: Parser StrExpr
-dotP'leadingSpaces =
-  P.try (P.spaces *> P.char '.') *> P.spaces *> idExprP
+  do
+    _ <- P.char '.'
+    _ <- P.spaces
+    a <- idExprP
+    _ <- P.spaces
+    pure a
 
 applyDots :: Expression -> [StrExpr] -> Expression
 applyDots =
@@ -1023,9 +1166,13 @@ bindingP :: Parser Binding
 bindingP =
   do
     a <- idExprP
-    _ <- P.spaces *> P.char '=' *> P.spaces
+    _ <- P.spaces
+    _ <- P.char '='
+    _ <- P.spaces
     b <- expressionP
-    _ <- P.spaces *> P.char ';'
+    _ <- P.spaces
+    _ <- P.char ';'
+    _ <- P.spaces
     pure $ Binding a b
 
 
@@ -1066,7 +1213,6 @@ The empty string is /not/ a valid expression.
 parse error at (line 1, column 1):
 unexpected end of input
 expecting expression
-TODO
 remaining input: ""
 
 A very simple expression: a one-letter bare identifier.
@@ -1075,11 +1221,11 @@ A very simple expression: a one-letter bare identifier.
 a
 remaining input: ""
 
-Parsing an expression should not consume any subsequent whitespace.
+Parsing an expression consumes any subsequent whitespace.
 
 >>> test "a "
 a
-remaining input: " "
+remaining input: ""
 
 When there are multiple expressions, that is parsed as a function call.
 
@@ -1101,11 +1247,11 @@ A simple example of parsing a dot expression.
 a.b
 remaining input: ""
 
-Dot parsing should also not consume trailing whitespace.
+Dot parsing also consumes trailing whitespace.
 
 >>> test "a.b "
 a.b
-remaining input: " "
+remaining input: ""
 
 It looks odd when a subsequent expression appears after a dot expression with no
 whitespace, but it is permitted.
@@ -1120,11 +1266,11 @@ A simple list example.
 [ a b ]
 remaining input: ""
 
-A list with trailing whitespace.
+A list with trailing whitespace that get consumed.
 
 >>> test "[ a b ] "
 [ a b ]
-remaining input: " "
+remaining input: ""
 
 A list that is in the left-hand side of a function call. This will fail at
 runtime if the call is evaluated, because a list is not a function, but it
@@ -1181,6 +1327,25 @@ The same thing without any whitespace.
 { x = y; a = b; }
 remaining input: ""
 
+A simple function.
+
+>>> test "x : y"
+x: y
+remaining input: ""
+
+Whitespace before the colon is unconventional, but allowed.
+
+>>> test "x : y"
+x: y
+remaining input: ""
+
+The space after the colon is not mandatory. (In Nix, this example would be
+parsed as the string "x:y", but here we do not support URI literals.)
+
+>>> test "x:y"
+x: y
+remaining input: ""
+
 A slightly bigger example where we're starting to nest more things.
 
 >>> test "[ \"abc\" f { x = y; } ]"
@@ -1191,15 +1356,36 @@ remaining input: ""
 [ "abc" (f { x = y; }) ]
 remaining input: ""
 
+This is not valid a expression (though the first bit of it is).
+
+>>> test "a b: c"
+a b
+remaining input: ": c"
+
+This is not a valid expression.
+
+>>> test "(a b: c)"
+parse error at (line 1, column 5):
+unexpected ":"
+expecting expression list item or ")"
+remaining input: ""
+
 -}
 expressionP :: Parser Expression
 expressionP =
-  (a <|> b) <?> "expression"
+  p <?> "expression"
   where
-    a = Expr'Func <$> (FuncExpr <$> P.try paramP <*> expressionP)
-    b = expressionListP >>= \case
-          [] -> P.parserZero
-          f : args -> pure $ applyArgs f args
+    p = asum
+      [ do
+          a <- paramP
+          b <- expressionP
+          pure $ Expr'Func (FuncExpr a b)
+      , do
+          a <- expressionListP
+          case a of
+            [] -> P.parserZero
+            f : args -> pure $ applyArgs f args
+      ]
 
 {- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
 chain of function arguments (@f x y z@).
@@ -1254,9 +1440,7 @@ remaining input: ""
 -}
 expressionListP :: Parser [Expression]
 expressionListP =
-  p <?> "expression list"
-  where
-    p = expressionP'listItem `sepBy` P.spaces
+  P.many expressionP'listItem <?> "expression list"
 
 {- | Parser for a single item within an expression list ('expressionListP').
 This expression is not a function, a function application, or a let binding.
@@ -1269,11 +1453,11 @@ This expression is not a function, a function application, or a let binding.
 
 >>> test "abc def"
 abc
-remaining input: " def"
+remaining input: "def"
 
 >>> test "a.b c"
 a.b
-remaining input: " c"
+remaining input: "c"
 
 >>> test "a.\"b\"c"
 a.b
@@ -1304,9 +1488,10 @@ expressionP'listItem :: Parser Expression
 expressionP'listItem =
   p <?> "expression list item"
   where
-    p = applyDots
-          <$> expressionP'listItem'noDot
-          <*> dotsP
+    p = do
+      a <- expressionP'listItem'noDot
+      b <- dotsP
+      pure $ applyDots a b
 
 {- | Like 'expressionP'listItem', but with the further restriction that the
 expression may not be a dot.
@@ -1325,10 +1510,10 @@ remaining input: ".b c"
 expressionP'listItem'noDot :: Parser Expression
 expressionP'listItem'noDot =
   asum
-    [ fmap Expr'Str strExprP
-    , fmap Expr'List listLiteralP
-    , fmap Expr'Dict dictLiteralP
-    , fmap Expr'Id bareIdP
+    [ Expr'Str  <$> strExprP
+    , Expr'List <$> listLiteralP
+    , Expr'Dict <$> dictLiteralP
+    , Expr'Id   <$> bareIdP
     , expressionP'paren
     ]
     <?> "expression list item without a dot"
@@ -1337,8 +1522,13 @@ expressionP'listItem'noDot =
 parenthesis. -}
 expressionP'paren :: Parser Expression
 expressionP'paren =
-  braced (P.char '(') (P.char ')') expressionP
-
+  do
+    _ <- P.char '('
+    _ <- P.spaces
+    a <- expressionP
+    _ <- P.char ')'
+    _ <- P.spaces
+    pure a
 
 
 --------------------------------------------------------------------------------
@@ -1357,15 +1547,8 @@ data RenderContext
 --  General parsing stuff
 --------------------------------------------------------------------------------
 
-sepBy :: Parser a -> Parser b -> Parser [a]
-p `sepBy` by =
-  (p `sepBy'1` by) <|> pure []
-
--- todo: this backtracks on p, which could be unexpectedly expensive.
-sepBy'1 :: Parser a -> Parser b -> Parser [a]
-p `sepBy'1` by =
-  (:) <$> p <*> P.many (P.try (by *> p))
-
-braced :: Parser x -> Parser y -> Parser a -> Parser a
-braced x y =
-  P.between (x *> P.spaces) (P.spaces *> y)
+counterP :: Parser a -> Parser Natural
+counterP p = go 0
+  where
+    go :: Natural -> Parser Natural
+    go n = (p *> go (succ n)) <|> pure n

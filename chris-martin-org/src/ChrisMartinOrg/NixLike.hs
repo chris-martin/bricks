@@ -103,6 +103,7 @@ keywordP :: Text -> Parser ()
 keywordP k = do
   _ <- P.string (Text.unpack k)
   _ <- P.notFollowedBy (P.satisfy isBareIdentifierChar)
+  _ <- P.spaces
   pure ()
 
 
@@ -461,8 +462,6 @@ remaining input: "x"
 >>> test "''hello'' x"
 "hello"
 remaining input: "x"
-
-todo - The 'r' quasiquoter from raw-strings-qq might read better here.
 
 >>> :{
 >>> test "  ''\n\
@@ -1057,7 +1056,7 @@ renderDot (Dot a b) =
 
 dictLiteralP :: Parser DictLiteral
 dictLiteralP =
-  p <?> "dict literal"
+  p <?> "dict"
   where
     p = asum
       [ do
@@ -1065,7 +1064,6 @@ dictLiteralP =
           pure $ DictLiteral False a
       , do
           _ <- P.try (keywordP keyword'rec)
-          _ <- P.spaces
           a <- dictLiteralP'noRec
           pure $ DictLiteral True a
       ]
@@ -1210,7 +1208,22 @@ renderLetExpr (LetExpr bs x) =
     body = renderExpression RenderContext'Normal x
 
 letExprP :: Parser LetExpr
-letExprP = fail "TODO"
+letExprP =
+  do
+    _ <- keywordP keyword'let
+    go id
+  where
+    go :: ([Binding] -> [Binding]) -> Parser LetExpr
+    go previousBindings =
+      asum
+        [ do
+            _ <- keywordP keyword'in
+            x <- expressionP
+            pure $ LetExpr (previousBindings []) x
+        , do
+            a <- bindingP
+            go $ previousBindings . (a :)
+        ]
 
 
 --------------------------------------------------------------------------------
@@ -1462,13 +1475,38 @@ Here are some functions that use dict deconstruction.
 { a, b, c ? x, ... }: g b (f a c)
 remaining input: ""
 
+>>> test "{ x, ... }: f x"
+{ x, ... }: f x
+remaining input: ""
+
+>>> test "{ x?\"abc\" }: x"
+{ x ? "abc" }: x
+remaining input: ""
+
+>>> test "{ ... }: x"
+{ ... }: x
+remaining input: ""
+
+A let expression.
+
+>>> test "let f = x: plus one x; in f seven"
+let f = x: plus one x; in f seven
+remaining input: ""
+
+A let binding list may be empty, although it is silly.
+
+>>> test "let in f x"
+let in f x
+remaining input: ""
+
 -}
 expressionP :: Parser Expression
 expressionP =
   p <?> "expression"
   where
     p = asum
-      [ do
+      [ Expr'Let <$> letExprP
+      , do
           a <- paramP
           b <- expressionP
           pure $ Expr'Func (FuncExpr a b)

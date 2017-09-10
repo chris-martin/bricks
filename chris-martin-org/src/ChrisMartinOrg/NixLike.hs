@@ -23,7 +23,7 @@ module ChrisMartinOrg.NixLike where
 
 import Control.Applicative ((<|>), (<*), (*>), (<*>), pure)
 import Control.Arrow ((>>>))
-import Control.Monad ((>>=), fail)
+import Control.Monad ((>>=), fail, mfilter)
 import Text.Parsec ((<?>))
 import Text.Parsec.Text (Parser)
 import Data.Bool (Bool (..), (&&), (||), not)
@@ -62,6 +62,27 @@ rather than @'Show' a => a@.
 >>> :}
 
 -}
+
+
+--------------------------------------------------------------------------------
+--  Keywords
+--------------------------------------------------------------------------------
+
+keyword'rec :: Text
+keyword'rec = "rec"
+
+keyword'let :: Text
+keyword'let = "let"
+
+keyword'in :: Text
+keyword'in = "in"
+
+keywords :: [Text]
+keywords =
+  [ keyword'rec
+  , keyword'let
+  , keyword'in
+  ]
 
 
 --------------------------------------------------------------------------------
@@ -134,9 +155,6 @@ isBareIdentifierName x =
   Text.all isBareIdentifierChar x
   && List.all (/= x) ("" : keywords)
 
-keywords :: [Text]
-keywords = ["rec", "let", "in"]
-
 -- | Letters, @-@, and @_@.
 isBareIdentifierChar :: Char -> Bool
 isBareIdentifierChar c =
@@ -162,7 +180,10 @@ bareIdP :: Parser BareId
 bareIdP =
   p <?> "bare identifier"
   where
-    p = BareId . Text.pack <$> P.many1 (P.satisfy isBareIdentifierChar)
+    p = fmap BareId
+      $ mfilter (not . (`List.elem` keywords))
+      $ fmap Text.pack
+      $ P.many1 (P.satisfy isBareIdentifierChar)
 
 {- |
 
@@ -779,8 +800,9 @@ data Dot = Dot
 renderDictLiteral :: DictLiteral -> Text
 renderDictLiteral =
   \case
-    DictLiteral _ [] -> renderEmptyDict
-    DictLiteral True bs -> "rec { " <> renderBindingList bs <> " }"
+    DictLiteral True  [] -> "rec " <> renderEmptyDict
+    DictLiteral False [] -> renderEmptyDict
+    DictLiteral True  bs -> "rec { " <> renderBindingList bs <> " }"
     DictLiteral False bs -> "{ " <> renderBindingList bs <> " }"
 
 renderEmptyDict :: Text
@@ -792,10 +814,15 @@ renderDot (Dot a b) =
 
 dictLiteralP :: Parser DictLiteral
 dictLiteralP =
-  asum
-    [ DictLiteral False <$> dictLiteralP'noRec
-    , DictLiteral True <$> (P.string "rec" *> P.spaces *> dictLiteralP'noRec)
-    ]
+  (noRec <|> rec) <?> "dict literal"
+  where
+    noRec = DictLiteral False <$> dictLiteralP'noRec
+
+    rec = DictLiteral True <$>
+          (P.try keywordP'rec *> P.spaces *> dictLiteralP'noRec)
+
+    keywordP'rec =
+      P.string (Text.unpack keyword'rec) <* P.lookAhead (P.space <|> P.char '{')
 
 {- | Parser for a non-recursive (no @rec@ keyword) dict literal.
 -}
@@ -960,7 +987,7 @@ f x
 >>> test "[ \"abc\" (f { x = y; }) ]"
 [ "abc" (f { x = y; }) ]
 
->> test "[ \"abc\" f { x = y; } ]"
+>>> test "[ \"abc\" f { x = y; } ]"
 [ "abc" f { x = y; } ]
 
 -}
@@ -1003,6 +1030,17 @@ c
 >>> test "\"abc\" (f { x = y; })"
 "abc"
 f { x = y; }
+
+>>> test "r re reck"
+r
+re
+reck
+
+>>> test "r re rec { } reck"
+r
+re
+rec { }
+reck
 
 -}
 expressionListP :: Parser [Expression]
@@ -1103,6 +1141,7 @@ sepBy :: Parser a -> Parser b -> Parser [a]
 p `sepBy` by =
   (p `sepBy1` by) <|> pure []
 
+-- todo: this backtracks on p, which could be unexpectedly expensive.
 sepBy1 :: Parser a -> Parser b -> Parser [a]
 p `sepBy1` by =
   (:) <$> p <*> P.many (P.try (by *> p))

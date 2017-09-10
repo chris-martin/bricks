@@ -47,18 +47,34 @@ import qualified Data.Text as Text
 
 {- $setup
 
->>> import Prelude (putStrLn, putStr, print, Show, show, IO, Either (..))
+>>> import Data.Either (Either (..), either)
+>>> import Data.Function (id, const)
+>>> import Prelude (putStrLn, putStr, print, Show, show, IO, String)
 
 We'll use the @parseTest@ function a lot to test parsers. It's a lot like
 'P.parseTest' from the parsec library, but it works on parsers of type 'Text'
-rather than @'Show' a => a@.
+rather than @'Show' a => a@. It also prints the unparsed input so we can verify
+that our parser consumes the right amount of input.
+
+>>> :{
+>>> remainingInputTest :: Parser a -> Text -> IO ()
+>>> remainingInputTest p input =
+>>>   let
+>>>     remainderP = P.many P.anyChar :: Parser String
+>>>     p' = (("" <$ p) <|> remainderP) *> remainderP
+>>>     r = either (const "") id $ P.parse p' "" input
+>>>   in
+>>>     putStr "remaining input: " *> print r
+>>> :}
 
 >>> :{
 >>> parseTest :: Parser Text -> Text -> IO ()
 >>> parseTest p input =
->>>   case P.parse p "" input of
->>>     Left err -> putStr "parse error at " *> print err
->>>     Right x -> putStr (Text.unpack x)
+>>>   do
+>>>     case P.parse p "" input of
+>>>       Left err -> putStr "parse error at " *> print err
+>>>       Right x -> putStrLn (Text.unpack x)
+>>>     remainingInputTest p input
 >>> :}
 
 -}
@@ -166,14 +182,17 @@ isBareIdentifierChar c =
 
 >>> test "-ab_c"
 -ab_c
+remaining input: ""
 
 >>> test ""
 parse error at (line 1, column 1):
 unexpected end of input
 expecting bare identifier
+remaining input: ""
 
 >>> test "a\"b"
 a
+remaining input: "\"b"
 
 -}
 bareIdP :: Parser BareId
@@ -191,9 +210,11 @@ bareIdP =
 
 >>> test "a"
 "a"
+remaining input: ""
 
 >>> test "\"a\""
 "a"
+remaining input: ""
 
 -}
 idExprP :: Parser StrExpr
@@ -301,6 +322,7 @@ may span multiple lines.
 
 >>> test "\"a\""
 "a"
+remaining input: ""
 
 -}
 strExprP'normal :: Parser StrExpr
@@ -370,8 +392,9 @@ string.
 
 >>> test = parseTest (renderStrExpr <$> (P.spaces *> strExprP'indented))
 
->>> test "''hello''"
+>>> test "''hello''x"
 "hello"
+remaining input: "x"
 
 todo - The 'r' quasiquoter from raw-strings-qq might read better here.
 
@@ -379,18 +402,20 @@ todo - The 'r' quasiquoter from raw-strings-qq might read better here.
 >>> test "  ''\n\
 >>>      \    one\n\
 >>>      \    two\n\
->>>      \  ''"
+>>>      \  ''x"
 >>> :}
 "one\ntwo"
+remaining input: "x"
 
 >>> :{
 >>> test "  ''\n\
 >>>      \    one\n\
 >>>      \\n\
 >>>      \    two\n\
->>>      \  ''"
+>>>      \  ''x"
 >>> :}
 "one\n\ntwo"
+remaining input: "x"
 
 -}
 strExprP'indented :: Parser StrExpr
@@ -414,18 +439,20 @@ that does those things, see 'strExprP'indented'.
 >>> test "  ''\n\
 >>>      \    one\n\
 >>>      \    two\n\
->>>      \  ''"
+>>>      \  ''x"
 >>> :}
 ["","    one","    two","  "]
+remaining input: "x"
 
 >>> :{
 >>> test "  ''\n\
 >>>      \    one\n\
 >>>      \\n\
 >>>      \    two\n\
->>>      \  ''"
+>>>      \  ''x"
 >>> :}
 ["","    one","","    two","  "]
+remaining input: "x"
 
 -}
 indentedStringP :: Parser IndentedString
@@ -466,18 +493,23 @@ renderIndentedStringLines =
 parse error at (line 1, column 4):
 unexpected end of input
 expecting line content or end of line
+remaining input: ""
 
 >>> test "\n"
 ""
+remaining input: "\n"
 
 >>> test "  \n"
 "  "
+remaining input: "\n"
 
 >>> test "   abc\ndef"
 "   abc"
+remaining input: "\ndef"
 
 >>> test "   abc''x"
 "   abc"
+remaining input: "''x"
 
 -}
 indentedStringLineP :: Parser IndentedStringLine
@@ -509,15 +541,19 @@ indentedStringLineP =
 
 >>> test ""
 0
+remaining input: ""
 
 >>> test "a"
 0
+remaining input: "a"
 
 >>> test "  a  b"
 2
+remaining input: "a  b"
 
 >>> test "  \n  "
 2
+remaining input: "\n  "
 
 -}
 spaceCountP :: Parser Natural
@@ -721,13 +757,13 @@ paramP =
     b = Param'Dict <$> dictParamP
 
 paramDefaultP :: Parser ParamDefault
-paramDefaultP = fail "not implemented"
+paramDefaultP = fail "TODO"
 
 dictParamP :: Parser DictParam
-dictParamP = fail "not implemented"
+dictParamP = fail "TODO"
 
 dictParamItemP :: Parser DictParamItem
-dictParamItemP = fail "not implemented"
+dictParamItemP = fail "TODO"
 
 applyArgs:: Expression -> [Expression] -> Expression
 applyArgs =
@@ -743,26 +779,23 @@ data ListLiteral = ListLiteral [Expression]
 
 {- |
 
->>> :{
->>> renderTest =
->>>   putStrLn . Text.unpack . renderListLiteral . ListLiteral
->>> :}
+>>> test = putStrLn . Text.unpack . renderListLiteral . ListLiteral
 
->>> renderTest []
+>>> test []
 [ ]
 
->>> renderTest [ Expr'Id (BareId "true") ]
+>>> test [ Expr'Id (BareId "true") ]
 [ true ]
 
->>> renderTest [ Expr'Id (BareId "true"), Expr'Id (BareId "false") ]
+>>> test [ Expr'Id (BareId "true"), Expr'Id (BareId "false") ]
 [ true false ]
 
 >>> call = Expr'Call (CallExpr (Expr'Id (BareId "f")) (Expr'Id (BareId "x")))
 
->>> renderTest [ call ]
+>>> test [ call ]
 [ (f x) ]
 
->>> renderTest [ call, Expr'Id (BareId "true") ]
+>>> test [ call, Expr'Id (BareId "true") ]
 [ (f x) true ]
 
 -}
@@ -840,20 +873,31 @@ dictLiteralP'noRec =
 >>> test = parseTest (Text.intercalate "\n" . fmap renderStrExpr <$> dotsP)
 
 >>> test ""
+<BLANKLINE>
+remaining input: ""
 
 >>> test ".a"
 "a"
+remaining input: ""
 
 >>> test ".\"a\""
 "a"
+remaining input: ""
 
 >>> test ".a . b c"
 "a"
 "b"
+remaining input: " c"
 
 >>> test ".a.\"b\""
 "a"
 "b"
+remaining input: ""
+
+>>> test ".a.\"b\"x"
+"a"
+"b"
+remaining input: "x"
 
 -}
 dotsP :: Parser [StrExpr]
@@ -871,15 +915,19 @@ dotsP'lhs =
 
 >>> test ".a"
 "a"
+remaining input: ""
 
 >>> test ". a . b"
 "a"
+remaining input: " . b"
 
 >>> test ". \"a\""
 "a"
+remaining input: ""
 
 >>> test ". \"a\".b"
 "a"
+remaining input: ".b"
 
 -}
 dotP :: Parser StrExpr
@@ -917,7 +965,7 @@ renderLetExpr (LetExpr bs x) =
     body = renderExpression RenderContext'Normal x
 
 letExprP :: Parser LetExpr
-letExprP = fail "not implemented"
+letExprP = fail "TODO"
 
 
 --------------------------------------------------------------------------------
@@ -978,37 +1026,141 @@ renderExpression c =
 
 >>> test = parseTest (renderExpression RenderContext'Normal <$> expressionP)
 
->>> test "[ true false ]"
-[ true false ]
+The empty string is /not/ a valid expression.
+
+>>> test ""
+parse error at (line 1, column 1):
+unexpected end of input
+expecting expression
+TODO
+remaining input: ""
+
+A very simple expression: a one-letter bare identifier.
+
+>>> test "a"
+a
+remaining input: ""
+
+Parsing an expression should not consume any subsequent whitespace.
+
+>>> test "a "
+a
+remaining input: " "
+
+When there are multiple expressions, that is parsed as a function call.
 
 >>> test "f x"
 f x
+remaining input: ""
 
->>> test "[ true (f x) ]"
-[ true (f x) ]
+Expressions can directly abut each other, so it's important that the expression
+parser is also able to read an expression even when another expression directly
+follows it.
+
+>>> test "f[x y]"
+f [ x y ]
+remaining input: ""
+
+A simple example of parsing a dot expression.
+
+>>> test "a.b"
+a.b
+remaining input: ""
+
+Dot parsing should also not consume trailing whitespace.
+
+>>> test "a.b "
+a.b
+remaining input: " "
+
+It looks odd when a subsequent expression appears after a dot expression with no
+whitespace, but it is permitted.
+
+>>> test "a.b\"c\""
+a.b "c"
+remaining input: ""
+
+A simple list example.
+
+>>> test "[ a b ]"
+[ a b ]
+remaining input: ""
+
+A list with trailing whitespace.
+
+>>> test "[ a b ] "
+[ a b ]
+remaining input: " "
+
+A list that is in the left-hand side of a function call. This will fail at
+runtime if the call is evaluated, because a list is not a function, but it
+should /parse/ successfully.
+
+>>> test "[ a b ] x"
+[ a b ] x
+remaining input: ""
+
+A list with a function call inside.
+
+>>> test "[ (f x) ]"
+[ (f x) ]
+remaining input: ""
+
+>>> test "[ a (f x) ]"
+[ a (f x) ]
+remaining input: ""
+
+A minimal dict literal.
 
 >>> test "{ x = y; }"
 { x = y; }
+remaining input: ""
+
+The left-hand side of a binding is allowed to be anything, even something that
+would not be valid as a bare identifier, if it's in quotes.
+
+>>> test "{ \"a b\" = y; }"
+{ "a b" = y; }
+remaining input: ""
+
+It may even be the empty string.
+
+>>> test "{ \"\" = y; }"
+{ "" = y; }
+remaining input: ""
+
+None of the conventional whitespace within a dict literal is mandatory.
 
 >>> test "{x=y;}"
 { x = y; }
+remaining input: ""
 
->>> test "{ x = y ; a = b; }"
+A simple dict literal with two bindings.
+
+>>> test "{ x = y; a = b; }"
 { x = y; a = b; }
+remaining input: ""
+
+The same thing without any whitespace.
 
 >>> test "{x=y;a=b;}"
 { x = y; a = b; }
+remaining input: ""
 
->>> test "[ \"abc\" (f { x = y; }) ]"
-[ "abc" (f { x = y; }) ]
+A slightly bigger example where we're starting to nest more things.
 
 >>> test "[ \"abc\" f { x = y; } ]"
 [ "abc" f { x = y; } ]
+remaining input: ""
+
+>>> test "[ \"abc\" (f { x = y; }) ]"
+[ "abc" (f { x = y; }) ]
+remaining input: ""
 
 -}
 expressionP :: Parser Expression
 expressionP =
-  a <|> b
+  (a <|> b) <?> "expression"
   where
     a = Expr'Func <$> (FuncExpr <$> P.try paramP <*> expressionP)
     b = expressionListP >>= \case
@@ -1026,36 +1178,44 @@ chain of function arguments (@f x y z@).
 >>> :}
 
 >>> test ""
+<BLANKLINE>
+remaining input: ""
 
 >>> test "x y z"
 x
 y
 z
+remaining input: ""
 
 >>> test "(a)b c(d)"
 a
 b
 c
 d
+remaining input: ""
 
 >>> test "a.\"b\"c"
 a.b
 c
+remaining input: ""
 
 >>> test "\"abc\" (f { x = y; })"
 "abc"
 f { x = y; }
+remaining input: ""
 
 >>> test "r re reck"
 r
 re
 reck
+remaining input: ""
 
 >>> test "r re rec { } reck"
 r
 re
 rec { }
 reck
+remaining input: ""
 
 -}
 expressionListP :: Parser [Expression]
@@ -1069,32 +1229,41 @@ This expression is not a function, a function application, or a let binding.
 
 >>> :{
 >>> test = parseTest
->>>   (renderExpression RenderContext'Normal <$> expressionP'listItem)
+>>>      $ fmap (renderExpression RenderContext'Normal)
+>>>      $ expressionP'listItem
 >>> :}
 
 >>> test "abc def"
 abc
+remaining input: " def"
 
 >>> test "a.b c"
 a.b
+remaining input: " c"
 
 >>> test "a.\"b\"c"
 a.b
+remaining input: "c"
 
 >>> test "(a.b)c"
 a.b
+remaining input: "c"
 
 >>> test "a.b(c)"
 a.b
+remaining input: "(c)"
 
 >>> test "[ a b ]c"
 [ a b ]
+remaining input: "c"
 
 >>> test "a[ b c ]"
 a
+remaining input: "[ b c ]"
 
 >>> test "\"a\"b"
 "a"
+remaining input: "b"
 
 -}
 expressionP'listItem :: Parser Expression
@@ -1110,11 +1279,13 @@ expression may not be a dot.
 
 >>> :{
 >>> test = parseTest
->>>   (renderExpression RenderContext'Normal <$> expressionP'listItem'noDot)
+>>>      $ fmap (renderExpression RenderContext'Normal)
+>>>      $ expressionP'listItem'noDot
 >>> :}
 
 >>> test "a.b c"
 a
+remaining input: ".b c"
 
 -}
 expressionP'listItem'noDot :: Parser Expression

@@ -57,6 +57,14 @@ rather than @'Show' a => a@. It also prints the unparsed input so we can verify
 that our parser consumes the right amount of input.
 
 >>> :{
+>>> parseTest :: Parser Text -> Text -> IO ()
+>>> parseTest p input =
+>>>   do
+>>>     case P.parse p "" input of
+>>>       Left err -> putStr "parse error at " *> print err
+>>>       Right x -> putStrLn (Text.unpack x)
+>>>     remainingInputTest p input
+>>>
 >>> remainingInputTest :: Parser a -> Text -> IO ()
 >>> remainingInputTest p input =
 >>>   let
@@ -65,16 +73,6 @@ that our parser consumes the right amount of input.
 >>>     r = either (const "") id $ P.parse p' "" input
 >>>   in
 >>>     putStr "remaining input: " *> print r
->>> :}
-
->>> :{
->>> parseTest :: Parser Text -> Text -> IO ()
->>> parseTest p input =
->>>   do
->>>     case P.parse p "" input of
->>>       Left err -> putStr "parse error at " *> print err
->>>       Right x -> putStrLn (Text.unpack x)
->>>     remainingInputTest p input
 >>> :}
 
 -}

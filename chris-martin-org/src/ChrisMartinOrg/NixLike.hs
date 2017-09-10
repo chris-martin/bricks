@@ -404,9 +404,10 @@ stripping the indentation or removing leading/trailing empty lines. For a parser
 that does those things, see 'strExprP'indented'.
 
 >>> :{
->>> test = P.parseTest $
->>>        fmap (\(IndentedString xs) -> renderIndentedStringLine <$> xs) $
->>>        (P.spaces *> indentedStringP)
+>>> test = parseTest
+>>>      $ fmap (Text.pack . show)
+>>>      $ fmap (\(IndentedString xs) -> renderIndentedStringLine <$> xs)
+>>>      $ P.spaces *> indentedStringP
 >>> :}
 
 >>> :{
@@ -455,7 +456,11 @@ renderIndentedStringLines =
 
 {- | Parser for a single line of an 'IndentedString'.
 
->>> test = P.parseTest (renderIndentedStringLine <$> indentedStringLineP)
+>>> :{
+>>> test = parseTest
+>>>      $ fmap (Text.pack . show . renderIndentedStringLine)
+>>>      $ indentedStringLineP
+>>> :}
 
 >>> test "abc"
 parse error at (line 1, column 4):

@@ -872,32 +872,68 @@ dictLiteralP'noRec =
 
 >>> test = parseTest (Text.intercalate "\n" . fmap renderStrExpr <$> dotsP)
 
+This parser /does/ match the empty string.
+
 >>> test ""
 <BLANKLINE>
 remaining input: ""
+
+If it is given only whitespace, it does not consume it.
+
+>>> test "  "
+<BLANKLINE>
+remaining input: "  "
+
+The simplest nonempty dot list.
 
 >>> test ".a"
 "a"
 remaining input: ""
 
+This parser should not consume any trailing whitespace beyond the dot list.
+
+>>> test ".a "
+"a"
+remaining input: " "
+
+Dot attributes are usually bare identifiers, but they may also be quoted.
+
 >>> test ".\"a\""
 "a"
 remaining input: ""
+
+Here we throw some extra whitespace into the middle, which makes no difference,
+and some extra stuff onto the end, which does not get consumed.
 
 >>> test ".a . b c"
 "a"
 "b"
 remaining input: " c"
 
+Another example of a quoted dot, this time following an unquoted dot.
+
 >>> test ".a.\"b\""
 "a"
 "b"
 remaining input: ""
 
+If quotes or braces are involved, the stuff that follows a dot expression
+can directly abut it with no whitespace in between.
+
 >>> test ".a.\"b\"x"
 "a"
 "b"
 remaining input: "x"
+
+>>> test ".a.b\"x\""
+"a"
+"b"
+remaining input: "\"x\""
+
+>>> test ".a.b(x)"
+"a"
+"b"
+remaining input: "(x)"
 
 -}
 dotsP :: Parser [StrExpr]

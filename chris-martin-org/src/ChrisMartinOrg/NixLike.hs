@@ -687,26 +687,26 @@ renderFuncExpr cx (FuncExpr a b) =
         renderExpression RenderContext'Normal b
 
     p = case cx of
-      RenderContext'Normal -> False
-      RenderContext'List   -> True
-      RenderContext'Call1  -> True
-      RenderContext'Call2  -> False
-      RenderContext'Dot1   -> True
+      RenderContext'Normal   -> False
+      RenderContext'List     -> True
+      RenderContext'Call'lhs -> True
+      RenderContext'Call'rhs -> False
+      RenderContext'Dot'lhs  -> True
 
 renderCallExpr :: RenderContext -> CallExpr -> Text
 renderCallExpr cx (CallExpr a b) =
   if p then "(" <> x <> ")" else x
 
   where
-    x = renderExpression RenderContext'Call1 a <> " " <>
-        renderExpression RenderContext'Call2 b
+    x = renderExpression RenderContext'Call'lhs a <> " " <>
+        renderExpression RenderContext'Call'rhs b
 
     p = case cx of
-      RenderContext'Normal -> False
-      RenderContext'List   -> True
-      RenderContext'Call1  -> False
-      RenderContext'Call2  -> True
-      RenderContext'Dot1   -> True
+      RenderContext'Normal   -> False
+      RenderContext'List     -> True
+      RenderContext'Call'lhs -> False
+      RenderContext'Call'rhs -> True
+      RenderContext'Dot'lhs  -> True
 
 paramP :: Parser Param
 paramP =
@@ -810,7 +810,7 @@ renderEmptyDict = "{ }"
 
 renderDot :: Dot -> Text
 renderDot (Dot a b) =
-  renderExpression RenderContext'Dot1 a <> "." <> renderIdExpr b
+  renderExpression RenderContext'Dot'lhs a <> "." <> renderIdExpr b
 
 dictLiteralP :: Parser DictLiteral
 dictLiteralP =
@@ -853,10 +853,11 @@ dictLiteralP'noRec =
 -}
 dotsP :: Parser [StrExpr]
 dotsP =
-  P.option [] dotsP'1 <?> "dots"
+  P.option [] dotsP'lhs <?> "dots"
 
-dotsP'1 :: Parser [StrExpr]
-dotsP'1 =
+-- | Like 'dotsP', but fails unless it can parse at least one dot.
+dotsP'lhs :: Parser [StrExpr]
+dotsP'lhs =
   (:) <$> dotP <*> P.many dotP'leadingSpaces
 
 {- |
@@ -1137,9 +1138,9 @@ expressionP'paren =
 data RenderContext
   = RenderContext'Normal
   | RenderContext'List
-  | RenderContext'Call1
-  | RenderContext'Call2
-  | RenderContext'Dot1
+  | RenderContext'Call'lhs
+  | RenderContext'Call'rhs
+  | RenderContext'Dot'lhs
 
 
 --------------------------------------------------------------------------------
@@ -1148,11 +1149,11 @@ data RenderContext
 
 sepBy :: Parser a -> Parser b -> Parser [a]
 p `sepBy` by =
-  (p `sepBy1` by) <|> pure []
+  (p `sepBy'1` by) <|> pure []
 
 -- todo: this backtracks on p, which could be unexpectedly expensive.
-sepBy1 :: Parser a -> Parser b -> Parser [a]
-p `sepBy1` by =
+sepBy'1 :: Parser a -> Parser b -> Parser [a]
+p `sepBy'1` by =
   (:) <$> p <*> P.many (P.try (by *> p))
 
 braced :: Parser x -> Parser y -> Parser a -> Parser a

@@ -22,7 +22,7 @@ Notable differences from Nix:
 -}
 module ChrisMartinOrg.NixLike where
 
-import Control.Applicative ((<|>), (<*), (*>), pure)
+import Control.Applicative ((<|>), (*>), pure)
 import Control.Arrow ((>>>))
 import Control.Monad (fail, guard)
 import Text.Parsec ((<?>))
@@ -862,27 +862,75 @@ dictParamP =
     _ <- P.try . P.lookAhead $ dictParamStartP
     _ <- P.char '{'
     _ <- P.spaces
-    go id
+    asum
+      [ do
+          _ <- dictParamEndP
+          pure $ DictParam [] False
+      , go id
+      ]
   where
     go :: ([DictParamItem] -> [DictParamItem]) -> Parser DictParam
     go previousItems =
       asum
         [ do
-            _ <- P.char '}'
-            pure (DictParam (previousItems []) False)
-        , do
             _ <- P.string "..."
             _ <- P.spaces
-            _ <- P.char '}'
+            _ <- dictParamEndP
             pure (DictParam (previousItems []) True)
         , do
-            a <- bareIdP <* P.spaces
+            a <- bareIdP
             b <- P.optionMaybe paramDefaultP
-            go (previousItems . (DictParamItem a b :))
+            let items = previousItems . (DictParamItem a b :)
+            asum
+              [ do
+                  _ <- P.char ','
+                  _ <- P.spaces
+                  go items
+              , do
+                  _ <- dictParamEndP
+                  pure (DictParam (items []) False)
+              ]
         ]
 
--- | This is used in a lookahead by 'dictParamP' to determine whether we're
--- about to start parsing a 'DictParam'.
+    paramDefaultP :: Parser ParamDefault
+    paramDefaultP =
+      do
+        _ <- P.char '?'
+        _ <- P.spaces
+        ParamDefault <$> expressionP
+
+{- | This is used in a lookahead by 'dictParamP' to determine whether we're
+about to start parsing a 'DictParam'.
+
+>>> :{
+>>> test = parseTest
+>>>      $ (P.try dictParamStartP $> "yes") <|> pure "no"
+>>> :}
+
+>>> test "{a, b}:"
+yes
+remaining input: " b}:"
+
+>>> test "{a ? 4, b}:"
+yes
+remaining input: " 4, b}:"
+
+>>> test "{ }: x"
+yes
+remaining input: " x"
+
+{ } is not enough to determine whether we're parsing a dict param, because if
+it isn't followed by a colon, then it's actually an empty dict literal.
+
+>>> test "{ } x"
+no
+remaining input: "{ } x"
+
+>>> test "{ ... }:"
+yes
+remaining input: " }:"
+
+-}
 dictParamStartP :: Parser ()
 dictParamStartP =
   do
@@ -890,6 +938,7 @@ dictParamStartP =
     _ <- P.spaces
     asum
       [ void $ P.string "..."
+      , void $ P.char '}' *> P.spaces *> P.char ':'
       , void $ bareIdP *>
           asum
             [ P.char ','
@@ -898,8 +947,13 @@ dictParamStartP =
             ]
       ]
 
-paramDefaultP :: Parser ParamDefault
-paramDefaultP = fail "TODO"
+dictParamEndP :: Parser ()
+dictParamEndP =
+  do
+    _ <- P.char '}'
+    _ <- P.char ':'
+    _ <- P.spaces
+    pure ()
 
 applyArgs:: Expression -> [Expression] -> Expression
 applyArgs =
@@ -1294,6 +1348,24 @@ should /parse/ successfully.
 [ a b ] x
 remaining input: ""
 
+The same thing with other weird stuff on the left-hand side of a function call.
+
+>>> test "{ a = b; } x"
+{ a = b; } x
+remaining input: ""
+
+>>> test "{ } x"
+{ } x
+remaining input: ""
+
+Note that the case where an empty dict is on the left-hand side of a function
+call looks very similar to the case where a function expression using dict
+deconstruction with no bindings. The only difference is the colon.
+
+>>> test "{ }: x"
+{ }: x
+remaining input: ""
+
 A list with a function call inside.
 
 >>> test "[ (f x) ]"
@@ -1382,6 +1454,12 @@ This is not a valid expression.
 parse error at (line 1, column 5):
 unexpected ":"
 expecting expression list item or ")"
+remaining input: ""
+
+Here are some functions that use dict deconstruction.
+
+>>> test "{ a, b, c ? x, ... }: g b (f a c)"
+{ a, b, c ? x, ... }: g b (f a c)
 remaining input: ""
 
 -}

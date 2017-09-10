@@ -852,7 +852,12 @@ dictLiteralP'noRec =
 
 -}
 dotsP :: Parser [StrExpr]
-dotsP = dotP `sepBy` P.spaces <?> "dots"
+dotsP =
+  P.option [] dotsP'1 <?> "dots"
+
+dotsP'1 :: Parser [StrExpr]
+dotsP'1 =
+  (:) <$> dotP <*> P.many (dotP'leadingSpaces)
 
 {- |
 
@@ -873,7 +878,11 @@ dotsP = dotP `sepBy` P.spaces <?> "dots"
 -}
 dotP :: Parser StrExpr
 dotP =
-  P.char '.' *> P.spaces *> idExprP
+  P.try (P.char '.') *> P.spaces *> idExprP
+
+dotP'leadingSpaces :: Parser StrExpr
+dotP'leadingSpaces =
+  P.try (P.spaces *> P.char '.') *> P.spaces *> idExprP
 
 applyDots :: Expression -> [StrExpr] -> Expression
 applyDots =

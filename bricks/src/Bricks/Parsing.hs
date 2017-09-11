@@ -13,12 +13,6 @@ import Bricks.Identifiers
 import Bricks.Keywords
 import Bricks.Types
 
-import Text.Parsec      ((<?>))
-import Text.Parsec.Text (Parser)
-
-import qualified Data.Text   as Text
-import qualified Text.Parsec as P
-
 import Control.Applicative (pure, (*>), (<*>), (<|>))
 import Control.Monad       (guard)
 import Data.Bool           (Bool (..), not, (&&))
@@ -29,8 +23,12 @@ import Data.Functor        (void, ($>), (<$>))
 import Data.Ord            (Ord (..))
 import Numeric.Natural     (Natural)
 import Prelude             (Num (..), fromIntegral, succ)
+import Text.Parsec         ((<?>))
+import Text.Parsec.Text    (Parser)
 
-import qualified Data.List as List
+import qualified Data.List   as List
+import qualified Data.Text   as Text
+import qualified Text.Parsec as P
 
 -- | Parser for a particular keyword.
 keywordP  :: Keyword    -- The keyword you're expecting

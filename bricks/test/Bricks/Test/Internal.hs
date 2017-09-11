@@ -7,6 +7,7 @@ module Bricks.Test.Internal
 
 import Control.Arrow ((>>>))
 import Control.Monad (unless)
+import Data.Foldable (for_)
 import Data.Function (const)
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
@@ -19,8 +20,9 @@ import qualified System.IO as IO
 runTests :: Hedgehog.Group -> IO ()
 runTests tests =
   do
-    IO.hSetBuffering IO.stdout IO.LineBuffering
-    IO.hSetBuffering IO.stderr IO.LineBuffering
+    for_ [IO.stdout, IO.stderr] $ \h -> do
+      IO.hSetEncoding h IO.utf8
+      IO.hSetBuffering h IO.LineBuffering
     success <- Hedgehog.checkParallel tests
     unless success Exit.exitFailure
 

@@ -1,8 +1,0 @@
-name: package-imports-example1
-
-library:
-  source-dirs: lib
-  exposed-modules:
-    - Example
-  dependencies:
-    - base

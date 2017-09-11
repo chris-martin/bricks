@@ -23,6 +23,17 @@ dependencies:
 
 tests:
 
+  doctest:
+    source-dirs: test
+    main: doctest.hs
+    ghc-options:
+      - -Wno-missing-signatures
+      - -threaded
+    dependencies:
+      - base
+      - bricks
+      - doctest
+
   rendering:
     source-dirs: test
     main: rendering.hs

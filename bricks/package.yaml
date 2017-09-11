@@ -1,7 +1,7 @@
-name: chris-martin-org
+name: bricks
 version: 0.1.0.0
 license: Apache-2.0
-github: chris-martin/chris-martin.org
+github: chris-martin/bricks
 
 ghc-options: -Wall
 
@@ -49,7 +49,7 @@ executables:
     source-dirs: app
     main: Main.hs
     dependencies:
-      - chris-martin-org
+      - bricks
 
 tests:
   doctest:
@@ -57,5 +57,5 @@ tests:
     main: doctest.hs
     dependencies:
       - base
-      - chris-martin-org
+      - bricks
       - doctest

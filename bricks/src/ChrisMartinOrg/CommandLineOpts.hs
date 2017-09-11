@@ -7,7 +7,7 @@ module ChrisMartinOrg.CommandLineOpts
   , getOpts
   ) where
 
-import Paths_chris_martin_org (version)
+import Paths_bricks (version)
 
 import Control.Applicative ((<|>))
 import Data.Semigroup ((<>))

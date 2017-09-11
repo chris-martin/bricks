@@ -1,0 +1,119 @@
+-- This file has been generated from package.yaml by hpack version 0.18.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           bricks
+version:        0.1.0.0
+homepage:       https://github.com/chris-martin/bricks#readme
+bug-reports:    https://github.com/chris-martin/bricks/issues
+license:        Apache-2.0
+build-type:     Simple
+cabal-version:  >= 1.10
+
+source-repository head
+  type: git
+  location: https://github.com/chris-martin/bricks
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      attoparsec
+    , base
+    , base16-bytestring
+    , blaze-html
+    , blaze-markup
+    , bytestring
+    , containers
+    , cryptonite
+    , directory
+    , filepath
+    , highlighting-kate
+    , hsass
+    , markdown
+    , memory
+    , optparse-applicative
+    , parsec
+    , safe
+    , text
+    , time
+    , unix
+  exposed-modules:
+      ChrisMartinOrg
+      ChrisMartinOrg.CommandLineOpts
+      ChrisMartinOrg.Content
+      ChrisMartinOrg.Core
+      ChrisMartinOrg.Css
+      ChrisMartinOrg.Hash
+      ChrisMartinOrg.Home
+      ChrisMartinOrg.NixLike
+      ChrisMartinOrg.Post
+      ChrisMartinOrg.PostDate
+      ChrisMartinOrg.Post.Page
+      ChrisMartinOrg.Post.Parse
+      ChrisMartinOrg.Redirect
+  other-modules:
+      Paths_bricks
+  default-language: Haskell2010
+
+executable chris-martin-org
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  ghc-options: -Wall
+  build-depends:
+      attoparsec
+    , base
+    , base16-bytestring
+    , blaze-html
+    , blaze-markup
+    , bytestring
+    , containers
+    , cryptonite
+    , directory
+    , filepath
+    , highlighting-kate
+    , hsass
+    , markdown
+    , memory
+    , optparse-applicative
+    , parsec
+    , safe
+    , text
+    , time
+    , unix
+    , bricks
+  default-language: Haskell2010
+
+test-suite doctest
+  type: exitcode-stdio-1.0
+  main-is: doctest.hs
+  hs-source-dirs:
+      test
+  ghc-options: -Wall
+  build-depends:
+      attoparsec
+    , base
+    , base16-bytestring
+    , blaze-html
+    , blaze-markup
+    , bytestring
+    , containers
+    , cryptonite
+    , directory
+    , filepath
+    , highlighting-kate
+    , hsass
+    , markdown
+    , memory
+    , optparse-applicative
+    , parsec
+    , safe
+    , text
+    , time
+    , unix
+    , base
+    , bricks
+    , doctest
+  default-language: Haskell2010

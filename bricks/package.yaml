@@ -11,26 +11,9 @@ library:
     - ChrisMartinOrg.NixLike
 
 dependencies:
-  - attoparsec
   - base
-  - base16-bytestring
-  - blaze-html
-  - blaze-markup
-  - bytestring
-  - containers
-  - cryptonite
-  - directory
-  - filepath
-  - highlighting-kate
-  - hsass
-  - markdown
-  - memory
-  - optparse-applicative
   - parsec
-  - safe
   - text
-  - time
-  - unix
 
 tests:
   doctest:

@@ -19,29 +19,13 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      attoparsec
-    , base
-    , base16-bytestring
-    , blaze-html
-    , blaze-markup
-    , bytestring
-    , containers
-    , cryptonite
-    , directory
-    , filepath
-    , highlighting-kate
-    , hsass
-    , markdown
-    , memory
-    , optparse-applicative
+      base
     , parsec
-    , safe
     , text
-    , time
-    , unix
   exposed-modules:
       ChrisMartinOrg.NixLike
   other-modules:
+      Bricks.Types
       Paths_bricks
   default-language: Haskell2010
 
@@ -52,26 +36,9 @@ test-suite doctest
       test
   ghc-options: -Wall
   build-depends:
-      attoparsec
-    , base
-    , base16-bytestring
-    , blaze-html
-    , blaze-markup
-    , bytestring
-    , containers
-    , cryptonite
-    , directory
-    , filepath
-    , highlighting-kate
-    , hsass
-    , markdown
-    , memory
-    , optparse-applicative
+      base
     , parsec
-    , safe
     , text
-    , time
-    , unix
     , base
     , bricks
     , doctest

@@ -1,4 +1,3 @@
 /cabal.config
-/out
-/chris-martin-org/dist
-/chris-martin-org/*.cabal
+/bricks/dist
+/bricks/*.cabal

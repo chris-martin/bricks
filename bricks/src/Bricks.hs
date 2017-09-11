@@ -9,6 +9,7 @@ Notable differences from Nix:
 - The concept of "set" is referred to as "dict" (this is not actually a language
   difference, I just use a different word to talk about the same concept)
 - No comments (todo - will add both inline and block comments)
+- No @inherit@ keyword (todo)
 
 -}
 module Bricks

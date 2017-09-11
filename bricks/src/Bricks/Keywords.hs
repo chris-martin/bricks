@@ -2,18 +2,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Bricks.Keywords
-
-  ( keywords
-
-  -- * Type conversion
-  , keywordString
-  , keywordText
+  (
+  -- * List of keywords
+    keywords
 
   -- * The keywords
   , keyword'rec
   , keyword'let
   , keyword'in
   , keyword'with
+
+  -- * Type conversion
+  , keywordString
+  , keywordText
 
   ) where
 

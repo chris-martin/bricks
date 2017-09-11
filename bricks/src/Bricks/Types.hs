@@ -1,6 +1,52 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Bricks.Types where
+module Bricks.Types
+  (
+  -- * Expressions
+    Expression (..)
+
+  -- * Identifiers
+  , BareId (..)
+
+  -- * Functions
+  -- ** Function calls
+  , CallExpr (..)
+  -- ** Function expressions
+  , FuncExpr (..)
+  -- ** Function parameters
+  , Param (..)
+  , DictParam (..)
+  , DictParamItem (..)
+  , ParamDefault (..)
+
+  -- * Keywords
+  , Keyword (..)
+
+  -- * Bindings
+  , Binding (..)
+
+  -- ** @let@
+  , LetExpr (..)
+
+  -- ** @with@
+  , With (..)
+
+  -- * Lists
+  , ListLiteral (..)
+
+  -- * Dicts
+  , DictLiteral (..)
+  , Dot (..)
+
+  -- * Strings
+  , StrExpr (..)
+  , StrExprPart (..)
+
+  -- ** Indented strings
+  , IndentedString (..)
+  , IndentedStringLine (..)
+
+  ) where
 
 import Data.Bool       (Bool)
 import Data.Maybe      (Maybe)

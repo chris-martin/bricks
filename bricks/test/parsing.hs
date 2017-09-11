@@ -3,7 +3,8 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 import Bricks
-import Bricks.Test.Internal
+import Bricks.Test.Hedgehog
+import Bricks.Test.QQ
 
 import Control.Applicative ((<|>))
 import Data.Either         (Either (..))

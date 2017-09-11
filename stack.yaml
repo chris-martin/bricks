@@ -4,4 +4,4 @@ packages:
   - bricks
 
 extra-deps:
-  - optparse-applicative-0.14.0.0
+  - hedgehog-0.5

@@ -3,12 +3,18 @@ version: 0.1.0.0
 license: Apache-2.0
 github: chris-martin/bricks
 
-ghc-options: -Wall
+ghc-options:
+  - -Wall
 
 library:
   source-dirs: src
   exposed-modules:
-    - ChrisMartinOrg.NixLike
+    - Bricks
+    - Bricks.Identifiers
+    - Bricks.Keywords
+    - Bricks.Parsing
+    - Bricks.Rendering
+    - Bricks.Types
 
 dependencies:
   - base
@@ -16,10 +22,27 @@ dependencies:
   - text
 
 tests:
-  doctest:
+
+  rendering:
     source-dirs: test
-    main: doctest.hs
+    main: rendering.hs
+    ghc-options:
+      - -Wno-missing-signatures
+      - -threaded
     dependencies:
       - base
       - bricks
-      - doctest
+      - hedgehog
+      - template-haskell
+
+  parsing:
+    source-dirs: test
+    main: parsing.hs
+    ghc-options:
+      - -Wno-missing-signatures
+      - -threaded
+    dependencies:
+      - base
+      - bricks
+      - hedgehog
+      - template-haskell

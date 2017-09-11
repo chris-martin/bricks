@@ -16,15 +16,14 @@ Notable differences from Nix:
 - No URI literals
 - The concept of "set" is referred to as "dict" (this is not actually a language
   difference, I just use a different word to talk about the same concept)
-- No @with@ keyword (todo)
 - No comments (todo)
 
 -}
 module ChrisMartinOrg.NixLike where
 
-import Control.Applicative ((<|>), (*>), pure)
+import Control.Applicative ((<|>), (<*>), (*>), pure)
 import Control.Arrow ((>>>))
-import Control.Monad (fail, guard)
+import Control.Monad (guard)
 import Text.Parsec ((<?>))
 import Text.Parsec.Text (Parser)
 import Data.Bool (Bool (..), (&&), (||), not)
@@ -92,11 +91,15 @@ keyword'let = "let"
 keyword'in :: Text
 keyword'in = "in"
 
+keyword'with :: Text
+keyword'with = "with"
+
 keywords :: [Text]
 keywords =
   [ keyword'rec
   , keyword'let
   , keyword'in
+  , keyword'with
   ]
 
 keywordP :: Text -> Parser ()
@@ -932,31 +935,24 @@ remaining input: " }:"
 -}
 dictParamStartP :: Parser ()
 dictParamStartP =
-  do
-    _ <- P.char '{'
-    _ <- P.spaces
+  P.char '{' *> P.spaces *>
     asum
       [ void $ P.string "..."
       , void $ P.char '}' *> P.spaces *> P.char ':'
-      , void $ bareIdP *>
-          asum
-            [ P.char ','
-            , P.char '?'
-            , P.char '}'
-            ]
+      , void $ bareIdP *> (P.char ',' <|> P.char '?' <|> P.char '}')
       ]
 
 dictParamEndP :: Parser ()
 dictParamEndP =
-  do
-    _ <- P.char '}'
-    _ <- P.char ':'
-    _ <- P.spaces
-    pure ()
+  void $ P.char '}' *> P.char ':' *> P.spaces
 
 applyArgs:: Expression -> [Expression] -> Expression
 applyArgs =
   foldl (\acc b -> Expr'Call (CallExpr acc b))
+
+funcP :: Parser FuncExpr
+funcP =
+  FuncExpr <$> paramP <*> expressionP
 
 
 --------------------------------------------------------------------------------
@@ -1225,6 +1221,32 @@ letExprP =
             go $ previousBindings . (a :)
         ]
 
+--------------------------------------------------------------------------------
+--  With
+--------------------------------------------------------------------------------
+
+data With =
+  With
+    { with'dict :: Expression
+    , with'expr :: Expression
+    }
+
+renderWith :: With -> Text
+renderWith (With a b) =
+  keyword'with <> " " <>
+  renderExpression RenderContext'Normal a <> "; " <>
+  renderExpression RenderContext'Normal b
+
+withP :: Parser With
+withP =
+  do
+    _ <- keywordP keyword'with
+    a <- expressionP
+    _ <- P.char ';'
+    _ <- P.spaces
+    b <- expressionP
+    pure $ With a b
+
 
 --------------------------------------------------------------------------------
 --  Binding
@@ -1270,6 +1292,7 @@ data Expression
   | Expr'Func FuncExpr
   | Expr'Call CallExpr
   | Expr'Let  LetExpr
+  | Expr'With With
 
 renderExpression :: RenderContext -> Expression -> Text
 renderExpression c =
@@ -1282,6 +1305,7 @@ renderExpression c =
     Expr'Func x -> renderFuncExpr c x
     Expr'Call x -> renderCallExpr c x
     Expr'Let  x -> renderLetExpr x
+    Expr'With x -> renderWith x
 
 {- | The primary, top-level expression parser. This is what you use to parse a
 @.nix@ file.
@@ -1499,17 +1523,23 @@ A let binding list may be empty, although it is silly.
 let in f x
 remaining input: ""
 
+>>> test "with x; y"
+with x; y
+remaining input: ""
+
+>>> test "with{x=y;}; f x z"
+with { x = y; }; f x z
+remaining input: ""
+
 -}
 expressionP :: Parser Expression
 expressionP =
   p <?> "expression"
   where
     p = asum
-      [ Expr'Let <$> letExprP
-      , do
-          a <- paramP
-          b <- expressionP
-          pure $ Expr'Func (FuncExpr a b)
+      [ Expr'Let  <$> letExprP
+      , Expr'With <$> withP
+      , Expr'Func <$> funcP
       , do
           a <- expressionListP
           case a of

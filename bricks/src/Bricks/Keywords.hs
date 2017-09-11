@@ -1,4 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude, OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Bricks.Keywords
 
@@ -19,7 +20,7 @@ module Bricks.Keywords
 import Bricks.Types
 
 import Data.String (String)
-import Data.Text (Text)
+import Data.Text   (Text)
 
 import qualified Data.Text as Text
 

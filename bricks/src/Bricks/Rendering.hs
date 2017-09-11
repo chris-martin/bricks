@@ -1,4 +1,7 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, OverloadedStrings, ViewPatterns #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module Bricks.Rendering where
 
@@ -6,19 +9,19 @@ import Bricks.Identifiers
 import Bricks.Keywords
 import Bricks.Types
 
-import Control.Arrow ((>>>))
-import Data.Bool (Bool (..))
-import Data.Foldable (Foldable, foldMap)
-import Data.Function ((.))
-import Data.Functor (Functor (..))
-import Data.Maybe (Maybe (..))
+import Control.Arrow  ((>>>))
+import Data.Bool      (Bool (..))
+import Data.Foldable  (Foldable, foldMap)
+import Data.Function  ((.))
+import Data.Functor   (Functor (..))
+import Data.Maybe     (Maybe (..))
 import Data.Semigroup ((<>))
-import Data.Text (Text)
-import Prelude (fromIntegral)
+import Data.Text      (Text)
+import Prelude        (fromIntegral)
 
 import qualified Data.Foldable as Foldable
-import qualified Data.List as List
-import qualified Data.Text as Text
+import qualified Data.List     as List
+import qualified Data.Text     as Text
 
 renderIdentifier :: Text -> Text
 renderIdentifier x =

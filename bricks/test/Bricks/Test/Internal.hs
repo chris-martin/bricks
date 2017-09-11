@@ -9,13 +9,14 @@ import Control.Arrow ((>>>))
 import Control.Monad (unless)
 import Data.Foldable (for_)
 import Data.Function (const)
+
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 
-import qualified Data.Text as Text
+import qualified Data.Text   as Text
 import qualified Hedgehog
 import qualified System.Exit as Exit
-import qualified System.IO as IO
+import qualified System.IO   as IO
 
 runTests :: Hedgehog.Group -> IO ()
 runTests tests =

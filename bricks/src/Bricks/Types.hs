@@ -2,9 +2,9 @@
 
 module Bricks.Types where
 
-import Data.Bool (Bool)
-import Data.Maybe (Maybe)
-import Data.Text (Text)
+import Data.Bool       (Bool)
+import Data.Maybe      (Maybe)
+import Data.Text       (Text)
 import Numeric.Natural (Natural)
 
 {- | An identifier which /must/ be unquoted. For example, in a binding @x = y;@,

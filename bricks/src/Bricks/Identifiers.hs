@@ -1,4 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude, OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Bricks.Identifiers
   ( isBareIdentifierName
@@ -6,13 +7,12 @@ module Bricks.Identifiers
   ) where
 
 import Bricks.Keywords
-import Bricks.Types
 
-import Data.Bool (Bool, (&&), (||), not)
-import Data.Char (Char)
-import Data.Eq ((==), (/=))
+import Data.Bool     (Bool, not, (&&), (||))
+import Data.Char     (Char)
+import Data.Eq       ((/=), (==))
 import Data.Function ((.))
-import Data.Text (Text)
+import Data.Text     (Text)
 
 import qualified Data.Char as Char
 import qualified Data.List as List

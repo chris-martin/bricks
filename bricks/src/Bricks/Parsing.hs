@@ -1,4 +1,6 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, OverloadedStrings #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {- | Parsec parsers for the Bricks language.
 
@@ -11,22 +13,22 @@ import Bricks.Identifiers
 import Bricks.Keywords
 import Bricks.Types
 
-import Text.Parsec ((<?>))
+import Text.Parsec      ((<?>))
 import Text.Parsec.Text (Parser)
 
-import qualified Data.Text as Text
+import qualified Data.Text   as Text
 import qualified Text.Parsec as P
 
-import Control.Applicative ((<|>), (<*>), (*>), pure)
-import Control.Monad (guard)
-import Data.Bool (Bool (..), (&&), not)
-import Data.Eq (Eq (..))
-import Data.Foldable (asum, foldl)
-import Data.Function (($), (.), id)
-import Data.Functor ((<$>), ($>), void)
-import Data.Ord (Ord (..))
-import Numeric.Natural (Natural)
-import Prelude (fromIntegral, Num (..), succ)
+import Control.Applicative (pure, (*>), (<*>), (<|>))
+import Control.Monad       (guard)
+import Data.Bool           (Bool (..), not, (&&))
+import Data.Eq             (Eq (..))
+import Data.Foldable       (asum, foldl)
+import Data.Function       (id, ($), (.))
+import Data.Functor        (void, ($>), (<$>))
+import Data.Ord            (Ord (..))
+import Numeric.Natural     (Natural)
+import Prelude             (Num (..), fromIntegral, succ)
 
 import qualified Data.List as List
 

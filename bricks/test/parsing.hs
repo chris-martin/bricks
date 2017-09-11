@@ -1,19 +1,20 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes, TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 import Bricks
 import Bricks.Test.Internal
 
 import Control.Applicative ((<|>))
-import Data.Either (Either (..))
-import Data.Function (const)
-import Data.Functor (($>), void)
-import Data.Maybe (Maybe (..), catMaybes)
-import Data.Semigroup ((<>))
-import Data.Text (Text)
-import Hedgehog (property, (===))
-import Text.Parsec.Text (Parser)
+import Data.Either         (Either (..))
+import Data.Functor        (void, ($>))
+import Data.Maybe          (Maybe (..), catMaybes)
+import Data.Semigroup      ((<>))
+import Data.Text           (Text)
+import Hedgehog            (property, (===))
+import Text.Parsec.Text    (Parser)
 
-import qualified Data.Text as Text
+import qualified Data.Text   as Text
 import qualified Hedgehog
 import qualified Text.Parsec as P
 

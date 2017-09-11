@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes, TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 import Bricks
 import Bricks.Test.Internal

@@ -40,50 +40,9 @@ library
     , time
     , unix
   exposed-modules:
-      ChrisMartinOrg
-      ChrisMartinOrg.CommandLineOpts
-      ChrisMartinOrg.Content
-      ChrisMartinOrg.Core
-      ChrisMartinOrg.Css
-      ChrisMartinOrg.Hash
-      ChrisMartinOrg.Home
       ChrisMartinOrg.NixLike
-      ChrisMartinOrg.Post
-      ChrisMartinOrg.PostDate
-      ChrisMartinOrg.Post.Page
-      ChrisMartinOrg.Post.Parse
-      ChrisMartinOrg.Redirect
   other-modules:
       Paths_bricks
-  default-language: Haskell2010
-
-executable chris-martin-org
-  main-is: Main.hs
-  hs-source-dirs:
-      app
-  ghc-options: -Wall
-  build-depends:
-      attoparsec
-    , base
-    , base16-bytestring
-    , blaze-html
-    , blaze-markup
-    , bytestring
-    , containers
-    , cryptonite
-    , directory
-    , filepath
-    , highlighting-kate
-    , hsass
-    , markdown
-    , memory
-    , optparse-applicative
-    , parsec
-    , safe
-    , text
-    , time
-    , unix
-    , bricks
   default-language: Haskell2010
 
 test-suite doctest

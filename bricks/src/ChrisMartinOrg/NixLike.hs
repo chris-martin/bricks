@@ -47,6 +47,8 @@ import qualified Data.Text as Text
 
 {- $setup
 
+>>> :set -XOverloadedStrings
+
 >>> import Data.Either (Either (..), either)
 >>> import Data.Function (const)
 >>> import Prelude (putStrLn, putStr, print, Show, show, IO, String)

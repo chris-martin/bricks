@@ -8,19 +8,7 @@ ghc-options: -Wall
 library:
   source-dirs: src
   exposed-modules:
-    - ChrisMartinOrg
-    - ChrisMartinOrg.CommandLineOpts
-    - ChrisMartinOrg.Content
-    - ChrisMartinOrg.Core
-    - ChrisMartinOrg.Css
-    - ChrisMartinOrg.Hash
-    - ChrisMartinOrg.Home
     - ChrisMartinOrg.NixLike
-    - ChrisMartinOrg.Post
-    - ChrisMartinOrg.PostDate
-    - ChrisMartinOrg.Post.Page
-    - ChrisMartinOrg.Post.Parse
-    - ChrisMartinOrg.Redirect
 
 dependencies:
   - attoparsec
@@ -43,13 +31,6 @@ dependencies:
   - text
   - time
   - unix
-
-executables:
-  chris-martin-org:
-    source-dirs: app
-    main: Main.hs
-    dependencies:
-      - bricks
 
 tests:
   doctest:

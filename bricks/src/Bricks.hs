@@ -3,25 +3,24 @@
 Notable differences from Nix:
 
 - No built-in null, integer, or boolean types
-- No @\@@ keyword
 - No @builtins@ and no infix operators (@+@, @-@, @//@)
 - No URI literals
 - The concept of "set" is referred to as "dict" (this is not actually a language
   difference, I just use a different word to talk about the same concept)
-- No comments (todo - will add both inline and block comments)
-- No @inherit@ keyword (todo)
 
 -}
 module Bricks
-  ( module Bricks.Identifiers
-  , module Bricks.Keywords
+  ( module Bricks.Bare
+  , module Bricks.IndentedString
+  , module Bricks.Keyword
   , module Bricks.Parsing
   , module Bricks.Rendering
-  , module Bricks.Types
+  , module Bricks.Expression
   ) where
 
-import Bricks.Identifiers
-import Bricks.Keywords
+import Bricks.Bare
+import Bricks.IndentedString
+import Bricks.Keyword
 import Bricks.Parsing
 import Bricks.Rendering
-import Bricks.Types
+import Bricks.Expression

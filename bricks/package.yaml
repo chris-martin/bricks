@@ -9,12 +9,17 @@ ghc-options:
 library:
   source-dirs: src
   exposed-modules:
+
     - Bricks
-    - Bricks.Identifiers
-    - Bricks.Keywords
+
+    - Bricks.Bare
+    - Bricks.Expression
+    - Bricks.IndentedString
+    - Bricks.Keyword
     - Bricks.Parsing
     - Bricks.Rendering
-    - Bricks.Types
+
+    - Bricks.Internal.DList
 
 dependencies:
   - base

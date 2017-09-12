@@ -2,39 +2,42 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-{- | Parsec parsers for the Bricks language.
+{- | Parsec 'Parser's for the Bricks language.
 
-All parsers consume trailing whitespace unless otherwise noted.
+Most parsers consume trailing whitespace, except ones that operate within
+quoted string environments where whitespace is significant.
 
 -}
 module Bricks.Parsing where
 
-import Bricks.Identifiers
-import Bricks.Keywords
-import Bricks.Types
+import Bricks.Bare
+import Bricks.Expression
+import Bricks.Keyword
+import Bricks.IndentedString
 
-import Control.Applicative (pure, (*>), (<*>), (<|>))
-import Control.Monad       (guard)
-import Data.Bool           (Bool (..), not, (&&))
+import Bricks.Internal.DList (DList)
+import qualified Bricks.Internal.DList as DList
+
+import Control.Applicative (pure, (*>), (<*>), (<*), (<|>))
+import Control.Monad       ((>>=))
+import Data.Bool           (Bool (..), (&&))
 import Data.Eq             (Eq (..))
 import Data.Foldable       (asum, foldl)
-import Data.Function       (id, ($), (.))
-import Data.Functor        (void, ($>), (<$>))
-import Data.Ord            (Ord (..))
+import Data.Function       (($), (.), flip)
+import Data.Functor        (Functor, void, ($>), (<$>), fmap)
+import Data.Maybe (Maybe (..))
 import Numeric.Natural     (Natural)
-import Prelude             (Num (..), fromIntegral, succ)
+import Prelude             (succ, undefined)
 import Text.Parsec         ((<?>))
 import Text.Parsec.Text    (Parser)
 
-import qualified Data.List   as List
 import qualified Data.Text   as Text
 import qualified Text.Parsec as P
 
--- | Parser for a particular keyword.
-keywordP  :: Keyword    -- The keyword you're expecting
-          -> Parser ()
-keywordP k =
-  do
+-- | Backtracking parser for a particular keyword.
+parse'keyword :: Keyword -> Parser ()
+parse'keyword k =
+  P.try $ do
     -- Consume the keyword
     _ <- P.string (keywordString k)
 
@@ -42,472 +45,390 @@ keywordP k =
     -- of a valid identifier. For example, this prevents this parser from
     -- interpreting the beginning of an identifier named "letter" as the
     -- keyword "let".
-    _ <- P.notFollowedBy (P.satisfy isBareIdentifierChar)
+    _ <- P.notFollowedBy (P.satisfy canBeBare'char)
 
     -- As usual, consume trailing spaces.
     _ <- P.spaces
 
     pure ()
 
-{- | Parser for a bare (unquoted) identifier. Bare identifiers are restricted
-to a conservative set of characters (see 'isBareIdentifierChar'), and they may
-not be any of the 'keywords'. -}
-bareIdP :: Parser BareId
-bareIdP =
-  p <?> "bare identifier"
-  where
-    p = do
-      -- Consume at least one character
-      a <- Text.pack <$> P.many1 (P.satisfy isBareIdentifierChar)
+{- | Parser for a bare (unquoted) string. Bare strings are restricted to a
+conservative set of characters, and they may not be any of the keywords. -}
+parse'bare :: Parser Bare
+parse'bare =
+  do
+    -- Consume at least one character
+    a <- Text.pack <$> P.many1 (P.satisfy canBeBare'char)
 
-      -- Fail if what we just parsed is a keyword.
-      guard $ List.all ((/= a) . keywordText) keywords
-      _ <- P.spaces
-      pure $ BareId a
+    -- Fail if what we just parsed isn't a valid bare string
+    case bareMaybe a of
+      Nothing -> P.parserZero
+      Just b  -> P.spaces $> b
 
-idExprP :: Parser StrExpr
-idExprP =
+{- | Parser for a dynamic (possibly antiquoted) string which may be either bare
+or quoted. -}
+parse'strDynamic :: Parser Str'Dynamic
+parse'strDynamic =
+  parse'strDynamic'quoted <|> parse'strDynamic'bare
+
+{- | Parser for a dynamic string which is bare (unquoted). This is either a
+bare string or a single bare antiquote. -}
+parse'strDynamic'bare :: Parser Str'Dynamic
+parse'strDynamic'bare =
   asum
-    [ strExprP
-    , do
-        a <- bareIdP
-        pure $ StrExpr [ StrExprPart'Literal (bareIdText a) ]
+    [ parse'antiquote <* P.spaces <&> \x -> [Str'1'Antiquote x]
+    , parse'bare                  <&> \x -> [Str'1'Literal (bare'str x)]
     ]
 
-{- | Parser for any kind of string literal. This includes "normal" string
-literals delimited by one double-quote @"@ ('strExprP'normal') and "indented"
-string literals delimited by two single-quotes @''@ ('strExprP'indented'). -}
-strExprP :: Parser StrExpr
-strExprP =
-  (strExprP'normal <|> strExprP'indented) <?> "string"
+{- | Parser for a static string which may be either bare or a quoted.
+By "static," we mean that the string may /not/ contain antiquotation. -}
+parse'strStatic :: Parser Str'Static
+parse'strStatic =
+  parse'strStatic'quoted <|> parse'strStatic'bare
 
-antiquoteP :: Parser Expression
-antiquoteP =
-  do
-    _ <- P.try (P.string "${")
-    _ <- P.spaces
-    a <- expressionP
-    _ <- P.char '}'
-    pure a
-
-{- | Parser for a "normal" string literal, delimited by one double-quote (@"@).
-Normal string literals have antiquotation and backslash escape sequences. They
-may span multiple lines. -}
-strExprP'normal :: Parser StrExpr
-strExprP'normal =
-  (P.char '"' *> go id) <?> "normal string literal"
+-- | Parser for a static string that is quoted.
+parse'strStatic'quoted :: Parser Str'Static
+parse'strStatic'quoted =
+  parse'strDynamic'quoted <&> dynamicToStatic >>= \case
+    Nothing -> P.parserZero
+    Just x  -> pure x
   where
-    go :: ([StrExprPart] -> [StrExprPart]) -> Parser StrExpr
+    dynamicToStatic :: Str'Dynamic -> Maybe Str'Static
+    dynamicToStatic = undefined
+
+-- | Parser for a static string that is bare (unquoted).
+parse'strStatic'bare :: Parser Str'Static
+parse'strStatic'bare =
+  parse'bare <&> bare'str
+
+{- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
+string delimited by one double-quote @"@ ('parse'strDynamic'normalQ') or an
+"indented" string delimited by two single-quotes @''@
+('parse'strDynamic'indentedQ'). -}
+parse'strDynamic'quoted :: Parser Str'Dynamic
+parse'strDynamic'quoted =
+  parse'strDynamic'normalQ <|> parse'strDynamic'indentedQ
+
+{-| Parser for an antiquotation @${ ... }@. This parser does /not/ consume
+trailing whitespace, because it is used in quoted string environments where
+whitespace is significant. -}
+parse'antiquote :: Parser Expression
+parse'antiquote =
+  P.try (P.string "${") *> P.spaces *> parse'expression <* P.char '}'
+
+-- | Parser for a dynamic string enclosed in "normal" quotes (@"@).
+parse'strDynamic'normalQ :: Parser Str'Dynamic
+parse'strDynamic'normalQ =
+  P.char '"' *> go DList.empty
+  where
+    go :: DList Str'1 -> Parser Str'Dynamic
     go previousParts =
       asum
-        [ do
-            _ <- P.char '"'
-            _ <- P.spaces
-            pure $ StrExpr (previousParts [])
-        , do
-            xs <- P.many1 $ asum
-              [ do
-                  c <- P.satisfy (\c -> c /= '$' && c /= '"' && c /= '\\')
-                  pure $ Text.singleton c
-              , P.try $ do
-                  c <- P.char '$'
-                  _ <- P.notFollowedBy (P.char '{')
-                  pure $ Text.singleton c
-              , do
-                  _ <- P.char '\\'
-                  asum
-                    [ P.char '\\' $> "\\"
-                    , P.char '"' $> "\""
-                    , P.char 'n' $> "\n"
-                    , P.char 'r' $> "\r"
-                    , P.char 't' $> "\t"
-                    , P.string "${" $> "${"
-                    ]
-              ]
-            go $ previousParts . (StrExprPart'Literal (Text.concat xs) :)
-        , do
-            a <- antiquoteP
-            go $ previousParts . (StrExprPart'Antiquote a :)
+        [ end               $> DList.toList previousParts
+        , (chars <|> anti) >>= \x -> go $ previousParts `DList.snoc` x
         ]
 
-{- | Parser for an "indented string literal," delimited by two single-quotes
-@''@ ('strExprP'indented'). Indented string literals have antiquotation but no
-backslash escape sequences.
+    -- Read the closing " character
+    end = P.char '"' *> P.spaces
 
-This type of literal is called "indented" because leading whitespace is
-intelligently stripped from the string ('stripIndentation'), which makes it
-convenient to use these literals for multi-line strings within an indented
-expression without the whitespace from indentation ending up as part of the
-string. -}
-strExprP'indented :: Parser StrExpr
-strExprP'indented =
-  p <?> "indented string literal"
-  where
-    p = do
-      a <- indentedStringP
-      pure $ indentedString'joinLines . stripIndentation . trimEmptyLines $ a
+    -- Read an antiquote
+    anti = Str'1'Antiquote <$> parse'antiquote
 
-{- | Parser for an indented string. This parser produces unprocessed lines,
-/without/ stripping the indentation or removing leading/trailing empty lines.
-For a parser that does those things, see 'strExprP'indented'. -}
-indentedStringP :: Parser IndentedString
-indentedStringP =
-  do
-    _ <- P.string "''"
-    go id
+    -- Read some normal characters in the string
+    chars = do
+      xs <- P.many1 $ asum
+        [ do
+            c <- P.satisfy (\c -> c /= '$' && c /= '"' && c /= '\\')
+            pure $ Text.singleton c
+        , P.try $ do
+            c <- P.char '$'
+            _ <- P.notFollowedBy (P.char '{')
+            pure $ Text.singleton c
+        , do
+            _ <- P.char '\\'
+            asum
+              [ P.char '\\'   $> "\\"
+              , P.char '"'    $> "\""
+              , P.char 'n'    $> "\n"
+              , P.char 'r'    $> "\r"
+              , P.char 't'    $> "\t"
+              , P.string "${" $> "${"
+              ]
+        ]
+      pure $ Str'1'Literal (Text.concat xs)
+
+{- | Parser for a dynamic string enclosed in "indented string" format,
+delimited by two single-quotes @''@. This string syntax supports a different
+(and smaller) set of escape sequences from normal strings. -}
+parse'strDynamic'indentedQ :: Parser Str'Dynamic
+parse'strDynamic'indentedQ =
+  inStr'join . inStr'dedent . inStr'trim <$> parse'inStr
+
+{- | Parser for an indented string. This parser produces a representation of
+the lines from the source as-is, before the whitespace is cleaned up. -}
+parse'inStr :: Parser InStr
+parse'inStr =
+  P.string "''" *> go DList.empty
   where
-    go :: ([IndentedStringLine] -> [IndentedStringLine])
-       -> Parser IndentedString
+    go :: DList InStr'1 -> Parser InStr
     go previousLines =
       do
-        line <- indentedStringLineP
+        line <- parse'inStr'1
+        let newLines = previousLines `DList.snoc` line
         asum
-          [ do
-              _ <- P.string "''"
-              _ <- P.spaces
-              pure $ IndentedString (previousLines [line])
-          , do
-              _ <- P.char '\n'
-              go $ previousLines . (line :)
+          [ P.string "''" *> P.spaces $> DList.toList newLines
+          , P.char '\n'   *> go newLines
           ]
 
--- | Parser for a single line of an 'IndentedString'.
-indentedStringLineP :: Parser IndentedStringLine
-indentedStringLineP =
+-- | Parser for a single line of an 'InStr'.
+parse'inStr'1 :: Parser InStr'1
+parse'inStr'1 =
   do
-    a <- counterP (P.char ' ')
-    b <- go id
-    pure $ IndentedStringLine a b
+    a <- parse'count (P.char ' ')
+    b <- go DList.empty
+    pure $ InStr'1 a b
   where
-    go :: ([StrExprPart] -> [StrExprPart]) -> Parser StrExpr
+    go :: DList Str'1 -> Parser Str'Dynamic
     go previousParts =
       asum
-        [ do
-            _ <- P.lookAhead $ void (P.char '\n') <|> void (P.try (P.string "''"))
-            pure $ StrExpr (previousParts [])
-        , do
-            xs <- P.many1 $ asum
-              [ do
-                  c <- P.satisfy (\c -> c /= '$' && c /= '\'' && c /= '\n')
-                  pure $ Text.singleton c
-              , P.try $ do
-                  c <- P.char '$'
-                  _ <- P.notFollowedBy (P.char '{')
-                  pure $ Text.singleton c
-              , P.try $ do
-                  c <- P.char '\''
-                  _ <- P.notFollowedBy (P.char '\'')
-                  pure $ Text.singleton c
-              ]
-            go $ previousParts . (StrExprPart'Literal (Text.concat xs) :)
-        , do
-            a <- antiquoteP
-            go $ previousParts . (StrExprPart'Antiquote a :)
+        [ end               $> DList.toList previousParts
+        , (chars <|> anti) >>= \x -> go (previousParts `DList.snoc` x)
         ]
 
--- | Join 'IndentedStringLine's with newlines interspersed.
-indentedString'joinLines :: IndentedString -> StrExpr
-indentedString'joinLines (IndentedString xs) =
-  StrExpr $ List.concat $ List.intersperse [newline] (f <$> xs)
-  where
-    newline = StrExprPart'Literal "\n"
-    f :: IndentedStringLine -> [StrExprPart]
-    f (IndentedStringLine n (StrExpr parts)) =
-      StrExprPart'Literal (Text.replicate (fromIntegral n) " ") : parts
-
-{- | Determines whether an 'IndentedStringLine' contains any non-space
-characters. The opposite of 'indentedStringLine'nonEmpty'.
-
-This is used to determine whether this line should be considered when
-calculating the number of space characters to strip in 'stripIndentation'. -}
-indentedStringLine'nonEmpty :: IndentedStringLine -> Bool
-indentedStringLine'nonEmpty =
-  \case
-    IndentedStringLine{ indentedStringLine'str = StrExpr [] } -> False
-    _ -> True
-
--- | The opposite of 'indentedStringLine'nonEmpty'.
-indentedStringLine'empty :: IndentedStringLine -> Bool
-indentedStringLine'empty =
-  not . indentedStringLine'nonEmpty
-
-{- | Determine how many characters of whitespace to strip from an indented
-string. -}
-indentedString'indentationSize :: IndentedString -> Natural
-indentedString'indentationSize (IndentedString xs) =
-  case List.filter indentedStringLine'nonEmpty xs of
-    [] -> 0
-    ys -> List.minimum (indentedStringLine'leadingSpaces <$> ys)
-
-{- | Modify an 'IndentedStringLine' by applying a function to its number of
-leading spaces. -}
-indentedStringLine'modifyLeadingSpaces
-  :: (Natural -> Natural) -> IndentedStringLine -> IndentedStringLine
-indentedStringLine'modifyLeadingSpaces
-  f x@IndentedStringLine{indentedStringLine'leadingSpaces = a} =
-  x{ indentedStringLine'leadingSpaces = f a }
-
-{- | Determine the minimum indentation of any nonempty line, and remove that
-many space characters from the front of every line. -}
-stripIndentation :: IndentedString -> IndentedString
-stripIndentation is@(IndentedString xs) =
-  let
-    b = indentedString'indentationSize is
-    f a = if a >= b then a - b else 0
-  in
-    IndentedString (indentedStringLine'modifyLeadingSpaces f <$> xs)
-
--- | Remove any empty lines from the beginning or end of an indented string.
-trimEmptyLines :: IndentedString -> IndentedString
-trimEmptyLines (IndentedString xs) =
-  IndentedString (trimWhile indentedStringLine'empty xs)
-  where
-    trimWhile f = List.dropWhileEnd f . List.dropWhile f
-
-paramP :: Parser Param
-paramP =
-  asum
-    [ Param'Id   <$> idParamP
-    , Param'Dict <$> dictParamP
-    ]
-
-idParamP :: Parser BareId
-idParamP = P.try $ do
-  a <- bareIdP
-  _ <- P.spaces
-  _ <- P.char ':'
-  _ <- P.spaces
-  pure a
-
-dictParamP :: Parser DictParam
-dictParamP =
-  do
-    _ <- P.try . P.lookAhead $ dictParamStartP
-    _ <- P.char '{'
-    _ <- P.spaces
-    asum
-      [ do
-          _ <- dictParamEndP
-          pure $ DictParam [] False
-      , go id
+    end = P.lookAhead $ asum
+      [ void $ P.char '\n'
+      , void $ P.try (P.string "''")
       ]
+
+    chars = fmap (Str'1'Literal . Text.pack) $ P.many1 $ asum
+      [ P.satisfy (\c -> c /= '$' && c /= '\'' && c /= '\n')
+      , P.try $ P.char '$'  <* P.notFollowedBy (P.char '{')
+      , P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
+      ]
+
+    anti = parse'antiquote <&> Str'1'Antiquote
+
+{- | Parser for a function parameter (the beginning of a 'Lambda'), including
+the colon. This forms part of 'parse'expression', so it backtracks in places
+where it has overlap with other types of expressions. -}
+parse'param :: Parser Param
+parse'param =
+  asum
+    [ normal  <&> Param'Bare
+    , pattern <&> Param'DictPattern
+    ]
   where
-    go :: ([DictParamItem] -> [DictParamItem]) -> Parser DictParam
+
+    -- A simple bare-string parameter. This entire branch backtracks,
+    -- because until we get to the colon, we don't know whether the
+    -- variable name we're reading is a lambda parameter or just the name
+    -- by itself.
+    normal = P.try $ parse'bare <* P.spaces <* P.char ':' <* P.spaces
+
+    -- A dict pattern. This branch backtracks because the beginning of a
+    -- dict pattern looks like the beginning of a dict expression.
+    pattern = do
+      -- First we look ahead to determine whether it looks like a lambda.
+      _ <- P.try . P.lookAhead $ parse'dictPattern'start
+
+      -- And if so, then we go on and parse the dict pattern with no
+      -- further backtracking.
+      parse'dictPattern <* P.char ':' <* P.spaces
+
+{- | Parser for a dict pattern (the type of lambda parameter that does dict
+destructuring. This parser does not backtrack. -}
+parse'dictPattern :: Parser DictPattern
+parse'dictPattern =
+  P.char '{' *> P.spaces *> go DList.empty
+  where
+    go :: DList DictPattern'1 -> Parser DictPattern
     go previousItems =
       asum
-        [ do
-            _ <- P.string "..."
-            _ <- P.spaces
-            _ <- dictParamEndP
-            pure (DictParam (previousItems []) True)
+        [ end $> DictPattern (DList.toList previousItems) False
+        , ellipsis $> DictPattern (DList.toList previousItems) True
         , do
-            a <- bareIdP
-            b <- P.optionMaybe paramDefaultP
-            let items = previousItems . (DictParamItem a b :)
+            newItems <- (previousItems `DList.snoc`) <$> item
             asum
-              [ do
-                  _ <- P.char ','
-                  _ <- P.spaces
-                  go items
-              , do
-                  _ <- dictParamEndP
-                  pure (DictParam (items []) False)
+              [ P.char ',' *> P.spaces *> go newItems
+              , end $> DictPattern (DList.toList newItems) False
               ]
         ]
 
-    paramDefaultP :: Parser ParamDefault
-    paramDefaultP =
-      do
-        _ <- P.char '?'
-        _ <- P.spaces
-        ParamDefault <$> expressionP
+    item = DictPattern'1 <$> parse'bare <*> P.optionMaybe def
 
-{- | This is used in a lookahead by 'dictParamP' to determine whether we're
-about to start parsing a 'DictParam'. -}
-dictParamStartP :: Parser ()
-dictParamStartP =
-  P.char '{' *> P.spaces *>
-    asum
-      [ void $ P.string "..."
-      , void $ P.char '}' *> P.spaces *> P.char ':'
-      , void $ bareIdP *> (P.char ',' <|> P.char '?' <|> P.char '}')
-      ]
+    ellipsis = P.string "..." *> P.spaces *> end
 
-dictParamEndP :: Parser ()
-dictParamEndP =
-  void $ P.char '}' *> P.char ':' *> P.spaces
+    def = P.char '?' *> P.spaces *> parse'expression
 
-applyArgs:: Expression -> [Expression] -> Expression
+    end = P.char '}' *> P.spaces
+
+{- | This is used in a lookahead by 'parse'param' to determine whether we're
+about to start parsing a 'DictPattern'. -}
+parse'dictPattern'start :: Parser ()
+parse'dictPattern'start =
+  P.char '{' *> P.spaces *> asum
+    [ void $ P.string "..."
+    , void $ P.char '}' *> P.spaces *> P.char ':'
+    , void $ parse'bare *> (P.char ',' <|> P.char '?' <|> P.char '}')
+    ]
+
+applyArgs :: Expression   -- ^ Function
+          -> [Expression] -- ^ Args
+          -> Expression   -- ^ Function application
 applyArgs =
-  foldl (\acc b -> Expr'Call (CallExpr acc b))
+  foldl (\acc b -> Expr'Apply (Apply acc b))
 
-funcP :: Parser FuncExpr
-funcP =
-  FuncExpr <$> paramP <*> expressionP
+-- | Parser for a lambda expression (@x: y@).
+parse'lambda :: Parser Lambda
+parse'lambda =
+  Lambda <$> parse'param <*> parse'expression
 
-listLiteralP :: Parser ListLiteral
-listLiteralP =
-  p <?> "list"
+-- | Parser for a list expression (@[ ... ]@).
+parse'list :: Parser List
+parse'list =
+  P.char '[' *> P.spaces *> parse'expressionList <* P.char ']' <* P.spaces
+
+-- | Parser for a dict expression, either recursive (@rec@ keyword) or not.
+parse'dict :: Parser Dict
+parse'dict =
+  asum
+    [ parse'dict'noRec <&> Dict False
+    , parse'dict'rec   <&> Dict True
+    ]
+
+-- | Parser for a recursive (@rec@ keyword) dict.
+parse'dict'rec :: Parser [DictBinding]
+parse'dict'rec =
+  parse'keyword keyword'rec *> parse'dict'noRec
+
+-- | Parser for a non-recursive (no @rec@ keyword) dict.
+parse'dict'noRec :: Parser [DictBinding]
+parse'dict'noRec =
+  P.char '{' *> P.spaces *> go DList.empty
   where
-    p = do
-      _ <- P.char '['
-      _ <- P.spaces
-      xs <- expressionListP
-      _ <- P.char ']'
-      _ <- P.spaces
-      pure $ ListLiteral xs
-
-dictLiteralP :: Parser DictLiteral
-dictLiteralP =
-  p <?> "dict"
-  where
-    p = asum
-      [ do
-          a <- dictLiteralP'noRec
-          pure $ DictLiteral False a
-      , do
-          _ <- P.try (keywordP keyword'rec)
-          a <- dictLiteralP'noRec
-          pure $ DictLiteral True a
+    go :: DList DictBinding -> Parser [DictBinding]
+    go previousBindings = asum
+      [ P.char '}' *> P.spaces $> DList.toList previousBindings
+      , parse'dictBinding >>= \a -> go (previousBindings `DList.snoc` a)
       ]
 
--- | Parser for a non-recursive (no @rec@ keyword) dict literal.
-dictLiteralP'noRec :: Parser [Binding]
-dictLiteralP'noRec =
-  P.char '{' *> P.spaces *> go id
-  where
-    go :: ([Binding] -> [Binding]) -> Parser [Binding]
-    go previousBindings =
-      asum
-        [ do
-            _ <- P.char '}'
-            _ <- P.spaces
-            pure $ previousBindings []
-        , do
-            a <- bindingP
-            go $ previousBindings . (a :)
-        ]
+{- | Parser for a chain of dict lookups (like @.a.b.c@) on the right-hand side
+of a 'Dot' expression. -}
+parser'dot'rhs'chain :: Parser [Str'Dynamic]
+parser'dot'rhs'chain =
+  P.many $ P.char '.' *> P.spaces *> parse'strDynamic <* P.spaces
 
--- | Parser for a chain of dict lookups (like @.a.b.c@).
-dotsP :: Parser [StrExpr]
-dotsP =
-  P.many dotP <?> "dots"
-
-dotP :: Parser StrExpr
-dotP =
-  do
-    _ <- P.char '.'
-    _ <- P.spaces
-    a <- idExprP
-    _ <- P.spaces
-    pure a
-
-applyDots :: Expression -> [StrExpr] -> Expression
+applyDots :: Expression -> [Str'Dynamic] -> Expression
 applyDots =
   foldl (\acc b -> Expr'Dot (Dot acc b))
 
-letExprP :: Parser LetExpr
-letExprP =
-  do
-    _ <- keywordP keyword'let
-    go id
+parse'let :: Parser Let
+parse'let =
+  parse'keyword keyword'let *> go DList.empty
   where
-    go :: ([Binding] -> [Binding]) -> Parser LetExpr
+    go :: DList LetBinding -> Parser Let
     go previousBindings =
       asum
-        [ do
-            _ <- keywordP keyword'in
-            x <- expressionP
-            pure $ LetExpr (previousBindings []) x
-        , do
-            a <- bindingP
-            go $ previousBindings . (a :)
+        [ end              <&> Let (DList.toList previousBindings)
+        , parse'letBinding >>= \a -> go (previousBindings `DList.snoc` a)
         ]
 
-withP :: Parser With
-withP =
-  do
-    _ <- keywordP keyword'with
-    a <- expressionP
-    _ <- P.char ';'
-    _ <- P.spaces
-    b <- expressionP
-    pure $ With a b
+    end = parse'keyword keyword'in *> parse'expression
 
-bindingP :: Parser Binding
-bindingP =
-  do
-    a <- idExprP
-    _ <- P.spaces
-    _ <- P.char '='
-    _ <- P.spaces
-    b <- expressionP
-    _ <- P.spaces
-    _ <- P.char ';'
-    _ <- P.spaces
-    pure $ Binding a b
+parse'with :: Parser With
+parse'with =
+  With
+    <$> (parse'keyword keyword'with *> parse'expression)
+    <*> (P.char ';' *> P.spaces *> parse'expression)
+
+parse'dictBinding :: Parser DictBinding
+parse'dictBinding =
+  parse'dictBinding'inherit <|> parse'dictBinding'eq
+
+parse'dictBinding'inherit :: Parser DictBinding
+parse'dictBinding'inherit =
+  DictBinding'Inherit
+    <$> (parse'keyword keyword'inherit *> P.optionMaybe parse'expression'paren)
+    <*> undefined
+
+parse'dictBinding'eq :: Parser DictBinding
+parse'dictBinding'eq =
+  DictBinding'Eq
+    <$> (parse'strDynamic <* P.spaces <* P.char '=' <* P.spaces)
+    <*> (parse'expression <* P.spaces <* P.char ';' <* P.spaces)
+
+parse'letBinding :: Parser LetBinding
+parse'letBinding =
+  parse'letBinding'inherit <|> parse'letBinding'eq
+
+parse'letBinding'eq :: Parser LetBinding
+parse'letBinding'eq =
+  LetBinding'Eq
+    <$> (parse'strStatic  <* P.spaces <* P.char '=' <* P.spaces)
+    <*> (parse'expression <* P.spaces <* P.char ';' <* P.spaces)
+
+parse'letBinding'inherit :: Parser LetBinding
+parse'letBinding'inherit =
+  LetBinding'Inherit
+    <$> (parse'keyword keyword'inherit *> P.optionMaybe parse'expression'paren)
+    <*> undefined
 
 {- | The primary, top-level expression parser. This is what you use to parse a
 @.nix@ file. -}
-expressionP :: Parser Expression
-expressionP =
+parse'expression :: Parser Expression
+parse'expression =
   p <?> "expression"
   where
     p = asum
-      [ Expr'Let  <$> letExprP
-      , Expr'With <$> withP
-      , Expr'Func <$> funcP
-      , do
-          a <- expressionListP
-          case a of
-            [] -> P.parserZero
-            f : args -> pure $ applyArgs f args
+      [ parse'let    <&> Expr'Let
+      , parse'with   <&> Expr'With
+      , parse'lambda <&> Expr'Lambda
+      , parse'expressionList >>= \case
+          [] -> P.parserZero
+          f : args -> pure $ applyArgs f args
       ]
 
 {- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
 chain of function arguments (@f x y z@). -}
-expressionListP :: Parser [Expression]
-expressionListP =
-  P.many expressionP'listItem <?> "expression list"
+parse'expressionList :: Parser [Expression]
+parse'expressionList =
+  P.many parse'expressionList'1 <?> "expression list"
 
 {- | Parser for a single item within an expression list ('expressionListP').
-This expression is not a function, a function application, or a let binding. -}
-expressionP'listItem :: Parser Expression
-expressionP'listItem =
-  p <?> "expression list item"
-  where
-    p = do
-      a <- expressionP'listItem'noDot
-      b <- dotsP
-      pure $ applyDots a b
+This expression is not a lambda, a function application, a @let@-@in@
+expression, or a @with@ expression. -}
+parse'expressionList'1 :: Parser Expression
+parse'expressionList'1 =
+  applyDots
+    <$> parse'expressionList'1'noDot
+    <*> parser'dot'rhs'chain
+    <?> "expression list item"
 
-{- | Like 'expressionP'listItem', but with the further restriction that the
-expression may not be a dot. -}
-expressionP'listItem'noDot :: Parser Expression
-expressionP'listItem'noDot =
+{- | Like 'parse'expressionList'1', but with the further restriction that the
+expression may not be a 'Dot'. -}
+parse'expressionList'1'noDot :: Parser Expression
+parse'expressionList'1'noDot =
   asum
-    [ Expr'Str  <$> strExprP
-    , Expr'List <$> listLiteralP
-    , Expr'Dict <$> dictLiteralP
-    , Expr'Id   <$> bareIdP
-    , expressionP'paren
+    [ parse'strDynamic'quoted <&> Expr'Str
+    , parse'list              <&> Expr'List
+    , parse'dict              <&> Expr'Dict
+    , parse'bare              <&> Expr'Var
+    , parse'expression'paren
     ]
     <?> "expression list item without a dot"
 
 {- | Parser for a parenthesized expression, from opening parenthesis to closing
 parenthesis. -}
-expressionP'paren :: Parser Expression
-expressionP'paren =
-  do
-    _ <- P.char '('
-    _ <- P.spaces
-    a <- expressionP
-    _ <- P.char ')'
-    _ <- P.spaces
-    pure a
+parse'expression'paren :: Parser Expression
+parse'expression'paren =
+  P.char '(' *> P.spaces *> parse'expression <* P.char ')' <* P.spaces
 
-counterP :: Parser a -> Parser Natural
-counterP p = go 0
+parse'count :: Parser a -> Parser Natural
+parse'count p = go 0
   where
     go :: Natural -> Parser Natural
     go n = (p *> go (succ n)) <|> pure n
+
+(<&>) :: Functor f => f a -> (a -> b) -> f b
+(<&>) = flip fmap
+infixl 1 <&>

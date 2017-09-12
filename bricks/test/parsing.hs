@@ -21,8 +21,8 @@ import qualified Text.Parsec as P
 
 main = runTests $$(Hedgehog.discover)
 
-{- | We'll use the @parseTest@ function a lot to test parsers. It's a lot like
-'P.parseTest' from the parsec library, but it works on parsers of type 'Text'
+{- | We'll use the @parseTest@ function a lot to test parsers. It's a bit like
+'P.parseTest' from the Parsec library, but it works on parsers of type 'Text'
 rather than @'Show' a => a@. It also prints the unparsed input so we can verify
 that our parser consumes the right amount of input, and it prints a message if
 the parser fails and consumes input. -}
@@ -53,15 +53,14 @@ parseTest p input =
 
     ]
 
-prop_bare_identifier_parser = property $ do
+prop_parse_bare = property $ do
 
-  let test = parseTest $ fmap bareIdText $ bareIdP
+  let test = parseTest $ fmap bare'str $ parse'bare
 
   test "-ab_c" === [text|-ab_c|]
 
   test ""      === [text|Parse error at (line 1, column 1):
-                        | - unexpected end of input
-                        | - expecting bare identifier|]
+                        | - unexpected end of input|]
 
   test "a\"b"  === [text|a
                         |Remaining input: "\"b"|]
@@ -70,14 +69,14 @@ prop_bare_identifier_parser = property $ do
                         |Remaining input: "b"|]
 
   -- The bare identifier parser doesn't backtrack.
-  -- Note how in this example it consumes "rec" when it fails.
+  -- Note how in this example fails and consumes input.
   test "rec { }" === [text|Parse error at (line 1, column 4):
                           | - unexpected " "
                           |Parser failed and consumed input|]
 
-prop_identifier_parser = property $ do
+prop_parse_strDynamic = property $ do
 
-  let test = parseTest $ fmap renderStrExpr $ idExprP
+  let test = parseTest $ fmap render'strDynamic'quoted $ parse'strDynamic
 
   test "a"     === [text|"a"|]
 
@@ -86,9 +85,11 @@ prop_identifier_parser = property $ do
   test "a b"   === [text|"a"
                         |Remaining input: "b"|]
 
-prop_string_parser_normal = property $ do
+prop_parse_strDynamic_normalQ = property $ do
 
-  let test = parseTest $ fmap renderStrExpr $ strExprP'normal
+  let test = parseTest
+           $ fmap render'strDynamic'quoted
+           $ parse'strDynamic'normalQ
 
   test "\"a\""        === [text|"a"|]
 
@@ -107,11 +108,11 @@ prop_string_parser_normal = property $ do
 
   test "\"a\\${\""    === [text|"a\${"|]
 
-prop_string_parser_indented = property $ do
+prop_parse_strDynamic_indentedQ = property $ do
 
   let test = parseTest
-           $ fmap renderStrExpr
-           $ P.spaces *> strExprP'indented
+           $ fmap render'strDynamic'quoted
+           $ P.spaces *> parse'strDynamic'indentedQ
 
   test "''hello''x"    === [text|"hello"
                                 |Remaining input: "x"|]
@@ -132,14 +133,11 @@ prop_string_parser_indented = property $ do
             |  ''x|] === [text|"one\n\ntwo"
                               |Remaining input: "x"|]
 
-prop_indented_string_parser = property $ do
+prop_parse_inStr = property $ do
 
   let test = parseTest
-           $ fmap
-               ( Text.pack . show
-               . (\(IndentedString xs) -> renderIndentedStringLine <$> xs)
-               )
-           $ P.spaces *> indentedStringP
+           $ fmap (Text.pack . show . fmap render'inStr'1)
+           $ P.spaces *> parse'inStr
 
   test [text|  ''
             |    one
@@ -165,11 +163,11 @@ prop_indented_string_parser = property $ do
 
   test "''   abc\ndef''" === [text|["   abc","def"]|]
 
-prop_indented_string_line_parser = property $ do
+prop_parse_inStr_line = property $ do
 
   let test = parseTest
-           $ fmap (Text.pack . show . renderIndentedStringLine)
-           $ indentedStringLineP
+           $ fmap (Text.pack . show . render'inStr'1)
+           $ parse'inStr'1
 
   test "abc" === [text|Parse error at (line 1, column 4):
                       | - unexpected end of input
@@ -188,9 +186,9 @@ prop_indented_string_line_parser = property $ do
   test "   abc''x"   === [text|"   abc"
                               |Remaining input: "''x"|]
 
-prop_dict_param_start_parser = property $ do
+prop_parse_dict_pattern_start = property $ do
 
-  let test = parseTest $ (P.try dictParamStartP $> "yes") <|> pure "no"
+  let test = parseTest $ (P.try parse'dictPattern'start $> "yes") <|> pure "no"
 
   test "{a, b}:"     === [text|yes
                               |Remaining input: " b}:"|]
@@ -209,11 +207,21 @@ prop_dict_param_start_parser = property $ do
   test "{ ... }:"    === [text|yes
                               |Remaining input: " }:"|]
 
-prop_dots_parser = property $ do
+prop_parse_dict_pattern = property $ do
+
+  let test = parseTest $ fmap render'dictPattern $ parse'dictPattern
+
+  test "{}"               === [text|{ }|]
+  test "{...}"            === [text|{ ... }|]
+  test "{a}"              === [text|{ a }|]
+  test "{a , b}"          === [text|{ a, b }|]
+  test "{a , b ? c, ...}" === [text|{ a, b ? c, ... }|]
+
+prop_parse_dot_rhs_chain = property $ do
 
   let test = parseTest
-           $ fmap (Text.intercalate "\n" . fmap renderStrExpr)
-           $ dotsP
+           $ fmap (Text.intercalate "\n" . fmap render'strDynamic'quoted)
+           $ parser'dot'rhs'chain
 
   -- The dots parser /does/ match the empty string.
   test ""         === [text||]
@@ -226,6 +234,7 @@ prop_dots_parser = property $ do
 
   -- Dot attributes are usually bare identifiers, but they may also be quoted.
   test ".\"a\""   === [text|"a"|]
+  test ". \"a\""  === [text|"a"|]
 
   -- Here we throw some extra whitespace into the middle, which makes no
   -- difference, and some extra stuff onto the end, which does not get consumed.
@@ -247,15 +256,19 @@ prop_dots_parser = property $ do
                                 |"b"
                                 |Remaining input: "\"x\""|]
 
-  test ".a.b(x)" === [text|"a"
-                          |"b"
-                          |Remaining input: "(x)"|]
+  test ".a.b(x)"   === [text|"a"
+                            |"b"
+                            |Remaining input: "(x)"|]
 
-prop_expression_parser = property $ do
+  test ". a . b"   === [text|"a"
+                            |"b"|]
 
-  let test = parseTest
-           $ fmap (renderExpression RenderContext'Normal)
-           $ expressionP
+  test ". \"a\".b" === [text|"a"
+                            |"b"|]
+
+prop_parse_expression = property $ do
+
+  let test = parseTest $ fmap render'expression $ parse'expression
 
   -- The empty string is /not/ a valid expression.
   test "" === [text|Parse error at (line 1, column 1):
@@ -377,60 +390,52 @@ prop_expression_parser = property $ do
 
   test "with{x=y;}; f x z" === [text|with { x = y; }; f x z|]
 
-prop_dot_parser = property $ do
-
-  let test = parseTest $ fmap renderStrExpr $ dotP
-
-  test ".a"        === [text|"a"|]
-
-  test ". \"a\""   === [text|"a"|]
-
-  test ". a . b"   === [text|"a"
-                            |Remaining input: ". b"|]
-
-  test ". \"a\".b" === [text|"a"
-                            |Remaining input: ".b"|]
-
-prop_expression_list_parser = property $ do
+prop_parse_expression_list = property $ do
 
   let test = parseTest
-           $ fmap ( Text.intercalate "\n"
-                  . fmap (renderExpression RenderContext'Normal)
-                  )
-           $ expressionListP
+           $ fmap (Text.intercalate "\n" . fmap render'expression)
+           $ parse'expressionList
 
-  test "" === [text||]
+  test ""                       === [text||]
 
-  test "x y z" === [text|x
-                        |y
-                        |z|]
+  test "x y z"                  === [text|x
+                                         |y
+                                         |z|]
 
 
-  test "(a)b c(d)" === [text|a
-                            |b
-                            |c
-                            |d|]
+  test "(a)b c(d)"              === [text|a
+                                         |b
+                                         |c
+                                         |d|]
 
-  test "a.\"b\"c" === [text|a.b
-                           |c|]
+  test "a.\"b\"c"               === [text|a.b
+                                         |c|]
 
   test "\"abc\" (f { x = y; })" === [text|"abc"
                                          |f { x = y; }|]
 
-  test "r re reck" === [text|r
-                            |re
-                            |reck|]
+  -- Parsing lists of variables that are similar to keywords
+  test "r re reck"              === [text|r
+                                         |re
+                                         |reck|]
+  test "r re rec { } reck"      === [text|r
+                                         |re
+                                         |rec { }
+                                         |reck|]
+  test "l le lets"              === [text|l
+                                         |le
+                                         |lets|]
+  test "i ins"                  === [text|i
+                                         |ins|]
+  test "wi wit withs"           === [text|wi
+                                         |wit
+                                         |withs|]
+  test "inheri inherits"        === [text|inheri
+                                         |inherits|]
 
-  test "r re rec { } reck" === [text|r
-                                    |re
-                                    |rec { }
-                                    |reck|]
+prop_parse_expression_list_item = property $ do
 
-prop_expression_list_item_parser = property $ do
-
-  let test = parseTest
-           $ fmap (renderExpression RenderContext'Normal)
-           $ expressionP'listItem
+  let test = parseTest $ fmap render'expression $ parse'expressionList'1
 
   test "abc def"  === [text|abc
                            |Remaining input: "def"|]
@@ -449,11 +454,9 @@ prop_expression_list_item_parser = property $ do
   test "\"a\"b"   === [text|"a"
                            |Remaining input: "b"|]
 
-prop_expression_list_item_no_dot_parser = property $ do
+prop_parse_expression_list_item_no_dot = property $ do
 
-  let test = parseTest
-           $ fmap (renderExpression RenderContext'Normal)
-           $ expressionP'listItem'noDot
+  let test = parseTest $ fmap render'expression $ parse'expressionList'1'noDot
 
   test "a.b c" === [text|a
                         |Remaining input: ".b c"|]

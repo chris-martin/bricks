@@ -74,16 +74,18 @@ prop_parse_bare = property $ do
                           | - unexpected " "
                           |Parser failed and consumed input|]
 
-prop_parse_strDynamic = property $ do
+prop_parse_expression_dictKey = property $ do
 
-  let test = parseTest $ fmap render'strDynamic'quoted $ parse'strDynamic
+  let test = parseTest $ fmap render'expression $ parse'expression'dictKey
 
-  test "a"     === [text|"a"|]
+  test "a"      === [text|"a"|]
 
-  test "\"a\"" === [text|"a"|]
+  test "\"a\""  === [text|"a"|]
 
-  test "a b"   === [text|"a"
-                        |Remaining input: "b"|]
+  test "a b"    === [text|"a"
+                         |Remaining input: "b"|]
+
+  test "${a.b}" === [text|a.b|]
 
 prop_parse_strDynamic_normalQ = property $ do
 
@@ -220,8 +222,8 @@ prop_parse_dict_pattern = property $ do
 prop_parse_dot_rhs_chain = property $ do
 
   let test = parseTest
-           $ fmap (Text.intercalate "\n" . fmap render'strDynamic'quoted)
-           $ parser'dot'rhs'chain
+           $ fmap (Text.intercalate "\n" . fmap render'expression)
+           $ parse'dot'rhs'chain
 
   -- The dots parser /does/ match the empty string.
   test ""         === [text||]
@@ -265,6 +267,9 @@ prop_parse_dot_rhs_chain = property $ do
 
   test ". \"a\".b" === [text|"a"
                             |"b"|]
+
+  test ". \"a\".${b}" === [text|"a"
+                               |b|]
 
 prop_parse_expression = property $ do
 

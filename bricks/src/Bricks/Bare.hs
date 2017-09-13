@@ -21,8 +21,8 @@ import Data.Bool     (Bool, not, (&&), (||))
 import Data.Char     (Char)
 import Data.Eq       ((/=), (==))
 import Data.Function ((.))
+import Data.Maybe    (Maybe (..))
 import Data.Text     (Text)
-import Data.Maybe (Maybe (..))
 
 import qualified Data.Char as Char
 import qualified Data.List as List

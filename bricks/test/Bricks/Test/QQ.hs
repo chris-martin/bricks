@@ -10,7 +10,7 @@ import Data.Function (const)
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 
-import qualified Data.Text   as Text
+import qualified Data.Text as Text
 
 text :: QuasiQuoter
 text =

@@ -42,20 +42,111 @@ module Bricks.Expression
 
 import Bricks.Bare
 
-import Data.Bool       (Bool)
-import Data.Maybe      (Maybe)
-import Data.Text       (Text)
+import Data.Bool  (Bool)
+import Data.Maybe (Maybe)
+import Data.Text  (Text)
 
 data Expression
-  = Expr'Str    Str'Dynamic
-  | Expr'List   List
-  | Expr'Dict   Dict
-  | Expr'Dot    Dot
-  | Expr'Var    Bare
+  = Expr'Str Str'Dynamic
+      -- ^ A /string/ may be quoted either in the traditional form using a
+      -- single double-quote (@"@...@"@):
+      --
+      -- > "one\ntwo"
+      --
+      -- or in the "indented string" form using two single-quotes (@''@...@''@):
+      --
+      -- > ''
+      -- >   one
+      -- >   two
+      -- > ''
+      --
+      -- Both of these examples reduce to the same value, because leading
+      -- whitespace is stripped from indented strings.
+      --
+      -- Either may contain "antiquotation" (also known as "string
+      -- interpolation") to conveniently concatenate string-valued variables
+      -- into the string.
+      --
+      -- > "Hello, my name is ${name}!"
+  | Expr'List List
+      -- ^ A /list/ is an ordered collection of expressions.
+      --
+      -- The empty list:
+      --
+      -- > [ ]
+      --
+      -- A list containing three variables:
+      --
+      -- > [ a b c ]
+      --
+      -- Lambdas, function applications, @let@-@in@ expressions, and @with@
+      -- expressions must be parenthesized when in a list.
+      --
+      -- > [
+      -- >   (x: f x y)
+      -- >   (g y)
+      -- >   (let a = y; in f a a)
+      -- >   (with d; f x a)
+      -- > ]
+  | Expr'Dict Dict
+      -- ^ A /dict/ is an unordered extensional mapping from strings.
+      --
+      -- The empty dict (with no bindings):
+      --
+      -- > { }
+      --
+      -- A dict with two bindings:
+      --
+      -- > {
+      -- >   a = "one";
+      -- >   b = "one two";
+      -- > }
+      --
+      -- By default, dict bindings cannot refer to each other. For that, you
+      -- need the @rec@ keyword to create a /recursive/ dict.
+      --
+      -- > rec {
+      -- >   a = "one";
+      -- >   b = "@{a} two";
+      -- > }
+      --
+      -- The left-hand side of a dict binding may be a quoted string (in the
+      -- traditional @"@...@"@ style, not the indented-string @''@ style),
+      -- which make it possible for them to be strings that otherwise couldn't
+      -- be expressed unquoted, such as strings containing spaces:
+      --
+      -- > { "a b" = "c"; }
+      --
+      -- The left-hand side of a dict may even be an arbitrary expression,
+      -- using the @${@ ... @}@ form:
+      --
+      -- > let x = "a b"; in { ${x} = "c"; }
+  | Expr'Dot Dot
+      -- ^ A /dot/ expression (named after the @.@ character it contains)
+      -- looks up the value in a dict.
+      --
+      -- The examples in this section all reduce to "Z".
+      --
+      -- > { a = "Z"; }.a
+      --
+      -- > let x = { a = "Z"; }; in x.a
+      --
+      -- > { x = { a = "Z"; }; }.x.a
+      --
+      -- The right-hand side of a dot may be a quoted string (in the
+      -- traditional @"@...@"@ style, not the indented-string @''@ style):
+      --
+      -- > { a = "Z"; }."a"
+      --
+      -- The right-hand side of a dot may even be an arbitrary expression,
+      -- using the @${@ ... @}@ form:
+      --
+      -- > { a = "Z"; }.${ let b = "a"; in b }
+  | Expr'Var Bare
   | Expr'Lambda Lambda
-  | Expr'Apply  Apply
-  | Expr'Let    Let
-  | Expr'With   With
+  | Expr'Apply Apply
+  | Expr'Let Let
+  | Expr'With With
 
 {- | A fixed string value. We use the description "static" to mean the string
 may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
@@ -136,14 +227,15 @@ data Dict =
 
 -- | A binding of the form @x = y;@ within a 'DictLiteral' or 'LetExpr'.
 data DictBinding
-  = DictBinding'Eq Str'Dynamic Expression
-  | DictBinding'Inherit (Maybe Expression) [Str'Dynamic]
+  = DictBinding'Eq Expression Expression
+  | DictBinding'Inherit (Maybe Expression) [Str'Static]
 
 -- | An expression of the form @person.name@ that looks up a key from a dict.
-data Dot = Dot
-  { dot'dict :: Expression
-  , dot'key  :: Str'Dynamic
-  }
+data Dot =
+  Dot
+    { dot'dict :: Expression
+    , dot'key  :: Expression
+    }
 
 -- | A @let@-@in@ expression.
 data Let =

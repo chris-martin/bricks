@@ -12,20 +12,20 @@ module Bricks.Parsing where
 
 import Bricks.Bare
 import Bricks.Expression
-import Bricks.Keyword
 import Bricks.IndentedString
+import Bricks.Keyword
 
-import Bricks.Internal.DList (DList)
+import           Bricks.Internal.DList (DList)
 import qualified Bricks.Internal.DList as DList
 
-import Control.Applicative (pure, (*>), (<*>), (<*), (<|>))
+import Control.Applicative (pure, (*>), (<*), (<*>), (<|>))
 import Control.Monad       ((>>=))
 import Data.Bool           (Bool (..), (&&))
 import Data.Eq             (Eq (..))
 import Data.Foldable       (asum, foldl)
-import Data.Function       (($), (.), flip)
-import Data.Functor        (Functor, void, ($>), (<$>), fmap)
-import Data.Maybe (Maybe (..))
+import Data.Function       (flip, ($), (.))
+import Data.Functor        (Functor, fmap, void, ($>), (<$>))
+import Data.Maybe          (Maybe (..))
 import Numeric.Natural     (Natural)
 import Prelude             (succ, undefined)
 import Text.Parsec         ((<?>))
@@ -65,21 +65,6 @@ parse'bare =
       Nothing -> P.parserZero
       Just b  -> P.spaces $> b
 
-{- | Parser for a dynamic (possibly antiquoted) string which may be either bare
-or quoted. -}
-parse'strDynamic :: Parser Str'Dynamic
-parse'strDynamic =
-  parse'strDynamic'quoted <|> parse'strDynamic'bare
-
-{- | Parser for a dynamic string which is bare (unquoted). This is either a
-bare string or a single bare antiquote. -}
-parse'strDynamic'bare :: Parser Str'Dynamic
-parse'strDynamic'bare =
-  asum
-    [ parse'antiquote <* P.spaces <&> \x -> [Str'1'Antiquote x]
-    , parse'bare                  <&> \x -> [Str'1'Literal (bare'str x)]
-    ]
-
 {- | Parser for a static string which may be either bare or a quoted.
 By "static," we mean that the string may /not/ contain antiquotation. -}
 parse'strStatic :: Parser Str'Static
@@ -102,21 +87,14 @@ parse'strStatic'bare =
   parse'bare <&> bare'str
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
-string delimited by one double-quote @"@ ('parse'strDynamic'normalQ') or an
-"indented" string delimited by two single-quotes @''@
+string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
+an "indented" string delimited by two single-quotes @''@...@''@
 ('parse'strDynamic'indentedQ'). -}
 parse'strDynamic'quoted :: Parser Str'Dynamic
 parse'strDynamic'quoted =
   parse'strDynamic'normalQ <|> parse'strDynamic'indentedQ
 
-{-| Parser for an antiquotation @${ ... }@. This parser does /not/ consume
-trailing whitespace, because it is used in quoted string environments where
-whitespace is significant. -}
-parse'antiquote :: Parser Expression
-parse'antiquote =
-  P.try (P.string "${") *> P.spaces *> parse'expression <* P.char '}'
-
--- | Parser for a dynamic string enclosed in "normal" quotes (@"@).
+-- | Parser for a dynamic string enclosed in "normal" quotes (@"@...@"@).
 parse'strDynamic'normalQ :: Parser Str'Dynamic
 parse'strDynamic'normalQ =
   P.char '"' *> go DList.empty
@@ -132,7 +110,8 @@ parse'strDynamic'normalQ =
     end = P.char '"' *> P.spaces
 
     -- Read an antiquote
-    anti = Str'1'Antiquote <$> parse'antiquote
+    anti = fmap Str'1'Antiquote $
+      P.try (P.string "${") *> P.spaces *> parse'expression <* P.char '}'
 
     -- Read some normal characters in the string
     chars = do
@@ -158,8 +137,8 @@ parse'strDynamic'normalQ =
       pure $ Str'1'Literal (Text.concat xs)
 
 {- | Parser for a dynamic string enclosed in "indented string" format,
-delimited by two single-quotes @''@. This string syntax supports a different
-(and smaller) set of escape sequences from normal strings. -}
+delimited by two single-quotes @''@...@''@. This string syntax supports a
+different (and smaller) set of escape sequences from normal strings. -}
 parse'strDynamic'indentedQ :: Parser Str'Dynamic
 parse'strDynamic'indentedQ =
   inStr'join . inStr'dedent . inStr'trim <$> parse'inStr
@@ -206,7 +185,8 @@ parse'inStr'1 =
       , P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
       ]
 
-    anti = parse'antiquote <&> Str'1'Antiquote
+    anti = fmap Str'1'Antiquote $
+      P.try (P.string "${") *> P.spaces *> parse'expression <* P.char '}'
 
 {- | Parser for a function parameter (the beginning of a 'Lambda'), including
 the colon. This forms part of 'parse'expression', so it backtracks in places
@@ -314,11 +294,11 @@ parse'dict'noRec =
 
 {- | Parser for a chain of dict lookups (like @.a.b.c@) on the right-hand side
 of a 'Dot' expression. -}
-parser'dot'rhs'chain :: Parser [Str'Dynamic]
-parser'dot'rhs'chain =
-  P.many $ P.char '.' *> P.spaces *> parse'strDynamic <* P.spaces
+parse'dot'rhs'chain :: Parser [Expression]
+parse'dot'rhs'chain =
+  P.many $ P.char '.' *> P.spaces *> parse'expression'dictKey <* P.spaces
 
-applyDots :: Expression -> [Str'Dynamic] -> Expression
+applyDots :: Expression -> [Expression] -> Expression
 applyDots =
   foldl (\acc b -> Expr'Dot (Dot acc b))
 
@@ -354,8 +334,8 @@ parse'dictBinding'inherit =
 parse'dictBinding'eq :: Parser DictBinding
 parse'dictBinding'eq =
   DictBinding'Eq
-    <$> (parse'strDynamic <* P.spaces <* P.char '=' <* P.spaces)
-    <*> (parse'expression <* P.spaces <* P.char ';' <* P.spaces)
+    <$> (parse'expression'dictKey <* P.spaces <* P.char '=' <* P.spaces)
+    <*> (parse'expression         <* P.spaces <* P.char ';' <* P.spaces)
 
 parse'letBinding :: Parser LetBinding
 parse'letBinding =
@@ -401,7 +381,7 @@ parse'expressionList'1 :: Parser Expression
 parse'expressionList'1 =
   applyDots
     <$> parse'expressionList'1'noDot
-    <*> parser'dot'rhs'chain
+    <*> parse'dot'rhs'chain
     <?> "expression list item"
 
 {- | Like 'parse'expressionList'1', but with the further restriction that the
@@ -422,6 +402,22 @@ parenthesis. -}
 parse'expression'paren :: Parser Expression
 parse'expression'paren =
   P.char '(' *> P.spaces *> parse'expression <* P.char ')' <* P.spaces
+
+{- | Parser for an expression in a context that is expecting a dict key.
+
+One of:
+
+- a bare string
+- a quoted dynamic string
+- an arbitrary expression wrapped in antiquotes (@${@...@}@)
+-}
+parse'expression'dictKey :: Parser Expression
+parse'expression'dictKey =
+  asum
+    [ parse'strDynamic'quoted <&> Expr'Str
+    , P.string "${" *> P.spaces *> parse'expression <* P.char '}' <* P.spaces
+    , parse'bare <&> \x -> Expr'Str [Str'1'Literal (bare'str x)]
+    ]
 
 parse'count :: Parser a -> Parser Natural
 parse'count p = go 0

@@ -5,9 +5,9 @@
 module Bricks.Rendering where
 
 import Bricks.Bare
+import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
-import Bricks.Expression
 
 import Data.Bool      (Bool (..))
 import Data.Foldable  (foldMap)
@@ -18,7 +18,7 @@ import Data.Semigroup ((<>))
 import Data.Text      (Text)
 import Prelude        (fromIntegral)
 
-import qualified Data.Text     as Text
+import qualified Data.Text as Text
 
 type Render a = a -> Text
 
@@ -135,18 +135,18 @@ render'dictBinding :: Render DictBinding
 render'dictBinding =
   \case
     DictBinding'Eq a b ->
-      render'strDynamic'maybeBare a <> " = " <> render'expression b
+      render'expression'dictKey a <> " = " <> render'expression b
     DictBinding'Inherit Nothing xs ->
       "inherit" <> r'inheritItems xs
     DictBinding'Inherit (Just a) xs ->
       "inherit (" <> render'expression a <> ")" <> r'inheritItems xs
   where
-    r'inheritItems = foldMap (\x -> " " <> render'strDynamic'maybeBare x)
+    r'inheritItems = foldMap (\x -> " " <> render'strStatic'maybeBare x)
 
 -- | Render a dot expression (@a.b@).
 render'dot :: Render Dot
 render'dot (Dot a b) =
-  render'expression'dotLeftContext a <> "." <> render'strDynamic'maybeBare b
+  render'expression'dotLeftContext a <> "." <> render'expression'dictKey b
 
 -- | Render a @let@-@in@ expression.
 render'let :: Render Let
@@ -224,3 +224,8 @@ render'expression'applyRightContext x =
 render'expression'inParens :: Render Expression
 render'expression'inParens x =
   "(" <> render'expression x <> ")"
+
+render'expression'dictKey :: Render Expression
+render'expression'dictKey = \case
+  Expr'Str x -> render'strDynamic'maybeBare x
+  x -> "${" <> render'expression x <> "}"

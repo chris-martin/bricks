@@ -19,8 +19,8 @@ module Bricks
   ) where
 
 import Bricks.Bare
+import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
 import Bricks.Parsing
 import Bricks.Rendering
-import Bricks.Expression

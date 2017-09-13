@@ -1,4 +1,9 @@
-module Bricks.Internal.DList where
+module Bricks.Internal.DList
+  ( DList
+  , empty
+  , snoc
+  , toList
+  ) where
 
 type DList a = [a] -> [a]
 

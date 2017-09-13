@@ -4,21 +4,24 @@
 
 module Bricks.Rendering where
 
+-- Bricks
 import Bricks.Bare
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
 
+-- Text
+import           Data.Text (Text)
+import qualified Data.Text as Text
+
+-- Base
 import Data.Bool      (Bool (..))
 import Data.Foldable  (foldMap)
 import Data.Function  ((.))
 import Data.Functor   (Functor (..))
 import Data.Maybe     (Maybe (..))
 import Data.Semigroup ((<>))
-import Data.Text      (Text)
 import Prelude        (fromIntegral)
-
-import qualified Data.Text as Text
 
 type Render a = a -> Text
 
@@ -53,10 +56,10 @@ render'strStatic'quoted x =
 
 -- | Render a dynamic string, in bare (unquoted) form if possible.
 render'strDynamic'maybeBare :: Render Str'Dynamic
-render'strDynamic'maybeBare =
-  \case
-    [Str'1'Literal x] -> render'strStatic'maybeBare x
-    x                -> render'strDynamic'quoted x
+render'strDynamic'maybeBare d =
+  case str'dynamicToStatic d of
+    Just s  -> render'strStatic'maybeBare s
+    Nothing -> render'strDynamic'quoted d
 
 -- | Render a dynamic string, in quoted form.
 render'strDynamic'quoted :: Render Str'Dynamic

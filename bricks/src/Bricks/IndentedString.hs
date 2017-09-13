@@ -18,12 +18,15 @@ module Bricks.IndentedString
 
   ) where
 
+-- Bricks
 import Bricks.Expression
 
-import Numeric.Natural (Natural)
-
-import qualified Data.List as List
+-- Text
 import qualified Data.Text as Text
+
+-- Base
+import qualified Data.List       as List
+import           Numeric.Natural (Natural)
 
 {- | An "indented string literal," delimited by two single-quotes @''@.
 

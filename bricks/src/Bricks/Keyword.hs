@@ -23,11 +23,13 @@ module Bricks.Keyword
 
   ) where
 
+-- Text
+import           Data.Text (Text)
+import qualified Data.Text as Text
+
+-- Base
 import Data.Function ((.))
 import Data.String   (String)
-import Data.Text     (Text)
-
-import qualified Data.Text as Text
 
 newtype Keyword =
   Keyword

@@ -10,29 +10,36 @@ quoted string environments where whitespace is significant.
 -}
 module Bricks.Parsing where
 
+-- Bricks
 import Bricks.Bare
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
 
-import           Bricks.Internal.DList (DList)
-import qualified Bricks.Internal.DList as DList
+-- Bricks internal
+import           Bricks.Internal.DList   (DList)
+import qualified Bricks.Internal.DList   as DList
+import           Bricks.Internal.Functor ((<&>))
 
+-- Parsec
+import           Text.Parsec      ((<?>))
+import qualified Text.Parsec      as P
+import           Text.Parsec.Text (Parser)
+
+-- Text
+import qualified Data.Text as Text
+
+-- Base
 import Control.Applicative (pure, (*>), (<*), (<*>), (<|>))
 import Control.Monad       ((>>=))
 import Data.Bool           (Bool (..), (&&))
 import Data.Eq             (Eq (..))
 import Data.Foldable       (asum, foldl)
-import Data.Function       (flip, ($), (.))
-import Data.Functor        (Functor, fmap, void, ($>), (<$>))
+import Data.Function       (($), (.))
+import Data.Functor        (fmap, void, ($>), (<$>))
 import Data.Maybe          (Maybe (..))
 import Numeric.Natural     (Natural)
 import Prelude             (succ, undefined)
-import Text.Parsec         ((<?>))
-import Text.Parsec.Text    (Parser)
-
-import qualified Data.Text   as Text
-import qualified Text.Parsec as P
 
 -- | Backtracking parser for a particular keyword.
 parse'keyword :: Keyword -> Parser ()
@@ -416,7 +423,7 @@ parse'expression'dictKey =
   asum
     [ parse'strDynamic'quoted <&> Expr'Str
     , P.string "${" *> P.spaces *> parse'expression <* P.char '}' <* P.spaces
-    , parse'bare <&> \x -> Expr'Str [Str'1'Literal (bare'str x)]
+    , parse'bare <&> Expr'Str . str'staticToDynamic . bare'str
     ]
 
 parse'count :: Parser a -> Parser Natural
@@ -424,7 +431,3 @@ parse'count p = go 0
   where
     go :: Natural -> Parser Natural
     go n = (p *> go (succ n)) <|> pure n
-
-(<&>) :: Functor f => f a -> (a -> b) -> f b
-(<&>) = flip fmap
-infixl 1 <&>

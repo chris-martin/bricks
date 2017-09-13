@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Bricks.Expression
@@ -9,6 +10,8 @@ module Bricks.Expression
   , Str'Static
   , Str'Dynamic
   , Str'1 (..)
+  , str'dynamicToStatic
+  , str'staticToDynamic
 
   -- * Lists
   , List
@@ -40,11 +43,15 @@ module Bricks.Expression
 
   ) where
 
+-- Bricks
 import Bricks.Bare
 
+-- Text
+import Data.Text (Text)
+
+-- Base
 import Data.Bool  (Bool)
-import Data.Maybe (Maybe)
-import Data.Text  (Text)
+import Data.Maybe (Maybe (..))
 
 data Expression
   = Expr'Var Bare
@@ -218,6 +225,15 @@ ${name}!"@. See 'Expr'Str'.
 We use the description "dynamic" to mean the string may contain antiquotation,
 in contrast with 'Str'Static' which cannot. -}
 type Str'Dynamic = [Str'1]
+
+str'dynamicToStatic :: Str'Dynamic -> Maybe Str'Static
+str'dynamicToStatic = \case
+  [Str'1'Literal x] -> Just x
+  _ -> Nothing
+
+str'staticToDynamic :: Str'Static -> Str'Dynamic
+str'staticToDynamic x =
+  [Str'1'Literal x]
 
 -- | One part of a 'Str'Dynamic'.
 data Str'1

@@ -80,6 +80,17 @@ data Expression
       -- into the string.
       --
       -- > "Hello, my name is ${name}!"
+      --
+      -- Normal strings may contain the following escape sequences:
+      --
+      --  - @\\\\@ → @\\@
+      --  - @\\"@  → @"@
+      --  - @\\${@ → @${@
+      --  - @\\n@  → newline
+      --  - @\\r@  → carriage return
+      --  - @\\t@  → tab
+      --
+      -- The indented string form does not interpret any escape sequences.
   | Expr'List List
       -- ^ A /list/ is an ordered collection of expressions.
       --

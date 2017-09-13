@@ -131,8 +131,8 @@ parse'strDynamic'normalQ =
       pure $ Str'1'Literal (Text.concat xs)
 
 {- | Parser for a dynamic string enclosed in "indented string" format,
-delimited by two single-quotes @''@...@''@. This string syntax supports a
-different (and smaller) set of escape sequences from normal strings. -}
+delimited by two single-quotes @''@...@''@. This form of string does not have
+any escape sequences. -}
 parse'strDynamic'indentedQ :: Parser Str'Dynamic
 parse'strDynamic'indentedQ =
   inStr'join . inStr'dedent . inStr'trim <$> parse'inStr

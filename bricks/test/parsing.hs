@@ -407,6 +407,13 @@ prop_parse_expression = property $ do
 
   test "with{x=y;}; f x z" === [text|with { x = y; }; f x z|]
 
+  -- Indented strings do not support any escape sequences.
+  test [text|''
+            |  There \ is \n no \$ escape.
+            |''|] === [text|"There \\ is \\n no \\$ escape."|]
+
+  -- Therefore if you want to include something like '' in an indented string,
+  -- you have to put it inside an antiquote.
   test [text|''
             |  Isn't it
             |  ${"''"}interesting

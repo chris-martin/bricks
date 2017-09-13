@@ -29,13 +29,8 @@ escape'normal =
   Text.replace "${" "\\${" .
   Text.replace "\n" "\\n" .
   Text.replace "\r" "\\r" .
-  Text.replace "\t" "\\t"
-
--- | Insert escape sequences for rendering indented strings (quoted with @''@).
-escape'indented :: Text -> Text
-escape'indented =
-  Text.replace "${" "\\${" .
-  Text.replace "'" "\\'"
+  Text.replace "\t" "\\t" .
+  Text.replace "\\" "\\\\"
 
 -- | Render a bare string, in bare (unquoted) form.
 render'bare :: Render Bare
@@ -73,7 +68,7 @@ render'inStr'1 (InStr'1 n xs) =
   Text.replicate (fromIntegral n) " " <> foldMap r xs
   where
     r = \case
-      Str'1'Literal x   -> escape'indented x
+      Str'1'Literal x -> x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 -- | Render a lambda parameter: everything from the beginning of a lambda, up

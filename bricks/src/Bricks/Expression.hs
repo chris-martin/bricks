@@ -283,6 +283,9 @@ data Param
   | Param'DictPattern DictPattern
       -- ^ Dict destructuring, which gives you something resembling multiple
       -- named parameters with default values
+  | Param'Both Bare DictPattern
+      -- ^ Both a variable name /and/ a dict pattern, separated by the @\@@
+      -- keyword.
 
 -- | A type of function parameter ('Param') that does dict destructuring.
 data DictPattern =

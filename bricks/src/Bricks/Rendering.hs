@@ -85,8 +85,10 @@ render'inStr'1 (InStr'1 n xs) =
 render'param :: Render Param
 render'param =
   \case
-    Param'Bare x -> render'bare x
-    Param'DictPattern x -> render'dictPattern x
+    Param'Bare a        -> render'bare a
+    Param'DictPattern b -> render'dictPattern b
+    Param'Both a b      -> render'bare a <> "@" <>
+                           render'dictPattern b
 
 -- | Render a dict pattern (@{ a, b ? c, ... }@).
 render'dictPattern :: Render DictPattern

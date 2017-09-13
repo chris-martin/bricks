@@ -4,12 +4,15 @@ module Bricks.Test.QQ
   ( text
   ) where
 
+-- Base
 import Control.Arrow ((>>>))
 import Data.Function (const)
 
+-- Template Haskell
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 
+-- Text
 import qualified Data.Text as Text
 
 text :: QuasiQuoter

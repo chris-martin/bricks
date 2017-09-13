@@ -1,24 +1,32 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-import           Bricks
-import qualified Bricks.Internal.Seq  as Seq
-import           Bricks.Test.Hedgehog
-import           Bricks.Test.QQ
+-- Bricks
+import Bricks
 
-import Control.Applicative ((<|>))
-import Data.Either         (Either (..))
-import Data.Functor        (void, ($>))
-import Data.Maybe          (Maybe (..), catMaybes)
-import Data.Semigroup      ((<>))
-import Data.Text           (Text)
-import Hedgehog            (property, (===))
-import Text.Parsec.Text    (Parser)
+-- Bricks internal
+import           Bricks.Internal.Functor (fmap, void, ($>))
+import           Bricks.Internal.Prelude
+import qualified Bricks.Internal.Seq     as Seq
+import           Bricks.Internal.Text    (Text)
+import qualified Bricks.Internal.Text    as Text
 
-import qualified Data.Text   as Text
+-- Bricks test
+import Bricks.Test.Hedgehog
+import Bricks.Test.QQ
+
+-- Parsec
+import qualified Text.Parsec      as P
+import           Text.Parsec.Text (Parser)
+
+-- Hedgehog
+import           Hedgehog (property, (===))
 import qualified Hedgehog
-import qualified Text.Parsec as P
+
+-- Base
+import Text.Show (show)
 
 main = runTests $$(Hedgehog.discover)
 

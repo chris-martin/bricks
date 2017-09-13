@@ -1,14 +1,21 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
+-- Bricks
 import Bricks
+
+-- Bricks internal
+import Bricks.Internal.Prelude
+
+-- Bricks test
 import Bricks.Test.Hedgehog
 import Bricks.Test.QQ
 
-import Hedgehog (property, (===))
-
+-- Hedgehog
+import           Hedgehog (property, (===))
 import qualified Hedgehog
 
 main = runTests $$(Hedgehog.discover)

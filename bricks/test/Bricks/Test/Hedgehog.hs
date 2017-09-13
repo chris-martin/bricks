@@ -4,12 +4,14 @@ module Bricks.Test.Hedgehog
   ( runTests
   ) where
 
-import Control.Monad (unless)
-import Data.Foldable (for_)
+-- Base
+import           Control.Monad (unless)
+import           Data.Foldable (for_)
+import qualified System.Exit   as Exit
+import qualified System.IO     as IO
 
+-- Hedgehog
 import qualified Hedgehog
-import qualified System.Exit as Exit
-import qualified System.IO   as IO
 
 runTests :: Hedgehog.Group -> IO ()
 runTests tests =

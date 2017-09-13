@@ -47,7 +47,10 @@ import Data.Maybe (Maybe)
 import Data.Text  (Text)
 
 data Expression
-  = Expr'Str Str'Dynamic
+  = Expr'Var Bare
+      -- ^ A /bare/ (unquoted) string like @x@ that represents a reference to
+      -- some variable.
+  | Expr'Str Str'Dynamic
       -- ^ A /string/ may be quoted either in the traditional form using a
       -- single double-quote (@"@...@"@):
       --
@@ -150,12 +153,59 @@ data Expression
       -- using the @${@ ... @}@ form:
       --
       -- > { a = "Z"; }.${ let b = "a"; in b }
-  | Expr'Var Bare
-      -- ^ A bare string like @x@ that represents a reference to some variable.
   | Expr'Lambda Lambda
+      -- ^ A /lambda/ expression @x: y@ where @x@ is the parameter.
+      --
+      -- This is a function that turns a name into a greeting:
+      --
+      -- > name: "Hello, ${name}!"
+      --
+      -- The function parameter can also be a /dict pattern/, which looks like
+      -- this:
+      --
+      -- > { a, b, c ? "another" }: "Hello, ${a}, ${b}, and ${c}!"
+      --
+      -- That function accepts a dict and looks up the keys @a@, @b@, and @c@
+      -- from it, applying the default value @"another"@ to @c@ if it is not
+      -- present in the dict. Dict patterns therefore give us something that
+      -- resembles functions with named parameters and default arguments.
+      --
+      -- By default, a lambda defined with a dict pattern fails to evaluate if
+      -- the dict argument contains keys that are not listed in the pattern.
+      -- To prevent it from failing, you can end the pattern with @...@:
+      --
+      -- > ({ a, ... }: x) { a = "1"; b = "2"; }
+      --
+      -- Every function has a single parameter. If you need multiple
+      -- parameters, you have to curry:
+      --
+      -- > a: b: [ a b ]
   | Expr'Apply Apply
+      -- ^ Function /application/:
+      --
+      -- > f x
+      --
+      -- If a function has multiple (curried) parameters, you can chain them
+      -- together like so:
+      --
+      -- > f x y z
   | Expr'Let Let
+      -- ^ A /let/-/in/ expression:
+      --
+      -- > let
+      -- >   greet = x: "Hello, ${x}!";
+      -- >   name = "Chris";
+      -- > in
+      -- >   greet name
   | Expr'With With
+      -- ^ A /with/ expression is similar to a /let/-/in/ expression, but the
+      -- bindings come from a dict.
+      --
+      -- > with {
+      -- >   greet = x: "Hello, ${x}!";
+      -- >   name = "Chris";
+      -- > };
+      -- >   greet name
 
 {- | A fixed string value. We use the description "static" to mean the string
 may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
@@ -163,7 +213,7 @@ type Str'Static = Text
 
 {- | A quoted string expression, which may be a simple string like @"hello"@ or
 a more complex string containing antiquotation like @"Hello, my name is
-${name}!"@.
+${name}!"@. See 'Expr'Str'.
 
 We use the description "dynamic" to mean the string may contain antiquotation,
 in contrast with 'Str'Static' which cannot. -}
@@ -174,7 +224,7 @@ data Str'1
   = Str'1'Literal Str'Static
   | Str'1'Antiquote Expression
 
--- | A function expression.
+-- | A function expression. See 'Expr'Lambda'.
 data Lambda =
   Lambda
     { lambda'head :: Param
@@ -183,7 +233,7 @@ data Lambda =
         -- ^ Body of the function; what it evaluates to
     }
 
--- | A function application expression.
+-- | A function application expression. See 'Expr'Apply'.
 data Apply =
   Apply
     { apply'func :: Expression
@@ -192,7 +242,7 @@ data Apply =
         -- ^ The argument to the function
     }
 
-{- | A parameter to a function. All functions have a single parameter, but it's
+{- | A parameter to a 'Lambda'. All functions have a single parameter, but it's
 more complicated than that because it may also include dict destructuring. -}
 data Param
   = Param'Bare Bare
@@ -221,11 +271,12 @@ data DictPattern'1 =
         -- ^ The default value to be used if the key is not present in the dict
     }
 
--- | A list literal expression, starting with @[@ and ending with @]@.
+{- | A list literal expression, starting with @[@ and ending with @]@.
+See 'Expr'List'. -}
 type List = [Expression]
 
 {- | A dict literal expression, starting with @{@ or @rec {@ and ending with
-@}@. -}
+@}@. See 'Expr'Dict'. -}
 data Dict =
   Dict
     { dict'rec :: Bool
@@ -239,14 +290,15 @@ data DictBinding
   = DictBinding'Eq Expression Expression
   | DictBinding'Inherit (Maybe Expression) [Str'Static]
 
--- | An expression of the form @person.name@ that looks up a key from a dict.
+{- | An expression of the form @person.name@ that looks up a key from a dict.
+See 'Expr'Dot'. -}
 data Dot =
   Dot
     { dot'dict :: Expression
     , dot'key  :: Expression
     }
 
--- | A @let@-@in@ expression.
+-- | A @let@-@in@ expression. See 'Expr'Let'.
 data Let =
   Let
     { let'bindings :: [LetBinding]
@@ -264,7 +316,7 @@ data LetBinding
       -- ^ A binding using the @inherit@ keyword, of the form @inherit a b;@
       -- or @inherit (x) a b;@
 
--- | A @with@ expression.
+-- | A @with@ expression. See 'Expr'With'.
 data With =
   With
     { with'context :: Expression

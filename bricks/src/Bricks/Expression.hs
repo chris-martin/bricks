@@ -107,7 +107,7 @@ data Expression
       --
       -- > rec {
       -- >   a = "one";
-      -- >   b = "@{a} two";
+      -- >   b = "${a} two";
       -- > }
       --
       -- The left-hand side of a dict binding may be a quoted string (in the

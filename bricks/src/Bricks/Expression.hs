@@ -123,6 +123,8 @@ data Expression
       -- >   b = "${a} two";
       -- > }
       --
+      -- In either case, the order of the bindings does not matter.
+      --
       -- The left-hand side of a dict binding may be a quoted string (in the
       -- traditional @"@...@"@ style, not the indented-string @''@ style),
       -- which make it possible for them to be strings that otherwise couldn't
@@ -207,6 +209,18 @@ data Expression
       -- >   name = "Chris";
       -- > in
       -- >   greet name
+      --
+      -- /Let/ bindings, like dict bindings, may also use the @inherit@ keyword.
+      --
+      -- > let
+      -- >   d = { greet = x: "Hello, ${x}!"; name = "Chris"; }
+      -- >   inherit (d) greet name;
+      -- > in
+      -- >   greet name
+      --
+      -- The previous example also demonstrates how the bindings in a /let/
+      -- expression may refer to each other (much like a dict with the @rec@
+      -- keyword). As with dicts, the order of the bindings does not matter.
   | Expr'With With
       -- ^ A /with/ expression is similar to a /let/-/in/ expression, but the
       -- bindings come from a dict.

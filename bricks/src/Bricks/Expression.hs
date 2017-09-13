@@ -121,6 +121,14 @@ data Expression
       -- using the @${@ ... @}@ form:
       --
       -- > let x = "a b"; in { ${x} = "c"; }
+      --
+      -- Dicts also support the @inherit@ keyword:
+      --
+      -- > { inherit a; inherit (x) c d; }
+      --
+      -- The previous expression is equivalent to:
+      --
+      -- > { a = a; c = x.c; d = x.d; }
   | Expr'Dot Dot
       -- ^ A /dot/ expression (named after the @.@ character it contains)
       -- looks up the value in a dict.
@@ -143,6 +151,7 @@ data Expression
       --
       -- > { a = "Z"; }.${ let b = "a"; in b }
   | Expr'Var Bare
+      -- ^ A bare string like @x@ that represents a reference to some variable.
   | Expr'Lambda Lambda
   | Expr'Apply Apply
   | Expr'Let Let

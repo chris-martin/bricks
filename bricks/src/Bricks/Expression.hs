@@ -41,6 +41,9 @@ module Bricks.Expression
   -- * @with@
   , With (..)
 
+  -- * @inherit@
+  , Inherit (..)
+
   ) where
 
 -- Bricks
@@ -304,7 +307,7 @@ data Dict =
 -- | A binding of the form @x = y;@ within a 'DictLiteral' or 'LetExpr'.
 data DictBinding
   = DictBinding'Eq Expression Expression
-  | DictBinding'Inherit (Maybe Expression) [Str'Static]
+  | DictBinding'Inherit Inherit
 
 {- | An expression of the form @person.name@ that looks up a key from a dict.
 See 'Expr'Dot'. -}
@@ -328,7 +331,7 @@ expression. -}
 data LetBinding
   = LetBinding'Eq Str'Static Expression
       -- ^ A binding with an equals sign, of the form @x = y;@
-  | LetBinding'Inherit (Maybe Expression) [Str'Static]
+  | LetBinding'Inherit Inherit
       -- ^ A binding using the @inherit@ keyword, of the form @inherit a b;@
       -- or @inherit (x) a b;@
 
@@ -337,4 +340,10 @@ data With =
   With
     { with'context :: Expression
     , with'value :: Expression
+    }
+
+data Inherit =
+  Inherit
+    { inherit'from :: Maybe Expression
+    , inherit'list :: [Str'Static]
     }

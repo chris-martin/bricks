@@ -139,12 +139,8 @@ render'dictBinding =
   \case
     DictBinding'Eq a b ->
       render'expression'dictKey a <> " = " <> render'expression b
-    DictBinding'Inherit Nothing xs ->
-      "inherit" <> r'inheritItems xs
-    DictBinding'Inherit (Just a) xs ->
-      "inherit (" <> render'expression a <> ")" <> r'inheritItems xs
-  where
-    r'inheritItems = foldMap (\x -> " " <> render'strStatic'maybeBare x)
+    DictBinding'Inherit x ->
+      render'inherit x
 
 -- | Render a dot expression (@a.b@).
 render'dot :: Render Dot
@@ -164,12 +160,16 @@ render'letBinding =
   \case
     LetBinding'Eq a b ->
       render'strStatic'maybeBare a <> " = " <> render'expression b
-    LetBinding'Inherit Nothing xs ->
-      "inherit" <> r'inheritItems xs
-    LetBinding'Inherit (Just a) xs ->
-      "inherit (" <> render'expression a <> ")" <> r'inheritItems xs
+    LetBinding'Inherit x ->
+      render'inherit x
+
+render'inherit :: Render Inherit
+render'inherit =
+  \case
+    Inherit Nothing xs  -> "inherit" <> r xs
+    Inherit (Just a) xs -> "inherit (" <> render'expression a <> ")" <> r xs
   where
-    r'inheritItems = foldMap (\x -> " " <> render'strStatic'maybeBare x)
+    r = foldMap (\x -> " " <> render'strStatic'maybeBare x)
 
 -- | Render a @with@ expression.
 render'with :: Render With

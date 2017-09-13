@@ -331,9 +331,7 @@ parse'dictBinding =
 
 parse'dictBinding'inherit :: Parser DictBinding
 parse'dictBinding'inherit =
-  DictBinding'Inherit
-    <$> (parse'keyword keyword'inherit *> P.optionMaybe parse'expression'paren)
-    <*> undefined
+  DictBinding'Inherit <$> parse'inherit
 
 parse'dictBinding'eq :: Parser DictBinding
 parse'dictBinding'eq =
@@ -353,7 +351,11 @@ parse'letBinding'eq =
 
 parse'letBinding'inherit :: Parser LetBinding
 parse'letBinding'inherit =
-  LetBinding'Inherit
+  LetBinding'Inherit <$> parse'inherit
+
+parse'inherit :: Parser Inherit
+parse'inherit =
+  Inherit
     <$> (parse'keyword keyword'inherit *> P.optionMaybe parse'expression'paren)
     <*> undefined
 

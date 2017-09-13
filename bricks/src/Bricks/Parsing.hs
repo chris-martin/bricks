@@ -31,6 +31,26 @@ import           Text.Parsec.Text (Parser)
 -- Base
 import Prelude (succ)
 
+parse'spaces :: Parser ()
+parse'spaces =
+  void $ P.many (void P.space <|> parse'comment)
+
+parse'comment :: Parser ()
+parse'comment =
+  parse'comment'inline <|> parse'comment'block
+
+parse'comment'inline :: Parser ()
+parse'comment'inline =
+  void $ P.try (P.string "--") *> P.manyTill P.anyChar (P.char '\n')
+
+parse'comment'block :: Parser ()
+parse'comment'block =
+  start <* P.manyTill middle end
+  where
+    start  = void $ P.try (P.string "{-")
+    middle = parse'comment'block <|> void P.anyChar
+    end    = P.try (P.string "-}")
+
 -- | Backtracking parser for a particular keyword.
 parse'keyword :: Keyword -> Parser ()
 parse'keyword k =
@@ -45,7 +65,7 @@ parse'keyword k =
     _ <- P.notFollowedBy (P.satisfy canBeBare'char)
 
     -- As usual, consume trailing spaces.
-    _ <- P.spaces
+    _ <- parse'spaces
 
     pure ()
 
@@ -60,7 +80,7 @@ parse'bare =
     -- Fail if what we just parsed isn't a valid bare string
     case bareMaybe a of
       Nothing -> P.parserZero
-      Just b  -> P.spaces $> b
+      Just b  -> parse'spaces $> b
 
 {- | Parser for a static string which may be either bare or a quoted.
 By "static," we mean that the string may /not/ contain antiquotation. -}
@@ -101,11 +121,11 @@ parse'strDynamic'normalQ =
         ]
 
     -- Read the closing " character
-    end = P.char '"' *> P.spaces
+    end = P.char '"' *> parse'spaces
 
     -- Read an antiquote
     anti = fmap Str'1'Antiquote $
-      P.try (P.string "${") *> P.spaces *> parse'expression <* P.char '}'
+      P.try (P.string "${") *> parse'spaces *> parse'expression <* P.char '}'
 
     -- Read some normal characters in the string
     chars = do
@@ -149,7 +169,7 @@ parse'inStr =
         line <- parse'inStr'1
         let newLines = previousLines |> line
         asum
-          [ P.string "''" *> P.spaces $> newLines
+          [ P.string "''" *> parse'spaces $> newLines
           , P.char '\n'   *> go newLines
           ]
 
@@ -182,8 +202,8 @@ parse'inStr'1 =
 
 parse'antiquote :: Parser (Seq Str'1)
 parse'antiquote =
-  (P.try (P.string "${") *> P.spaces *> parse'expression <* P.char '}') <&>
-  \case
+  (P.try (P.string "${") *> parse'spaces *> parse'expression <* P.char '}')
+  <&> \case
     Expr'Str x -> x
     x -> Seq.singleton (Str'1'Antiquote x)
 
@@ -206,8 +226,8 @@ parse'param =
       -- know whether the variable name we're reading is a lambda parameter
       -- or just the name by itself (and not part of a lambda).
       (a, b) <- P.try $ do
-        a <- parse'bare <* P.spaces
-        b <- ((P.char ':' $> False) <|> (P.char '@' $> True)) <* P.spaces
+        a <- parse'bare <* parse'spaces
+        b <- ((P.char ':' $> False) <|> (P.char '@' $> True)) <* parse'spaces
         pure (a, b)
       if b
         -- If we read an @, then the next thing is a pattern.
@@ -223,13 +243,13 @@ parse'param =
 
       -- And if so, then we go on and parse the dict pattern with no
       -- further backtracking.
-      parse'dictPattern <* P.char ':' <* P.spaces
+      parse'dictPattern <* P.char ':' <* parse'spaces
 
 {- | Parser for a dict pattern (the type of lambda parameter that does dict
 destructuring. This parser does not backtrack. -}
 parse'dictPattern :: Parser DictPattern
 parse'dictPattern =
-  P.char '{' *> P.spaces *> go Seq.empty
+  P.char '{' *> parse'spaces *> go Seq.empty
   where
     go :: Seq DictPattern'1 -> Parser DictPattern
     go previousItems =
@@ -239,26 +259,26 @@ parse'dictPattern =
         , do
             newItems <- item <&> \x -> previousItems |> x
             asum
-              [ P.char ',' *> P.spaces *> go newItems
+              [ P.char ',' *> parse'spaces *> go newItems
               , end $> DictPattern newItems False
               ]
         ]
 
     item = DictPattern'1 <$> parse'bare <*> P.optionMaybe def
 
-    ellipsis = P.string "..." *> P.spaces *> end
+    ellipsis = P.string "..." *> parse'spaces *> end
 
-    def = P.char '?' *> P.spaces *> parse'expression
+    def = P.char '?' *> parse'spaces *> parse'expression
 
-    end = P.char '}' *> P.spaces
+    end = P.char '}' *> parse'spaces
 
 {- | This is used in a lookahead by 'parse'param' to determine whether we're
 about to start parsing a 'DictPattern'. -}
 parse'dictPattern'start :: Parser ()
 parse'dictPattern'start =
-  P.char '{' *> P.spaces *> asum
+  P.char '{' *> parse'spaces *> asum
     [ void $ P.string "..."
-    , void $ P.char '}' *> P.spaces *> P.char ':'
+    , void $ P.char '}' *> parse'spaces *> P.char ':'
     , void $ parse'bare *> (P.char ',' <|> P.char '?' <|> P.char '}')
     ]
 
@@ -276,7 +296,7 @@ parse'lambda =
 -- | Parser for a list expression (@[ ... ]@).
 parse'list :: Parser List
 parse'list =
-  (P.char '[' *> P.spaces *> parse'expressionList <* P.char ']' <* P.spaces)
+  (P.char '[' *> parse'spaces *> parse'expressionList <* P.char ']' <* parse'spaces)
   <&> Seq.fromList
 
 -- | Parser for a dict expression, either recursive (@rec@ keyword) or not.
@@ -295,11 +315,11 @@ parse'dict'rec =
 -- | Parser for a non-recursive (no @rec@ keyword) dict.
 parse'dict'noRec :: Parser (Seq DictBinding)
 parse'dict'noRec =
-  P.char '{' *> P.spaces *> go Seq.empty
+  P.char '{' *> parse'spaces *> go Seq.empty
   where
     go :: Seq DictBinding -> Parser (Seq DictBinding)
     go previousBindings = asum
-      [ P.char '}' *> P.spaces $> previousBindings
+      [ P.char '}' *> parse'spaces $> previousBindings
       , parse'dictBinding >>= \a -> go (previousBindings |> a)
       ]
 
@@ -307,7 +327,8 @@ parse'dict'noRec =
 of a 'Dot' expression. -}
 parse'dot'rhs'chain :: Parser [Expression]
 parse'dot'rhs'chain =
-  P.many $ P.char '.' *> P.spaces *> parse'expression'dictKey <* P.spaces
+  P.many $
+  P.char '.' *> parse'spaces *> parse'expression'dictKey <* parse'spaces
 
 applyDots :: Expression -> [Expression] -> Expression
 applyDots =
@@ -330,7 +351,7 @@ parse'with :: Parser With
 parse'with =
   With
     <$> (parse'keyword keyword'with *> parse'expression)
-    <*> (P.char ';' *> P.spaces *> parse'expression)
+    <*> (P.char ';' *> parse'spaces *> parse'expression)
 
 parse'dictBinding :: Parser DictBinding
 parse'dictBinding =
@@ -343,8 +364,8 @@ parse'dictBinding'inherit =
 parse'dictBinding'eq :: Parser DictBinding
 parse'dictBinding'eq =
   DictBinding'Eq
-    <$> (parse'expression'dictKey <* P.spaces <* P.char '=' <* P.spaces)
-    <*> (parse'expression         <* P.spaces <* P.char ';' <* P.spaces)
+    <$> (parse'expression'dictKey <* parse'spaces <* P.char '=' <* parse'spaces)
+    <*> (parse'expression         <* parse'spaces <* P.char ';' <* parse'spaces)
 
 parse'letBinding :: Parser LetBinding
 parse'letBinding =
@@ -353,8 +374,8 @@ parse'letBinding =
 parse'letBinding'eq :: Parser LetBinding
 parse'letBinding'eq =
   LetBinding'Eq
-    <$> (parse'strStatic  <* P.spaces <* P.char '=' <* P.spaces)
-    <*> (parse'expression <* P.spaces <* P.char ';' <* P.spaces)
+    <$> (parse'strStatic  <* parse'spaces <* P.char '=' <* parse'spaces)
+    <*> (parse'expression <* parse'spaces <* P.char ';' <* parse'spaces)
 
 parse'letBinding'inherit :: Parser LetBinding
 parse'letBinding'inherit =
@@ -369,7 +390,7 @@ parse'inherit =
     go :: Seq Str'Static -> Parser (Seq Str'Static)
     go previousList =
       asum
-        [ P.char ';' *> P.spaces $> previousList
+        [ P.char ';' *> parse'spaces $> previousList
         , parse'strStatic >>= \x -> go (previousList |> x)
         ]
 
@@ -421,7 +442,7 @@ parse'expressionList'1'noDot =
 parenthesis. -}
 parse'expression'paren :: Parser Expression
 parse'expression'paren =
-  P.char '(' *> P.spaces *> parse'expression <* P.char ')' <* P.spaces
+  P.char '(' *> parse'spaces *> parse'expression <* P.char ')' <* parse'spaces
 
 {- | Parser for an expression in a context that is expecting a dict key.
 
@@ -435,7 +456,8 @@ parse'expression'dictKey :: Parser Expression
 parse'expression'dictKey =
   asum
     [ parse'strDynamic'quoted <&> Expr'Str
-    , P.string "${" *> P.spaces *> parse'expression <* P.char '}' <* P.spaces
+    , P.string "${" *> parse'spaces *> parse'expression
+        <* P.char '}' <* parse'spaces
     , parse'bare <&> Expr'Str . str'staticToDynamic . bare'str
     ]
 

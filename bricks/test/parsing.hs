@@ -420,6 +420,20 @@ prop_parse_expression = property $ do
             |''
             |] === [text|"Isn't it\n''interesting"|]
 
+  -- Comments
+  test [text|let                -- hi
+            |  x {- ! -} = "a"; -- yep
+            | in                -- lol
+            |   f x
+            |] === [text|let x = "a"; in f x|]
+
+  -- Nested block comments
+  test [text|f{- a
+            |  -- b
+            |    {- c {- d
+            |    -}-} e
+            |  -}x|] === "f x"
+
 prop_parse_expression_list = property $ do
 
   let test = parseTest

@@ -198,16 +198,27 @@ where it has overlap with other types of expressions. -}
 parse'param :: Parser Param
 parse'param =
   asum
-    [ normal  <&> Param'Bare
+    [ startBare
     , pattern <&> Param'DictPattern
     ]
   where
 
-    -- A simple bare-string parameter. This entire branch backtracks,
-    -- because until we get to the colon, we don't know whether the
-    -- variable name we're reading is a lambda parameter or just the name
-    -- by itself.
-    normal = P.try $ parse'bare <* P.spaces <* P.char ':' <* P.spaces
+    -- A parameter that starts with a bare string. This could be a simple
+    -- param that consists only of the bare string, or it could be followed by
+    -- a dict pattern.
+    startBare = do
+      -- This part backtracks because until we get to the : or @, we don't
+      -- know whether the variable name we're reading is a lambda parameter
+      -- or just the name by itself (and not part of a lambda).
+      (a, b) <- P.try $ do
+        a <- parse'bare <* P.spaces
+        b <- ((P.char ':' $> False) <|> (P.char '@' $> True)) <* P.spaces
+        pure (a, b)
+      if b
+        -- If we read an @, then the next thing is a pattern.
+        then Param'Both a <$> pattern
+        -- Otherwise it's just the bare identifier and we're done.
+        else pure $ Param'Bare a
 
     -- A dict pattern. This branch backtracks because the beginning of a
     -- dict pattern looks like the beginning of a dict expression.

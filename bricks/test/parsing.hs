@@ -388,9 +388,12 @@ prop_parse_expression = property $ do
   test "{ a, b, c ? x, ... }: g b (f a c)"
     === [text|{ a, b, c ? x, ... }: g b (f a c)|]
 
-  test "{ x, ... }: f x"  === [text|{ x, ... }: f x|]
-  test "{ x?\"abc\" }: x" === [text|{ x ? "abc" }: x|]
-  test "{ ... }: x"       === [text|{ ... }: x|]
+  test "{ x, ... }: f x"    === [text|{ x, ... }: f x|]
+  test "{ x?\"abc\" }: x"   === [text|{ x ? "abc" }: x|]
+  test "{ ... }: x"         === [text|{ ... }: x|]
+  test "a@{ x, ... }: f x"  === [text|a@{ x, ... }: f x|]
+  test "a@{ x?\"abc\" }: x" === [text|a@{ x ? "abc" }: x|]
+  test "a@{ ... }: x"       === [text|a@{ ... }: x|]
 
   -- A let expression
   test "let f = x: plus one x; in f seven"

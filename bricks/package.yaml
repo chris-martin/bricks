@@ -19,10 +19,14 @@ library:
     - Bricks.Parsing
     - Bricks.Rendering
 
-    - Bricks.Internal.DList
+    - Bricks.Internal.Functor
+    - Bricks.Internal.Prelude
+    - Bricks.Internal.Seq
+    - Bricks.Internal.Text
 
 dependencies:
   - base
+  - containers
   - parsec
   - text
 

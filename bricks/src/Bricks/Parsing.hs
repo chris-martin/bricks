@@ -17,29 +17,19 @@ import Bricks.IndentedString
 import Bricks.Keyword
 
 -- Bricks internal
-import           Bricks.Internal.DList   (DList)
-import qualified Bricks.Internal.DList   as DList
-import           Bricks.Internal.Functor ((<&>))
+import           Bricks.Internal.Functor (fmap, void, ($>), (<$>), (<&>))
+import           Bricks.Internal.Prelude
+import           Bricks.Internal.Seq     (Seq, (|>))
+import qualified Bricks.Internal.Seq     as Seq
+import qualified Bricks.Internal.Text    as Text
 
 -- Parsec
 import           Text.Parsec      ((<?>))
 import qualified Text.Parsec      as P
 import           Text.Parsec.Text (Parser)
 
--- Text
-import qualified Data.Text as Text
-
 -- Base
-import Control.Applicative (pure, (*>), (<*), (<*>), (<|>))
-import Control.Monad       ((>>=))
-import Data.Bool           (Bool (..), (&&))
-import Data.Eq             (Eq (..))
-import Data.Foldable       (asum, foldl)
-import Data.Function       (($), (.))
-import Data.Functor        (fmap, void, ($>), (<$>))
-import Data.Maybe          (Maybe (..))
-import Numeric.Natural     (Natural)
-import Prelude             (succ)
+import Prelude (succ)
 
 -- | Backtracking parser for a particular keyword.
 parse'keyword :: Keyword -> Parser ()
@@ -101,13 +91,13 @@ parse'strDynamic'quoted =
 -- | Parser for a dynamic string enclosed in "normal" quotes (@"@...@"@).
 parse'strDynamic'normalQ :: Parser Str'Dynamic
 parse'strDynamic'normalQ =
-  P.char '"' *> go DList.empty
+  P.char '"' *> go Seq.empty
   where
-    go :: DList Str'1 -> Parser Str'Dynamic
+    go :: Seq Str'1 -> Parser Str'Dynamic
     go previousParts =
       asum
-        [ end               $> DList.toList previousParts
-        , (chars <|> anti) >>= \x -> go $ previousParts `DList.snoc` x
+        [ end $> previousParts
+        , (chars <|> anti) >>= \x -> go $ previousParts |> x
         ]
 
     -- Read the closing " character
@@ -151,15 +141,15 @@ parse'strDynamic'indentedQ =
 the lines from the source as-is, before the whitespace is cleaned up. -}
 parse'inStr :: Parser InStr
 parse'inStr =
-  P.string "''" *> go DList.empty
+  P.string "''" *> go Seq.empty
   where
-    go :: DList InStr'1 -> Parser InStr
+    go :: Seq InStr'1 -> Parser InStr
     go previousLines =
       do
         line <- parse'inStr'1
-        let newLines = previousLines `DList.snoc` line
+        let newLines = previousLines |> line
         asum
-          [ P.string "''" *> P.spaces $> DList.toList newLines
+          [ P.string "''" *> P.spaces $> newLines
           , P.char '\n'   *> go newLines
           ]
 
@@ -168,14 +158,15 @@ parse'inStr'1 :: Parser InStr'1
 parse'inStr'1 =
   do
     a <- parse'count (P.char ' ')
-    b <- go DList.empty
+    b <- go Seq.empty
     pure $ InStr'1 a b
   where
-    go :: DList Str'1 -> Parser Str'Dynamic
+    go :: Seq Str'1 -> Parser Str'Dynamic
     go previousParts =
       asum
-        [ end               $> DList.toList previousParts
-        , (chars <|> anti) >>= \x -> go (previousParts `DList.snoc` x)
+        [ end              $> previousParts
+        , chars           >>= \x  -> go (previousParts |> x)
+        , parse'antiquote >>= \xs -> go (previousParts <> xs)
         ]
 
     end = P.lookAhead $ asum
@@ -189,8 +180,12 @@ parse'inStr'1 =
       , P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
       ]
 
-    anti = fmap Str'1'Antiquote $
-      P.try (P.string "${") *> P.spaces *> parse'expression <* P.char '}'
+parse'antiquote :: Parser (Seq Str'1)
+parse'antiquote =
+  (P.try (P.string "${") *> P.spaces *> parse'expression <* P.char '}') <&>
+  \case
+    Expr'Str x -> x
+    x -> Seq.singleton (Str'1'Antiquote x)
 
 {- | Parser for a function parameter (the beginning of a 'Lambda'), including
 the colon. This forms part of 'parse'expression', so it backtracks in places
@@ -234,18 +229,18 @@ parse'param =
 destructuring. This parser does not backtrack. -}
 parse'dictPattern :: Parser DictPattern
 parse'dictPattern =
-  P.char '{' *> P.spaces *> go DList.empty
+  P.char '{' *> P.spaces *> go Seq.empty
   where
-    go :: DList DictPattern'1 -> Parser DictPattern
+    go :: Seq DictPattern'1 -> Parser DictPattern
     go previousItems =
       asum
-        [ end $> DictPattern (DList.toList previousItems) False
-        , ellipsis $> DictPattern (DList.toList previousItems) True
+        [ end $> DictPattern previousItems False
+        , ellipsis $> DictPattern previousItems True
         , do
-            newItems <- (previousItems `DList.snoc`) <$> item
+            newItems <- item <&> \x -> previousItems |> x
             asum
               [ P.char ',' *> P.spaces *> go newItems
-              , end $> DictPattern (DList.toList newItems) False
+              , end $> DictPattern newItems False
               ]
         ]
 
@@ -281,7 +276,8 @@ parse'lambda =
 -- | Parser for a list expression (@[ ... ]@).
 parse'list :: Parser List
 parse'list =
-  P.char '[' *> P.spaces *> parse'expressionList <* P.char ']' <* P.spaces
+  (P.char '[' *> P.spaces *> parse'expressionList <* P.char ']' <* P.spaces)
+  <&> Seq.fromList
 
 -- | Parser for a dict expression, either recursive (@rec@ keyword) or not.
 parse'dict :: Parser Dict
@@ -292,19 +288,19 @@ parse'dict =
     ]
 
 -- | Parser for a recursive (@rec@ keyword) dict.
-parse'dict'rec :: Parser [DictBinding]
+parse'dict'rec :: Parser (Seq DictBinding)
 parse'dict'rec =
   parse'keyword keyword'rec *> parse'dict'noRec
 
 -- | Parser for a non-recursive (no @rec@ keyword) dict.
-parse'dict'noRec :: Parser [DictBinding]
+parse'dict'noRec :: Parser (Seq DictBinding)
 parse'dict'noRec =
-  P.char '{' *> P.spaces *> go DList.empty
+  P.char '{' *> P.spaces *> go Seq.empty
   where
-    go :: DList DictBinding -> Parser [DictBinding]
+    go :: Seq DictBinding -> Parser (Seq DictBinding)
     go previousBindings = asum
-      [ P.char '}' *> P.spaces $> DList.toList previousBindings
-      , parse'dictBinding >>= \a -> go (previousBindings `DList.snoc` a)
+      [ P.char '}' *> P.spaces $> previousBindings
+      , parse'dictBinding >>= \a -> go (previousBindings |> a)
       ]
 
 {- | Parser for a chain of dict lookups (like @.a.b.c@) on the right-hand side
@@ -319,13 +315,13 @@ applyDots =
 
 parse'let :: Parser Let
 parse'let =
-  parse'keyword keyword'let *> go DList.empty
+  parse'keyword keyword'let *> go Seq.empty
   where
-    go :: DList LetBinding -> Parser Let
+    go :: Seq LetBinding -> Parser Let
     go previousBindings =
       asum
-        [ end              <&> Let (DList.toList previousBindings)
-        , parse'letBinding >>= \a -> go (previousBindings `DList.snoc` a)
+        [ end              <&> Let previousBindings
+        , parse'letBinding >>= \a -> go (previousBindings |> a)
         ]
 
     end = parse'keyword keyword'in *> parse'expression
@@ -368,13 +364,13 @@ parse'inherit :: Parser Inherit
 parse'inherit =
   Inherit
     <$> (parse'keyword keyword'inherit *> P.optionMaybe parse'expression'paren)
-    <*> go DList.empty
+    <*> go Seq.empty
   where
-    go :: DList Str'Static -> Parser [Str'Static]
+    go :: Seq Str'Static -> Parser (Seq Str'Static)
     go previousList =
       asum
-        [ P.char ';' *> P.spaces $> DList.toList previousList
-        , parse'strStatic >>= \x -> go (previousList `DList.snoc` x)
+        [ P.char ';' *> P.spaces $> previousList
+        , parse'strStatic >>= \x -> go (previousList |> x)
         ]
 
 {- | The primary, top-level expression parser. This is what you use to parse a

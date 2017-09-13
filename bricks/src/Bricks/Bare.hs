@@ -18,18 +18,14 @@ module Bricks.Bare
 -- Bricks
 import Bricks.Keyword
 
--- Text
-import           Data.Text (Text)
-import qualified Data.Text as Text
+-- Bricks internal
+import           Bricks.Internal.Prelude
+import           Bricks.Internal.Text    (Text)
+import qualified Bricks.Internal.Text    as Text
 
 -- Base
-import           Data.Bool     (Bool, not, (&&), (||))
-import           Data.Char     (Char)
-import qualified Data.Char     as Char
-import           Data.Eq       ((/=), (==))
-import           Data.Function ((.))
-import qualified Data.List     as List
-import           Data.Maybe    (Maybe (..))
+import qualified Data.Char as Char
+import qualified Data.List as List
 
 {- | A string that can be rendered unquoted. Bare strings are restricted to a
 conservative set of characters; see 'canBeBare'str' for the full rules.

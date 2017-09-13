@@ -10,18 +10,15 @@ import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
 
--- Text
-import           Data.Text (Text)
-import qualified Data.Text as Text
+-- Bricks internal
+import           Bricks.Internal.Functor (Functor (..))
+import           Bricks.Internal.Prelude
+import qualified Bricks.Internal.Seq     as Seq
+import           Bricks.Internal.Text    (Text)
+import qualified Bricks.Internal.Text    as Text
 
 -- Base
-import Data.Bool      (Bool (..))
-import Data.Foldable  (foldMap)
-import Data.Function  ((.))
-import Data.Functor   (Functor (..))
-import Data.Maybe     (Maybe (..))
-import Data.Semigroup ((<>))
-import Prelude        (fromIntegral)
+import Prelude (fromIntegral)
 
 type Render a = a -> Text
 
@@ -92,14 +89,14 @@ render'param =
 
 -- | Render a dict pattern (@{ a, b ? c, ... }@).
 render'dictPattern :: Render DictPattern
-render'dictPattern =
-  \case
-    DictPattern [] False -> "{ }"
-    DictPattern [] True  -> "{ ... }"
-    DictPattern xs False -> "{ " <> r xs <> " }"
-    DictPattern xs True  -> "{ " <> r xs <> ", ... }"
+render'dictPattern (DictPattern bs e) =
+  if Seq.null xs
+    then "{ }"
+    else "{ " <> Text.intercalate ", " xs <> " }"
   where
-    r = Text.intercalate ", " . fmap render'dictPattern'1
+    xs =
+      Seq.map render'dictPattern'1 bs <>
+      if e then Seq.singleton "..." else Seq.empty
 
 -- | Render a single item in a 'DictPattern'.
 render'dictPattern'1 :: Render DictPattern'1

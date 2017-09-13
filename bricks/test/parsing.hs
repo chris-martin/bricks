@@ -2,9 +2,10 @@
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-import Bricks
-import Bricks.Test.Hedgehog
-import Bricks.Test.QQ
+import           Bricks
+import qualified Bricks.Internal.Seq  as Seq
+import           Bricks.Test.Hedgehog
+import           Bricks.Test.QQ
 
 import Control.Applicative ((<|>))
 import Data.Either         (Either (..))
@@ -138,7 +139,7 @@ prop_parse_strDynamic_indentedQ = property $ do
 prop_parse_inStr = property $ do
 
   let test = parseTest
-           $ fmap (Text.pack . show . fmap render'inStr'1)
+           $ fmap (Text.pack . show . Seq.toList . fmap render'inStr'1)
            $ P.spaces *> parse'inStr
 
   test [text|  ''
@@ -405,6 +406,12 @@ prop_parse_expression = property $ do
   test "with x; y"  === [text|with x; y|]
 
   test "with{x=y;}; f x z" === [text|with { x = y; }; f x z|]
+
+  test [text|''
+            |  Isn't it
+            |  ${"''"}interesting
+            |''
+            |] === [text|"Isn't it\n''interesting"|]
 
 prop_parse_expression_list = property $ do
 

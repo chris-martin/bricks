@@ -49,12 +49,11 @@ module Bricks.Expression
 -- Bricks
 import Bricks.Bare
 
--- Text
-import Data.Text (Text)
-
--- Base
-import Data.Bool  (Bool)
-import Data.Maybe (Maybe (..))
+-- Bricks internal
+import           Bricks.Internal.Prelude
+import           Bricks.Internal.Seq     (Seq)
+import qualified Bricks.Internal.Seq     as Seq
+import           Bricks.Internal.Text    (Text)
 
 data Expression
   = Expr'Var Bare
@@ -241,16 +240,16 @@ ${name}!"@. See 'Expr'Str'.
 
 We use the description "dynamic" to mean the string may contain antiquotation,
 in contrast with 'Str'Static' which cannot. -}
-type Str'Dynamic = [Str'1]
+type Str'Dynamic = Seq Str'1
 
 str'dynamicToStatic :: Str'Dynamic -> Maybe Str'Static
-str'dynamicToStatic = \case
+str'dynamicToStatic = Seq.toList >>> \case
   [Str'1'Literal x] -> Just x
-  _ -> Nothing
+  _                 -> Nothing
 
 str'staticToDynamic :: Str'Static -> Str'Dynamic
 str'staticToDynamic x =
-  [Str'1'Literal x]
+  Seq.singleton (Str'1'Literal x)
 
 -- | One part of a 'Str'Dynamic'.
 data Str'1
@@ -290,7 +289,7 @@ data Param
 -- | A type of function parameter ('Param') that does dict destructuring.
 data DictPattern =
   DictPattern
-    { dictPattern'items :: [DictPattern'1]
+    { dictPattern'items :: Seq DictPattern'1
         -- ^ The list of variables to pull out of the dict argument, along
         -- with any default value each may have
     , dictPattern'ellipsis :: Bool
@@ -309,7 +308,7 @@ data DictPattern'1 =
 
 {- | A list literal expression, starting with @[@ and ending with @]@.
 See 'Expr'List'. -}
-type List = [Expression]
+type List = Seq Expression
 
 {- | A dict literal expression, starting with @{@ or @rec {@ and ending with
 @}@. See 'Expr'Dict'. -}
@@ -317,7 +316,7 @@ data Dict =
   Dict
     { dict'rec :: Bool
         -- ^ Whether the dict is recursive (denoted by the @rec@ keyword)
-    , dict'bindings :: [DictBinding]
+    , dict'bindings :: Seq DictBinding
         -- ^ The bindings (everything between @{@ and @}@)
     }
 
@@ -337,7 +336,7 @@ data Dot =
 -- | A @let@-@in@ expression. See 'Expr'Let'.
 data Let =
   Let
-    { let'bindings :: [LetBinding]
+    { let'bindings :: Seq LetBinding
         -- ^ The bindings (everything between the @let@ and @in@ keywords)
     , let'value :: Expression
         -- ^ The value (everything after the @in@ keyword)
@@ -362,5 +361,5 @@ data With =
 data Inherit =
   Inherit
     { inherit'from :: Maybe Expression
-    , inherit'list :: [Str'Static]
+    , inherit'list :: Seq Str'Static
     }

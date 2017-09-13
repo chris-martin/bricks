@@ -351,6 +351,14 @@ prop_parse_expression = property $ do
   -- The same thing without any whitespace
   test "{x=y;a=b;}" === [text|{ x = y; a = b; }|]
 
+  -- Dicts with 'inherit' bindings
+  test "{ inherit a; }"       === [text|{ inherit a; }|]
+  test "{ inherit a b; }"     === [text|{ inherit a b; }|]
+  test "{ inherit (x) a b; }" === [text|{ inherit (x) a b; }|]
+
+  -- An inherit binding can be empty, although it is weird.
+  test "{ inherit; }"   === [text|{ inherit; }|]
+
   -- A simple function
   test "x : y" === [text|x: y|]
 

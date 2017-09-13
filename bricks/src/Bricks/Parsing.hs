@@ -39,7 +39,7 @@ import Data.Function       (($), (.))
 import Data.Functor        (fmap, void, ($>), (<$>))
 import Data.Maybe          (Maybe (..))
 import Numeric.Natural     (Natural)
-import Prelude             (succ, undefined)
+import Prelude             (succ)
 
 -- | Backtracking parser for a particular keyword.
 parse'keyword :: Keyword -> Parser ()
@@ -357,7 +357,14 @@ parse'inherit :: Parser Inherit
 parse'inherit =
   Inherit
     <$> (parse'keyword keyword'inherit *> P.optionMaybe parse'expression'paren)
-    <*> undefined
+    <*> go DList.empty
+  where
+    go :: DList Str'Static -> Parser [Str'Static]
+    go previousList =
+      asum
+        [ P.char ';' *> P.spaces $> DList.toList previousList
+        , parse'strStatic >>= \x -> go (previousList `DList.snoc` x)
+        ]
 
 {- | The primary, top-level expression parser. This is what you use to parse a
 @.nix@ file. -}

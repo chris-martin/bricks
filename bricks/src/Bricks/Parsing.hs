@@ -81,12 +81,9 @@ parse'strStatic =
 -- | Parser for a static string that is quoted.
 parse'strStatic'quoted :: Parser Str'Static
 parse'strStatic'quoted =
-  parse'strDynamic'quoted <&> dynamicToStatic >>= \case
+  parse'strDynamic'quoted <&> str'dynamicToStatic >>= \case
     Nothing -> P.parserZero
     Just x  -> pure x
-  where
-    dynamicToStatic :: Str'Dynamic -> Maybe Str'Static
-    dynamicToStatic = undefined
 
 -- | Parser for a static string that is bare (unquoted).
 parse'strStatic'bare :: Parser Str'Static

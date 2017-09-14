@@ -32,7 +32,7 @@ conservative set of characters; see 'str'canRenderUnquoted' for the full rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
 value. Prefer 'bareMaybe' which does validate the text. -}
-newtype Str'Unquoted = Str'Unquoted'Unsafe { bare'str :: Text }
+newtype Str'Unquoted = Str'Unquoted'Unsafe { str'unquotedToStatic :: Text }
 
 str'tryUnquoted :: Text -> Maybe Str'Unquoted
 str'tryUnquoted x =

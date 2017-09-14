@@ -34,7 +34,7 @@ escape'normal =
 
 -- | Render a bare string, in bare (unquoted) form.
 render'bare :: Render Str'Unquoted
-render'bare = bare'str
+render'bare = str'unquotedToStatic
 
 -- | Render a static string, in bare (unquoted) form if possible.
 render'strStatic'unquotedIfPossible :: Render Str'Static

@@ -98,7 +98,7 @@ parse'strStatic'quoted =
 -- | Parser for a static string that is bare (unquoted).
 parse'strStatic'unquoted :: Parser Str'Static
 parse'strStatic'unquoted =
-  parse'strUnquoted <&> bare'str
+  parse'strUnquoted <&> str'unquotedToStatic
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
 string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
@@ -458,7 +458,7 @@ parse'expression'dictKey =
     [ parse'strDynamic'quoted <&> Expr'Str
     , P.string "${" *> parse'spaces *> parse'expression
         <* P.char '}' <* parse'spaces
-    , parse'strUnquoted <&> Expr'Str . str'staticToDynamic . bare'str
+    , parse'strUnquoted <&> Expr'Str . str'unquotedToDynamic
     ]
 
 parse'count :: Parser a -> Parser Natural

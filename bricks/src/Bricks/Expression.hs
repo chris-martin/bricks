@@ -10,8 +10,11 @@ module Bricks.Expression
   , Str'Static
   , Str'Dynamic
   , Str'1 (..)
+
+  -- * String conversions
   , str'dynamicToStatic
   , str'staticToDynamic
+  , str'unquotedToDynamic
 
   -- * Lists
   , List
@@ -261,6 +264,10 @@ str'dynamicToStatic = Seq.toList >>> \case
 str'staticToDynamic :: Str'Static -> Str'Dynamic
 str'staticToDynamic x =
   Seq.singleton (Str'1'Literal x)
+
+str'unquotedToDynamic :: Str'Unquoted -> Str'Dynamic
+str'unquotedToDynamic =
+  str'staticToDynamic . str'unquotedToStatic
 
 -- | One part of a 'Str'Dynamic'.
 data Str'1

@@ -38,6 +38,15 @@ string.
 -}
 newtype InStr = InStr { inStr'toSeq :: Seq InStr'1 }
 
+instance Semigroup InStr
+  where
+    InStr x <> InStr y = InStr (x <> y)
+
+instance Monoid InStr
+  where
+    mappend = (<>)
+    mempty = InStr Seq.empty
+
 inStr'toList :: InStr -> [InStr'1]
 inStr'toList =
   Seq.toList . inStr'toSeq

@@ -2,7 +2,61 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bricks.Rendering where
+module Bricks.Rendering
+  (
+  -- * @Render@
+    Render
+
+  -- * Expressions
+  , render'expression
+  , render'expression'listContext
+  , render'expression'dotLeftContext
+  , render'expression'applyLeftContext
+  , render'expression'applyRightContext
+  , render'expression'inParens
+  , render'expression'dictKey
+
+  -- * Strings
+  , str'escape
+  , render'strUnquoted
+  , render'strStatic'unquotedIfPossible
+  , render'strStatic'quoted
+  , render'strDynamic'unquotedIfPossible
+  , render'strDynamic'quoted
+  , render'inStr'1
+
+  -- * Lists
+  , render'list
+
+  -- * Dicts
+  , render'dict
+  , render'dictBinding
+
+  -- * Dict lookup
+  , render'dot
+
+  -- * Lambdas
+  , render'lambda
+
+  -- * Function parameters
+  , render'param
+  , render'dictPattern
+  , render'dictPattern'1
+
+  -- * Function application
+  , render'apply
+
+  -- * @let@
+  , render'let
+  , render'letBinding
+
+  -- * @with@
+  , render'with
+
+  -- * @inherit@
+  , render'inherit
+
+  ) where
 
 -- Bricks
 import Bricks.Expression

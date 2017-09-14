@@ -36,7 +36,6 @@ tests:
     source-dirs: test
     main: doctest.hs
     ghc-options:
-      - -Wno-missing-signatures
       - -threaded
     dependencies:
       - base
@@ -47,7 +46,6 @@ tests:
     source-dirs: test
     main: rendering.hs
     ghc-options:
-      - -Wno-missing-signatures
       - -threaded
     dependencies:
       - base
@@ -59,7 +57,6 @@ tests:
     source-dirs: test
     main: parsing.hs
     ghc-options:
-      - -Wno-missing-signatures
       - -threaded
     dependencies:
       - base

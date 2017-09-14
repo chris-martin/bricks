@@ -21,12 +21,14 @@ import qualified Text.Parsec      as P
 import           Text.Parsec.Text (Parser)
 
 -- Hedgehog
-import           Hedgehog (property, (===))
+import           Hedgehog (Property, property, (===))
 import qualified Hedgehog
 
 -- Base
 import Text.Show (show)
+import System.IO (IO)
 
+main :: IO ()
 main = runTests $$(Hedgehog.discover)
 
 {- | We'll use the @parseTest@ function a lot to test parsers. It's a bit like
@@ -61,6 +63,7 @@ parseTest p input =
 
     ]
 
+prop_parse_str_unquoted :: Property
 prop_parse_str_unquoted = property $ do
 
   let test = parseTest $ fmap str'unquotedToStatic $ parse'strUnquoted
@@ -82,6 +85,7 @@ prop_parse_str_unquoted = property $ do
                           | - unexpected " "
                           |Parser failed and consumed input|]
 
+prop_parse_expression_dictKey :: Property
 prop_parse_expression_dictKey = property $ do
 
   let test = parseTest $ fmap render'expression $ parse'expression'dictKey
@@ -95,6 +99,7 @@ prop_parse_expression_dictKey = property $ do
 
   test "${a.b}" === [text|a.b|]
 
+prop_parse_strDynamic_normalQ :: Property
 prop_parse_strDynamic_normalQ = property $ do
 
   let test = parseTest
@@ -118,6 +123,7 @@ prop_parse_strDynamic_normalQ = property $ do
 
   test "\"a\\${\""    === [text|"a\${"|]
 
+prop_parse_strDynamic_indentedQ :: Property
 prop_parse_strDynamic_indentedQ = property $ do
 
   let test = parseTest
@@ -143,6 +149,7 @@ prop_parse_strDynamic_indentedQ = property $ do
             |  ''x|] === [text|"one\n\ntwo"
                               |Remaining input: "x"|]
 
+prop_parse_inStr :: Property
 prop_parse_inStr = property $ do
 
   let test = parseTest
@@ -173,6 +180,7 @@ prop_parse_inStr = property $ do
 
   test "''   abc\ndef''" === [text|["   abc","def"]|]
 
+prop_parse_inStr_line :: Property
 prop_parse_inStr_line = property $ do
 
   let test = parseTest
@@ -196,6 +204,7 @@ prop_parse_inStr_line = property $ do
   test "   abc''x"   === [text|"   abc"
                               |Remaining input: "''x"|]
 
+prop_parse_dict_pattern_start :: Property
 prop_parse_dict_pattern_start = property $ do
 
   let test = parseTest $ (P.try parse'dictPattern'start $> "yes") <|> pure "no"
@@ -217,6 +226,7 @@ prop_parse_dict_pattern_start = property $ do
   test "{ ... }:"    === [text|yes
                               |Remaining input: " }:"|]
 
+prop_parse_dict_pattern :: Property
 prop_parse_dict_pattern = property $ do
 
   let test = parseTest $ fmap render'dictPattern $ parse'dictPattern
@@ -227,6 +237,7 @@ prop_parse_dict_pattern = property $ do
   test "{a , b}"          === [text|{ a, b }|]
   test "{a , b ? c, ...}" === [text|{ a, b ? c, ... }|]
 
+prop_parse_dot_rhs_chain :: Property
 prop_parse_dot_rhs_chain = property $ do
 
   let test = parseTest
@@ -279,6 +290,7 @@ prop_parse_dot_rhs_chain = property $ do
   test ". \"a\".${b}" === [text|"a"
                                |b|]
 
+prop_parse_expression :: Property
 prop_parse_expression = property $ do
 
   let test = parseTest $ fmap render'expression $ parse'expression
@@ -441,6 +453,7 @@ prop_parse_expression = property $ do
             |    -}-} e
             |  -}x|] === "f x"
 
+prop_parse_expression_list :: Property
 prop_parse_expression_list = property $ do
 
   let test = parseTest
@@ -484,6 +497,7 @@ prop_parse_expression_list = property $ do
   test "inheri inherits"        === [text|inheri
                                          |inherits|]
 
+prop_parse_expression_list_item :: Property
 prop_parse_expression_list_item = property $ do
 
   let test = parseTest $ fmap render'expression $ parse'expressionList'1
@@ -505,6 +519,7 @@ prop_parse_expression_list_item = property $ do
   test "\"a\"b"   === [text|"a"
                            |Remaining input: "b"|]
 
+prop_parse_expression_list_item_no_dot :: Property
 prop_parse_expression_list_item_no_dot = property $ do
 
   let test = parseTest $ fmap render'expression $ parse'expressionList'1'noDot

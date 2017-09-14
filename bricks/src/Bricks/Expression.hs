@@ -71,7 +71,6 @@ import qualified Bricks.Internal.Text    as Text
 -- Base
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
-import qualified Data.List     as List
 import           Prelude       (Int)
 
 data Expression

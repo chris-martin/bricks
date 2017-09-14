@@ -15,11 +15,16 @@ import Bricks.Test.Hedgehog
 import Bricks.Test.QQ
 
 -- Hedgehog
-import           Hedgehog (property, (===))
+import           Hedgehog (Property, property, (===))
 import qualified Hedgehog
 
+-- Base
+import System.IO (IO)
+
+main :: IO ()
 main = runTests $$(Hedgehog.discover)
 
+prop_render_identifier :: Property
 prop_render_identifier = property $ do
 
   let test = render'strStatic'unquotedIfPossible
@@ -29,6 +34,7 @@ prop_render_identifier = property $ do
   test "-ab"  === [text|-ab|]
   test ""     === [text|""|]
 
+prop_render_string_dynamic_quoted :: Property
 prop_render_string_dynamic_quoted = property $ do
 
   let test = render'strDynamic'quoted . strDynamic'fromList
@@ -45,6 +51,7 @@ prop_render_string_dynamic_quoted = property $ do
        ]
     === [text|"Hello, my name is ${name}!"|]
 
+prop_render_indented_string_line :: Property
 prop_render_indented_string_line = property $ do
 
   let test n xs = render'inStr'1 $ InStr'1 n (strDynamic'fromList xs)
@@ -54,6 +61,7 @@ prop_render_indented_string_line = property $ do
          ]
     === [text|  abc${x}|]
 
+prop_render_dict_pattern :: Property
 prop_render_dict_pattern = property $ do
 
   let test a b = render'dictPattern $ DictPattern a b
@@ -69,6 +77,7 @@ prop_render_dict_pattern = property $ do
   test [ item1, item2 ] False === [text|{ x, y ? "abc" }|]
   test [ item1, item2 ] True  === [text|{ x, y ? "abc", ... }|]
 
+prop_render_list :: Property
 prop_render_list = property $ do
 
   let test = render'list . List
@@ -81,5 +90,5 @@ prop_render_list = property $ do
   let call = Expr'Apply $ Apply (Expr'Var (Str'Unquoted'Unsafe "f"))
                                 (Expr'Var (Str'Unquoted'Unsafe "x"))
 
-  test [ call ]                            === [text|[ (f x) ]|]
+  test [ call ]                                     === [text|[ (f x) ]|]
   test [ call, Expr'Var (Str'Unquoted'Unsafe "a") ] === [text|[ (f x) a ]|]

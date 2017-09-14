@@ -12,12 +12,12 @@ library:
 
     - Bricks
 
-    - Bricks.Bare
     - Bricks.Expression
     - Bricks.IndentedString
     - Bricks.Keyword
     - Bricks.Parsing
     - Bricks.Rendering
+    - Bricks.UnquotedString
 
     - Bricks.Internal.Functor
     - Bricks.Internal.Prelude

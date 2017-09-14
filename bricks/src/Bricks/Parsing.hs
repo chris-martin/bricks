@@ -11,10 +11,10 @@ quoted string environments where whitespace is significant.
 module Bricks.Parsing where
 
 -- Bricks
-import Bricks.Bare
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
+import Bricks.UnquotedString
 
 -- Bricks internal
 import           Bricks.Internal.Functor (fmap, void, ($>), (<$>), (<&>))

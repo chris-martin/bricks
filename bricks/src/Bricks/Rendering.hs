@@ -5,10 +5,10 @@
 module Bricks.Rendering where
 
 -- Bricks
-import Bricks.Bare
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
+import Bricks.UnquotedString
 
 -- Bricks internal
 import           Bricks.Internal.Functor (Functor (..))

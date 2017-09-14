@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bricks.Bare
+module Bricks.UnquotedString
   (
   -- * Type
     Bare (..)

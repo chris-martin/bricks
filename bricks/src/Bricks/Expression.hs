@@ -47,7 +47,7 @@ module Bricks.Expression
   ) where
 
 -- Bricks
-import Bricks.Bare
+import Bricks.UnquotedString
 
 -- Bricks internal
 import           Bricks.Internal.Prelude

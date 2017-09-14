@@ -13,17 +13,19 @@ Notable differences from Nix:
 
 -}
 module Bricks
-  ( module Bricks.Bare
+
+  ( module Bricks.Expression
   , module Bricks.IndentedString
   , module Bricks.Keyword
   , module Bricks.Parsing
   , module Bricks.Rendering
-  , module Bricks.Expression
+  , module Bricks.UnquotedString
+
   ) where
 
-import Bricks.Bare
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
 import Bricks.Parsing
 import Bricks.Rendering
+import Bricks.UnquotedString

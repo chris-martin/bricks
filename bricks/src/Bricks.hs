@@ -11,6 +11,19 @@ Notable differences from Nix:
 - The concept of "set" is referred to as "dict" (this is not actually a language
   difference, I just use a different word to talk about the same concept)
 
+Everything is re-exported from this module. Overview of the smaller modules:
+
+- "Bricks.Expression" - Defines most of the types, notably 'Expression'
+- "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
+  parsing indented strings (@''@...@''@)
+- "Bricks.Keyword" - Enumerates the language's keywords
+- "Bricks.Parsing" - Defines all of the Parsec parsers for parsing Bricks code
+  into 'Expression's
+- "Bricks.Rendering" - Defines all of the renderers for turning 'Expression's
+  into Bricks code
+- "Bricks.UnquotedString" - Defines the rules for what strings are allowed to
+  appear unquoted in Bricks code
+
 -}
 module Bricks
 

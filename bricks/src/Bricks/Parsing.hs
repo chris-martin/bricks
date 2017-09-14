@@ -8,7 +8,76 @@ Most parsers consume trailing whitespace, except ones that operate within
 quoted string environments where whitespace is significant.
 
 -}
-module Bricks.Parsing where
+module Bricks.Parsing
+  (
+  -- * Expressions
+    parse'expression
+  , parse'expression'paren
+  , parse'expression'dictKey
+
+  -- * Expression lists
+  , parse'expressionList
+  , parse'expressionList'1
+  , parse'expressionList'1'noDot
+
+  -- * Strings
+  , parse'strUnquoted
+  , parse'strStatic
+  , parse'strStatic'quoted
+  , parse'strStatic'unquoted
+  , parse'strDynamic'quoted
+  , parse'strDynamic'normalQ
+  , parse'strDynamic'indentedQ
+  , parse'inStr
+  , parse'inStr'1
+
+  -- * Lists
+  , parse'list
+
+  -- * Dicts
+  , parse'dict
+  , parse'dict'rec
+  , parse'dict'noRec
+  , parse'dictBinding
+  , parse'dictBinding'inherit
+  , parse'dictBinding'eq
+
+  -- * Dict lookup
+  , parse'dot'rhs'chain
+
+  -- * Lambdas
+  , parse'lambda
+
+  -- * Function parameters
+  , parse'param
+  , parse'dictPattern
+  , parse'dictPattern'start
+
+  -- * @let@
+  , parse'let
+  , parse'letBinding
+  , parse'letBinding'eq
+  , parse'letBinding'inherit
+
+  -- * @with@
+  , parse'with
+
+  -- * @inherit@
+  , parse'inherit
+
+  -- * Comments and whitespace
+  , parse'spaces
+  , parse'comment
+  , parse'comment'inline
+  , parse'comment'block
+
+  -- * Keywords
+  , parse'keyword
+
+  -- * Antiquotation
+  , parse'antiquote
+
+  ) where
 
 -- Bricks
 import Bricks.Expression

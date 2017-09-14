@@ -22,7 +22,7 @@ main = runTests $$(Hedgehog.discover)
 
 prop_render_identifier = property $ do
 
-  let test = render'strStatic'maybeBare
+  let test = render'strStatic'unquotedIfPossible
 
   test "abc"  === [text|abc|]
   test "a\"b" === [text|"a\"b"|]

@@ -37,8 +37,8 @@ render'bare :: Render Str'Unquoted
 render'bare = bare'str
 
 -- | Render a static string, in bare (unquoted) form if possible.
-render'strStatic'maybeBare :: Render Str'Static
-render'strStatic'maybeBare x =
+render'strStatic'unquotedIfPossible :: Render Str'Static
+render'strStatic'unquotedIfPossible x =
   if str'canRenderUnquoted x then x else render'strStatic'quoted x
 
 -- | Render a static string, in quoted form.
@@ -47,10 +47,10 @@ render'strStatic'quoted x =
   "\"" <> escape'normal x <> "\""
 
 -- | Render a dynamic string, in bare (unquoted) form if possible.
-render'strDynamic'maybeBare :: Render Str'Dynamic
-render'strDynamic'maybeBare d =
+render'strDynamic'unquotedIfPossible :: Render Str'Dynamic
+render'strDynamic'unquotedIfPossible d =
   case str'dynamicToStatic d of
-    Just s  -> render'strStatic'maybeBare s
+    Just s  -> render'strStatic'unquotedIfPossible s
     Nothing -> render'strDynamic'quoted d
 
 -- | Render a dynamic string, in quoted form.
@@ -153,7 +153,7 @@ render'letBinding :: Render LetBinding
 render'letBinding =
   \case
     LetBinding'Eq a b ->
-      render'strStatic'maybeBare a <> " = " <> render'expression b
+      render'strStatic'unquotedIfPossible a <> " = " <> render'expression b
     LetBinding'Inherit x ->
       render'inherit x
 
@@ -163,7 +163,7 @@ render'inherit =
     Inherit Nothing xs  -> "inherit" <> r xs
     Inherit (Just a) xs -> "inherit (" <> render'expression a <> ")" <> r xs
   where
-    r = foldMap (\x -> " " <> render'strStatic'maybeBare x)
+    r = foldMap (\x -> " " <> render'strStatic'unquotedIfPossible x)
 
 -- | Render a @with@ expression.
 render'with :: Render With
@@ -224,5 +224,5 @@ render'expression'inParens x =
 
 render'expression'dictKey :: Render Expression
 render'expression'dictKey = \case
-  Expr'Str x -> render'strDynamic'maybeBare x
+  Expr'Str x -> render'strDynamic'unquotedIfPossible x
   x -> "${" <> render'expression x <> "}"

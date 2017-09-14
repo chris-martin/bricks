@@ -108,6 +108,7 @@ import Prelude       (succ)
 
 {- $setup
 
+>>> import Data.Foldable (length)
 >>> import Text.Parsec (parseTest)
 
 -}
@@ -426,6 +427,7 @@ list []
 
 >>> parseTest parse'list "[x \"one\" (a: b) (c d)]"
 list [var "x", str ["one"], lambda (param "a") (var "b"), apply (var "c") (var "d")]
+
 -}
 parse'list :: Parser List
 parse'list =
@@ -537,7 +539,14 @@ parse'inherit =
         ]
 
 {- | The primary, top-level expression parser. This is what you use to parse a
-@.nix@ file. -}
+@.nix@ file.
+
+>>> parseTest parse'expression ""
+parse error at (line 1, column 1):
+unexpected end of input
+expecting expression
+
+-}
 parse'expression :: Parser Expression
 parse'expression =
   p <?> "expression"
@@ -552,14 +561,36 @@ parse'expression =
       ]
 
 {- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
-chain of function arguments (@f x y z@). -}
+chain of function arguments (@f x y z@).
+
+>>> parseTest parse'expressionList ""
+[]
+
+>>> parseTest (length <$> parse'expressionList) "x \"one two\" (a: b) (c d)"
+4
+
+>>> parseTest (length <$> parse'expressionList) "(x \"one two\" (a: b) (c d))"
+1
+
+-}
 parse'expressionList :: Parser [Expression]
 parse'expressionList =
   P.many parse'expressionList'1 <?> "expression list"
 
 {- | Parser for a single item within an expression list ('expressionListP').
 This expression is not a lambda, a function application, a @let@-@in@
-expression, or a @with@ expression. -}
+expression, or a @with@ expression.
+
+>>> parseTest parse'expressionList'1 "ab.xy"
+dot (var "ab") (str ["xy"])
+
+>>> parseTest parse'expressionList'1 "(x: f x x) y z"
+lambda (param "x") (apply (apply (var "f") (var "x")) (var "x"))
+
+>>> parseTest parse'expressionList'1 "{ a = b; }.a y"
+dot (dict [binding (str ["a"]) (var "b")]) (str ["a"])
+
+-}
 parse'expressionList'1 :: Parser Expression
 parse'expressionList'1 =
   expression'applyDots
@@ -568,7 +599,18 @@ parse'expressionList'1 =
     <?> "expression list item"
 
 {- | Like 'parse'expressionList'1', but with the further restriction that the
-expression may not be a 'Dot'. -}
+expression may not be a 'Dot'.
+
+>>> parseTest parse'expressionList'1'noDot "ab.xy"
+var "ab"
+
+>>> parseTest parse'expressionList'1'noDot "(x: f x x) y z"
+lambda (param "x") (apply (apply (var "f") (var "x")) (var "x"))
+
+>>> parseTest parse'expressionList'1'noDot "{ a = b; }.a y"
+dict [binding (str ["a"]) (var "b")]
+
+-}
 parse'expressionList'1'noDot :: Parser Expression
 parse'expressionList'1'noDot =
   asum

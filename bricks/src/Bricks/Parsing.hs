@@ -52,6 +52,8 @@ module Bricks.Parsing
 
   -- * Function parameters
   , parse'param
+  , parse'param'var
+  , parse'param'noVar
   , parse'dictPattern
   , parse'dictPattern'start
 
@@ -326,38 +328,37 @@ the colon. This forms part of 'parse'expression', so it backtracks in places
 where it has overlap with other types of expressions. -}
 parse'param :: Parser Param
 parse'param =
-  asum
-    [ startWithVar
-    , pattern <&> Param'DictPattern
-    ]
-  where
+  parse'param'var <|> parse'param'noVar
 
-    -- A parameter that starts with a variable. This could be a simple param
-    -- that consists only of only the variable, or the variable may be followed
-    -- by a dict pattern.
-    startWithVar = do
-      -- This part backtracks because until we get to the : or @, we don't
-      -- know whether the variable name we're reading is a lambda parameter
-      -- or just the name by itself (and not part of a lambda).
-      (a, b) <- P.try $ do
-        a <- parse'strUnquoted <* parse'spaces
-        b <- ((P.char ':' $> False) <|> (P.char '@' $> True)) <* parse'spaces
-        pure (a, b)
-      if b
-        -- If we read an @, then the next thing is a pattern.
-        then Param'Both a <$> pattern
-        -- Otherwise it's just the variable and we're done.
-        else pure $ Param'Name a
+{- | Parser for a parameter that starts with a variable. This could be a simple
+param that consists only of /only/ the variable, or the variable may be
+followed by a dict pattern. -}
+parse'param'var :: Parser Param
+parse'param'var = do
+  -- This part backtracks because until we get to the : or @, we don't
+  -- know whether the variable name we're reading is a lambda parameter
+  -- or just the name by itself (and not part of a lambda).
+  (a, b) <- P.try $ do
+    a <- parse'strUnquoted <* parse'spaces
+    b <- ((P.char ':' $> False) <|> (P.char '@' $> True)) <* parse'spaces
+    pure (a, b)
+  if b
+    -- If we read an @, then the next thing is a pattern.
+    then parse'dictPattern <* P.char ':' <* parse'spaces <&> Param'Both a
+    -- Otherwise it's just the variable and we're done.
+    else pure $ Param'Name a
 
-    -- A dict pattern. This branch backtracks because the beginning of a
-    -- dict pattern looks like the beginning of a dict expression.
-    pattern = do
-      -- First we look ahead to determine whether it looks like a lambda.
-      _ <- P.try . P.lookAhead $ parse'dictPattern'start
+{- | Parser for a param that has no variable, only a a dict pattern. This
+parser backtracks because the beginning of a dict pattern looks like the
+beginning of a dict expression. -}
+parse'param'noVar :: Parser Param
+parse'param'noVar = Param'DictPattern <$> do
+  -- First we look ahead to determine whether it looks like a lambda.
+  _ <- P.try . P.lookAhead $ parse'dictPattern'start
 
-      -- And if so, then we go on and parse the dict pattern with no
-      -- further backtracking.
-      parse'dictPattern <* P.char ':' <* parse'spaces
+  -- And if so, then we go on and parse the dict pattern with no
+  -- further backtracking.
+  parse'dictPattern <* P.char ':' <* parse'spaces
 
 {- | Parser for a dict pattern (the type of lambda parameter that does dict
 destructuring. This parser does not backtrack. -}

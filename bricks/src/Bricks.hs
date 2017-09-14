@@ -130,6 +130,8 @@ module Bricks
   , Param (..)
   , render'param
   , parse'param
+  , parse'param'var
+  , parse'param'noVar
   -- ** Dict patterns
   , DictPattern (..)
   , DictPattern'1 (..)

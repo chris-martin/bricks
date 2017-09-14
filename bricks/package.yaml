@@ -1,6 +1,7 @@
 name: bricks
 version: 0.0.0.1
 license: Apache-2.0
+license-file: license.txt
 github: chris-martin/bricks
 
 ghc-options:

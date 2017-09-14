@@ -71,7 +71,7 @@ parse'keyword k =
 
 {- | Parser for a bare (unquoted) string. Bare strings are restricted to a
 conservative set of characters, and they may not be any of the keywords. -}
-parse'bare :: Parser Bare
+parse'bare :: Parser Str'Unquoted
 parse'bare =
   do
     -- Consume at least one character

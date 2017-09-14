@@ -33,7 +33,7 @@ escape'normal =
   Text.replace "\\" "\\\\"
 
 -- | Render a bare string, in bare (unquoted) form.
-render'bare :: Render Bare
+render'bare :: Render Str'Unquoted
 render'bare = bare'str
 
 -- | Render a static string, in bare (unquoted) form if possible.

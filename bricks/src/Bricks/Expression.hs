@@ -56,7 +56,7 @@ import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)
 
 data Expression
-  = Expr'Var Bare
+  = Expr'Var Str'Unquoted
       -- ^ A /bare/ (unquoted) string like @x@ that represents a reference to
       -- some variable.
   | Expr'Str Str'Dynamic
@@ -288,12 +288,12 @@ data Apply =
 {- | A parameter to a 'Lambda'. All functions have a single parameter, but it's
 more complicated than that because it may also include dict destructuring. -}
 data Param
-  = Param'Bare Bare
+  = Param'Bare Str'Unquoted
       -- ^ A simple single-parameter function
   | Param'DictPattern DictPattern
       -- ^ Dict destructuring, which gives you something resembling multiple
       -- named parameters with default values
-  | Param'Both Bare DictPattern
+  | Param'Both Str'Unquoted DictPattern
       -- ^ Both a variable name /and/ a dict pattern, separated by the @\@@
       -- keyword.
 
@@ -311,7 +311,7 @@ data DictPattern =
 -- | One item within a 'DictPattern'.
 data DictPattern'1 =
   DictPattern'1
-    { dictPattern'1'variable :: Bare
+    { dictPattern'1'variable :: Str'Unquoted
         -- ^ The bound variable
     , dictPattern'1'default :: Maybe Expression
         -- ^ The default value to be used if the key is not present in the dict

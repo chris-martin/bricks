@@ -4,7 +4,7 @@
 module Bricks.UnquotedString
   (
   -- * Type
-    Bare (..)
+    Str'Unquoted (..)
 
   -- * Constructor
   , bareMaybe
@@ -32,9 +32,9 @@ conservative set of characters; see 'canBeBare'str' for the full rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
 value. Prefer 'bareMaybe' which does validate the text. -}
-newtype Bare = BareUnsafe { bare'str :: Text }
+newtype Str'Unquoted = BareUnsafe { bare'str :: Text }
 
-bareMaybe :: Text -> Maybe Bare
+bareMaybe :: Text -> Maybe Str'Unquoted
 bareMaybe x =
   if canBeBare'str x then Just (BareUnsafe x) else Nothing
 

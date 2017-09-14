@@ -33,8 +33,8 @@ escape'normal =
   Text.replace "\\" "\\\\"
 
 -- | Render a bare string, in bare (unquoted) form.
-render'bare :: Render Str'Unquoted
-render'bare = str'unquotedToStatic
+render'strUnquoted :: Render Str'Unquoted
+render'strUnquoted = str'unquotedToStatic
 
 -- | Render a static string, in bare (unquoted) form if possible.
 render'strStatic'unquotedIfPossible :: Render Str'Static
@@ -77,9 +77,9 @@ render'inStr'1 (InStr'1 n xs) =
 render'param :: Render Param
 render'param =
   \case
-    Param'Var a        -> render'bare a
+    Param'Var a        -> render'strUnquoted a
     Param'DictPattern b -> render'dictPattern b
-    Param'Both a b      -> render'bare a <> "@" <>
+    Param'Both a b      -> render'strUnquoted a <> "@" <>
                            render'dictPattern b
 
 -- | Render a dict pattern (@{ a, b ? c, ... }@).
@@ -97,8 +97,8 @@ render'dictPattern (DictPattern bs e) =
 render'dictPattern'1 :: Render DictPattern'1
 render'dictPattern'1 =
   \case
-    DictPattern'1 a Nothing  -> render'bare a
-    DictPattern'1 a (Just b) -> render'bare a <> " ? " <> render'expression b
+    DictPattern'1 a Nothing  -> render'strUnquoted a
+    DictPattern'1 a (Just b) -> render'strUnquoted a <> " ? " <> render'expression b
 
 -- | Render a lambda expression (@x: y@).
 render'lambda :: Render Lambda
@@ -179,7 +179,7 @@ render'expression =
     Expr'Str    x -> render'strDynamic'quoted x
     Expr'Dict   x -> render'dict x
     Expr'List   x -> render'list x
-    Expr'Var    x -> render'bare x
+    Expr'Var    x -> render'strUnquoted x
     Expr'Dot    x -> render'dot x
     Expr'Lambda x -> render'lambda x
     Expr'Apply  x -> render'apply x

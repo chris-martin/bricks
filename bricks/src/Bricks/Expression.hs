@@ -288,14 +288,14 @@ data Apply =
 {- | A parameter to a 'Lambda'. All functions have a single parameter, but it's
 more complicated than that because it may also include dict destructuring. -}
 data Param
-  = Param'Bare Str'Unquoted
+  = Param'Var Str'Unquoted
       -- ^ A simple single-parameter function
   | Param'DictPattern DictPattern
       -- ^ Dict destructuring, which gives you something resembling multiple
       -- named parameters with default values
   | Param'Both Str'Unquoted DictPattern
       -- ^ Both a variable name /and/ a dict pattern, separated by the @\@@
-      -- keyword.
+      -- keyword
 
 -- | A type of function parameter ('Param') that does dict destructuring.
 data DictPattern =

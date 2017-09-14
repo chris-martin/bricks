@@ -233,7 +233,7 @@ parse'param =
         -- If we read an @, then the next thing is a pattern.
         then Param'Both a <$> pattern
         -- Otherwise it's just the bare identifier and we're done.
-        else pure $ Param'Bare a
+        else pure $ Param'Var a
 
     -- A dict pattern. This branch backtracks because the beginning of a
     -- dict pattern looks like the beginning of a dict expression.

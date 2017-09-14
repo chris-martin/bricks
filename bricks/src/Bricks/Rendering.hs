@@ -77,7 +77,7 @@ render'inStr'1 (InStr'1 n xs) =
 render'param :: Render Param
 render'param =
   \case
-    Param'Bare a        -> render'bare a
+    Param'Var a        -> render'bare a
     Param'DictPattern b -> render'dictPattern b
     Param'Both a b      -> render'bare a <> "@" <>
                            render'dictPattern b

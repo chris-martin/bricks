@@ -32,11 +32,11 @@ conservative set of characters; see 'canBeBare'str' for the full rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
 value. Prefer 'bareMaybe' which does validate the text. -}
-newtype Str'Unquoted = BareUnsafe { bare'str :: Text }
+newtype Str'Unquoted = Str'Unquoted'Unsafe { bare'str :: Text }
 
 bareMaybe :: Text -> Maybe Str'Unquoted
 bareMaybe x =
-  if canBeBare'str x then Just (BareUnsafe x) else Nothing
+  if canBeBare'str x then Just (Str'Unquoted'Unsafe x) else Nothing
 
 {- | Whether a string having this name can be rendered without quoting it.
 We allow a string to render unquoted if all these conditions are met:

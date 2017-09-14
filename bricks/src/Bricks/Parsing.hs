@@ -86,7 +86,7 @@ parse'strUnquoted =
 By "static," we mean that the string may /not/ contain antiquotation. -}
 parse'strStatic :: Parser Str'Static
 parse'strStatic =
-  parse'strStatic'quoted <|> parse'strStatic'bare
+  parse'strStatic'quoted <|> parse'strStatic'unquoted
 
 -- | Parser for a static string that is quoted.
 parse'strStatic'quoted :: Parser Str'Static
@@ -96,8 +96,8 @@ parse'strStatic'quoted =
     Just x  -> pure x
 
 -- | Parser for a static string that is bare (unquoted).
-parse'strStatic'bare :: Parser Str'Static
-parse'strStatic'bare =
+parse'strStatic'unquoted :: Parser Str'Static
+parse'strStatic'unquoted =
   parse'strUnquoted <&> bare'str
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted

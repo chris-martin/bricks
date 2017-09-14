@@ -71,8 +71,8 @@ parse'keyword k =
 
 {- | Parser for a bare (unquoted) string. Bare strings are restricted to a
 conservative set of characters, and they may not be any of the keywords. -}
-parse'bare :: Parser Str'Unquoted
-parse'bare =
+parse'strUnquoted :: Parser Str'Unquoted
+parse'strUnquoted =
   do
     -- Consume at least one character
     a <- Text.pack <$> P.many1 (P.satisfy char'canRenderUnquoted)
@@ -98,7 +98,7 @@ parse'strStatic'quoted =
 -- | Parser for a static string that is bare (unquoted).
 parse'strStatic'bare :: Parser Str'Static
 parse'strStatic'bare =
-  parse'bare <&> bare'str
+  parse'strUnquoted <&> bare'str
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
 string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
@@ -226,7 +226,7 @@ parse'param =
       -- know whether the variable name we're reading is a lambda parameter
       -- or just the name by itself (and not part of a lambda).
       (a, b) <- P.try $ do
-        a <- parse'bare <* parse'spaces
+        a <- parse'strUnquoted <* parse'spaces
         b <- ((P.char ':' $> False) <|> (P.char '@' $> True)) <* parse'spaces
         pure (a, b)
       if b
@@ -264,7 +264,7 @@ parse'dictPattern =
               ]
         ]
 
-    item = DictPattern'1 <$> parse'bare <*> P.optionMaybe def
+    item = DictPattern'1 <$> parse'strUnquoted <*> P.optionMaybe def
 
     ellipsis = P.string "..." *> parse'spaces *> end
 
@@ -279,7 +279,7 @@ parse'dictPattern'start =
   P.char '{' *> parse'spaces *> asum
     [ void $ P.string "..."
     , void $ P.char '}' *> parse'spaces *> P.char ':'
-    , void $ parse'bare *> (P.char ',' <|> P.char '?' <|> P.char '}')
+    , void $ parse'strUnquoted *> (P.char ',' <|> P.char '?' <|> P.char '}')
     ]
 
 applyArgs :: Expression   -- ^ Function
@@ -433,7 +433,7 @@ parse'expressionList'1'noDot =
     [ parse'strDynamic'quoted <&> Expr'Str
     , parse'list              <&> Expr'List
     , parse'dict              <&> Expr'Dict
-    , parse'bare              <&> Expr'Var
+    , parse'strUnquoted              <&> Expr'Var
     , parse'expression'paren
     ]
     <?> "expression list item without a dot"
@@ -458,7 +458,7 @@ parse'expression'dictKey =
     [ parse'strDynamic'quoted <&> Expr'Str
     , P.string "${" *> parse'spaces *> parse'expression
         <* P.char '}' <* parse'spaces
-    , parse'bare <&> Expr'Str . str'staticToDynamic . bare'str
+    , parse'strUnquoted <&> Expr'Str . str'staticToDynamic . bare'str
     ]
 
 parse'count :: Parser a -> Parser Natural

@@ -64,7 +64,7 @@ parseTest p input =
 
 prop_parse_bare = property $ do
 
-  let test = parseTest $ fmap bare'str $ parse'bare
+  let test = parseTest $ fmap bare'str $ parse'strUnquoted
 
   test "-ab_c" === [text|-ab_c|]
 

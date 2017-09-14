@@ -1,4 +1,4 @@
-{- | *Bricks* is Nix-like language.
+{- | __Bricks__ is a lazy functional language that strongly resembles Nix.
 
 Notable differences from Nix:
 

@@ -23,8 +23,8 @@ import Prelude (fromIntegral)
 type Render a = a -> Text
 
 -- | Insert escape sequences for rendering normal double-quoted (@"@) strings.
-escape'normal :: Text -> Text
-escape'normal =
+str'escape :: Text -> Text
+str'escape =
   Text.replace "\"" "\\\"" .
   Text.replace "${" "\\${" .
   Text.replace "\n" "\\n" .
@@ -44,7 +44,7 @@ render'strStatic'unquotedIfPossible x =
 -- | Render a static string, in quoted form.
 render'strStatic'quoted :: Render Str'Static
 render'strStatic'quoted x =
-  "\"" <> escape'normal x <> "\""
+  "\"" <> str'escape x <> "\""
 
 -- | Render a dynamic string, in unquoted form if possible.
 render'strDynamic'unquotedIfPossible :: Render Str'Dynamic
@@ -59,7 +59,7 @@ render'strDynamic'quoted xs =
   "\"" <> foldMap r xs <> "\""
   where
     r = \case
-      Str'1'Literal x   -> escape'normal x
+      Str'1'Literal x   -> str'escape x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 -- | Render one line of an indented string ('InStr').

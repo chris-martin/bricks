@@ -34,8 +34,7 @@ This type of literal is called "indented" because the parser automatically
 removes leading whitespace from the string ('inStr'dedent'), which makes it
 convenient to use these literals for multi-line strings within an indented
 expression without the whitespace from indentation ending up as part of the
-string.
--}
+string. -}
 newtype InStr = InStr { inStr'toSeq :: Seq InStr'1 }
 
 instance Semigroup InStr

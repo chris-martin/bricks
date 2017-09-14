@@ -14,6 +14,7 @@ module Bricks.Internal.Prelude
   , module Data.Semigroup
   , module Data.String
   , module Numeric.Natural
+  , module Text.Show
 
   ) where
 
@@ -25,9 +26,10 @@ import Data.Char           (Char)
 import Data.Either         (Either (..))
 import Data.Eq             (Eq ((/=), (==)))
 import Data.Foldable       (asum, fold, foldMap, foldl, foldr)
-import Data.Function       (($), (.))
+import Data.Function       (id, ($), (.))
 import Data.Maybe          (Maybe (Just, Nothing), catMaybes, maybe)
 import Data.Monoid         (Monoid (mappend, mempty))
 import Data.Semigroup      (Semigroup ((<>)))
 import Data.String         (String)
 import Numeric.Natural     (Natural)
+import Text.Show           (Show (show, showList, showsPrec), shows)

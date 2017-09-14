@@ -71,9 +71,9 @@ prop_render_dict_pattern = property $ do
 
 prop_render_list = property $ do
 
-  let test = render'list
+  let test = render'list . List
 
-  test []                            === [text|[ ]|]
+  test []                                     === [text|[ ]|]
   test [ Expr'Var (Str'Unquoted'Unsafe "a") ] === [text|[ a ]|]
   test [ Expr'Var (Str'Unquoted'Unsafe "a")
        , Expr'Var (Str'Unquoted'Unsafe "b") ] === [text|[ a b ]|]

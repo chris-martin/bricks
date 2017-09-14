@@ -1,5 +1,8 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeApplications           #-}
 
 module Bricks.Expression
   (
@@ -20,7 +23,7 @@ module Bricks.Expression
   , str'unquotedToDynamic
 
   -- * Lists
-  , List
+  , List (..)
 
   -- * Dicts
   , Dict (..)
@@ -58,10 +61,18 @@ module Bricks.Expression
 import Bricks.UnquotedString
 
 -- Bricks internal
+import           Bricks.Internal.Functor (fmap)
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Seq     (Seq)
 import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)
+import qualified Bricks.Internal.Text    as Text
+
+-- Base
+import           Data.Foldable (Foldable)
+import qualified Data.Foldable as Foldable
+import qualified Data.List     as List
+import           Prelude       (Int)
 
 data Expression
   = Expr'Var Str'Unquoted
@@ -259,15 +270,7 @@ ${name}!"@. See 'Expr'Str'.
 We use the description "dynamic" to mean the string may contain antiquotation,
 in contrast with 'Str'Static' which cannot. -}
 newtype Str'Dynamic = Str'Dynamic { strDynamic'toSeq :: Seq Str'1 }
-
-instance Semigroup Str'Dynamic
-  where
-    Str'Dynamic x <> Str'Dynamic y = Str'Dynamic (x <> y)
-
-instance Monoid Str'Dynamic
-  where
-    mappend = ((<>))
-    mempty = Str'Dynamic Seq.empty
+  deriving (Monoid, Semigroup)
 
 strDynamic'toList :: Str'Dynamic -> [Str'1]
 strDynamic'toList =
@@ -320,21 +323,21 @@ data Apply =
 {- | A parameter to a 'Lambda'. All functions have a single parameter, but it's
 more complicated than that because it may also include dict destructuring. -}
 data Param
-  = Param'Var Str'Unquoted
+  = Param'Name Str'Unquoted
       -- ^ A simple single-parameter function
   | Param'DictPattern DictPattern
       -- ^ Dict destructuring, which gives you something resembling multiple
       -- named parameters with default values
   | Param'Both Str'Unquoted DictPattern
-      -- ^ Both a variable name /and/ a dict pattern, separated by the @\@@
+      -- ^ Both a param name /and/ a dict pattern, separated by the @\@@
       -- keyword
 
 -- | A type of function parameter ('Param') that does dict destructuring.
 data DictPattern =
   DictPattern
     { dictPattern'items :: Seq DictPattern'1
-        -- ^ The list of variables to pull out of the dict argument, along
-        -- with any default value each may have
+        -- ^ The list of keys to pull out of the dict, along with any default
+        -- value each may have
     , dictPattern'ellipsis :: Bool
         -- ^ Whether to allow additional keys beyond what is listed in the
         -- items, corresponding to the @...@ keyword
@@ -343,15 +346,16 @@ data DictPattern =
 -- | One item within a 'DictPattern'.
 data DictPattern'1 =
   DictPattern'1
-    { dictPattern'1'variable :: Str'Unquoted
-        -- ^ The bound variable
+    { dictPattern'1'name :: Str'Unquoted
+        -- ^ The name of the key to pull out of the dict
     , dictPattern'1'default :: Maybe Expression
         -- ^ The default value to be used if the key is not present in the dict
     }
 
 {- | A list literal expression, starting with @[@ and ending with @]@.
 See 'Expr'List'. -}
-type List = Seq Expression
+newtype List = List (Seq Expression)
+  deriving (Monoid, Semigroup)
 
 {- | A dict literal expression, starting with @{@ or @rec {@ and ending with
 @}@. See 'Expr'Dict'. -}
@@ -420,3 +424,162 @@ expression'applyDots
   -> Expression   -- ^ Dot expression
 expression'applyDots =
   foldl (\acc b -> Expr'Dot (Dot acc b))
+
+
+--------------------------------------------------------------------------------
+--  Show
+--------------------------------------------------------------------------------
+
+{- The Show instances exist for the sake of doctests and REPL experimentation.
+They are designed to strike a balance in verbosity between the derived Show
+implementations (which are unwieldily long) and the Bricks language itself
+(which is quite terse but unsuitable for demonstrating the parser, as
+outputting a Bricks rendering of parse result wouldn't illumunate anyone's
+understanding of the AST that the Show instances are here to depict). -}
+
+instance Show Expression        where showsPrec = showsPrec'
+instance Show Str'Dynamic       where showsPrec = showsPrec'
+instance Show Str'1             where showsPrec = showsPrec'
+instance Show List              where showsPrec = showsPrec'
+instance Show Dict              where showsPrec = showsPrec'
+instance Show DictBinding       where showsPrec = showsPrec'
+instance Show Dot               where showsPrec = showsPrec'
+instance Show Lambda            where showsPrec = showsPrec'
+instance Show Param             where showsPrec = showsPrec'
+instance Show DictPattern       where showsPrec = showsPrec'
+instance Show DictPattern'1     where showsPrec = showsPrec'
+instance Show Apply             where showsPrec = showsPrec'
+instance Show Let               where showsPrec = showsPrec'
+instance Show LetBinding        where showsPrec = showsPrec'
+instance Show With              where showsPrec = showsPrec'
+instance Show Inherit           where showsPrec = showsPrec'
+
+showsPrec' :: Show' a => Int -> a -> String -> String
+showsPrec' _ x = (Text.unpack (show' x) <>)
+
+class Show' a
+  where
+    show' :: a -> Text
+
+instance Show' Expression
+  where
+    show' = \case
+      Expr'Var x    -> show'var x
+      Expr'Str x    -> show' x
+      Expr'List x   -> show' x
+      Expr'Dict x   -> show' x
+      Expr'Dot x    -> show' x
+      Expr'Lambda x -> show' x
+      Expr'Apply x  -> show' x
+      Expr'Let x    -> show' x
+      Expr'With x   -> show' x
+
+instance Show' Str'Dynamic
+  where
+    show' x = Text.unwords ["str", show'list (strDynamic'toList x)]
+
+instance Show' Str'1
+  where
+    show' = \case
+      Str'1'Literal x -> show'quoted' x
+      Str'1'Antiquote x -> Text.unwords ["antiquote", show'paren x]
+
+instance Show' List
+  where
+    show' (List xs) = Text.unwords ["list", show'list xs]
+
+instance Show' Dict
+  where
+    show' (Dict r bs) =
+      Text.unwords $ (if r then ("recursive":) else id) ["dict", show'list bs]
+
+instance Show' DictBinding
+  where
+    show' = \case
+      DictBinding'Eq a b -> Text.unwords ["binding", show'paren a, show'paren b]
+      DictBinding'Inherit x -> show' x
+
+instance Show' Dot
+  where
+    show' (Dot a b) = Text.unwords ["dot", show'paren a, show'paren b]
+
+instance Show' Lambda
+  where
+    show' (Lambda a b) = Text.unwords ["lambda", show'paren a, show'paren b]
+
+instance Show' Param
+  where
+    show' = \case
+      Param'Name a -> show'param a
+      Param'DictPattern b -> show' b
+      Param'Both a b -> Text.intercalate ", " [ show'param a, show' b ]
+
+instance Show' DictPattern
+  where
+    show' = \case
+      DictPattern xs e ->
+        Text.intercalate ", " $
+        [Text.unwords ["dict pattern", show'list xs]] <>
+        (if e then ["ellipsis"] else [])
+
+instance Show' DictPattern'1
+  where
+    show' (DictPattern'1 a mb) =
+      Text.unwords $
+        show'param a :
+        maybe [] (\b -> [Text.unwords ["with default", show'paren b]]) mb
+
+instance Show' Apply
+  where
+    show' (Apply a b) = Text.unwords ["apply", show'paren a, show'paren b]
+
+instance Show' Let
+  where
+    show' (Let xs y) = Text.unwords ["let", show'list xs, show'paren y]
+
+instance Show' LetBinding
+  where
+    show' = \case
+      LetBinding'Eq a b -> Text.unwords ["binding", show'static a, show'paren b]
+      LetBinding'Inherit x -> show' x
+
+instance Show' With
+  where
+    show' = \case
+      With a b -> Text.unwords ["with", show'paren a, show'paren b]
+
+instance Show' Inherit
+  where
+    show' (Inherit mf xs) =
+      Text.unwords $
+        ("inherit" :) $
+        (maybe id (\a -> ("from" :) . (show'paren a :)) mf) $
+        [show'list' $ fmap show'quoted' xs]
+
+show'list :: (Foldable f, Show' a) => f a -> Text
+show'list =
+  show'list' . fmap show' . Foldable.toList
+
+show'list' :: Foldable f => f Text -> Text
+show'list' x =
+  "[" <> Text.intercalate ", " x <> "]"
+
+show'quoted' :: Text -> Text
+show'quoted' =
+  Text.pack . show @Text
+
+show'paren :: Show' a => a -> Text
+show'paren x =
+  "(" <> show' x <> ")"
+
+show'static :: Str'Static -> Text
+show'static x =
+  Text.unwords ["str", show'quoted' x]
+
+show'param :: Str'Unquoted -> Text
+show'param x =
+  Text.unwords ["param", show'quoted' (str'unquotedToStatic x)]
+
+show'var :: Str'Unquoted -> Text
+show'var x =
+  Text.unwords ["var", show'quoted' (str'unquotedToStatic x)]

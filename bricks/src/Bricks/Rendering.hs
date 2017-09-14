@@ -131,7 +131,7 @@ render'inStr'1 (InStr'1 n xs) =
 render'param :: Render Param
 render'param =
   \case
-    Param'Var a         -> render'strUnquoted a
+    Param'Name a         -> render'strUnquoted a
     Param'DictPattern b -> render'dictPattern b
     Param'Both a b      -> render'strUnquoted a <> "@" <>
                            render'dictPattern b
@@ -167,7 +167,7 @@ render'apply (Apply a b) =
 
 -- | Render a list literal (@[ ... ]@).
 render'list :: Render List
-render'list xs =
+render'list (List xs) =
   "[ " <> r xs <> "]"
   where
     r = Text.concat . fmap (\x -> render'expression'listContext x <> " ")

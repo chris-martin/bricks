@@ -28,6 +28,8 @@ module Bricks.Parsing
   , parse'strDynamic'quoted
   , parse'strDynamic'normalQ
   , parse'strDynamic'indentedQ
+  , parse'str'within'normalQ
+  , parse'str'escape'normalQ
   , parse'inStr
   , parse'inStr'1
 
@@ -90,6 +92,7 @@ import           Bricks.Internal.Functor (fmap, void, ($>), (<$>), (<&>))
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Seq     (Seq, (|>))
 import qualified Bricks.Internal.Seq     as Seq
+import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
 
 -- Parsec
@@ -98,11 +101,18 @@ import qualified Text.Parsec      as P
 import           Text.Parsec.Text (Parser)
 
 -- Base
-import Prelude (succ)
+import Control.Monad (fail)
+import Prelude       (succ)
+
+{- $setup
+
+>>> import Text.Parsec (parseTest)
+
+-}
 
 parse'spaces :: Parser ()
 parse'spaces =
-  void $ P.many (void P.space <|> parse'comment)
+  (void $ P.many (void (P.space <?> "") <|> parse'comment))
 
 parse'comment :: Parser ()
 parse'comment =
@@ -110,13 +120,13 @@ parse'comment =
 
 parse'comment'inline :: Parser ()
 parse'comment'inline =
-  void $ P.try (P.string "--") *> P.manyTill P.anyChar (P.char '\n')
+  void $ P.try (P.string "--" <?> "") *> P.manyTill P.anyChar (P.char '\n')
 
 parse'comment'block :: Parser ()
 parse'comment'block =
   start <* P.manyTill middle end
   where
-    start  = void $ P.try (P.string "{-")
+    start  = void $ P.try (P.string "{-" <?> "")
     middle = parse'comment'block <|> void P.anyChar
     end    = P.try (P.string "-}")
 
@@ -139,7 +149,19 @@ parse'keyword k =
     pure ()
 
 {- | Parser for an unquoted string. Unquoted strings are restricted to a
-conservative set of characters, and they may not be any of the keywords. -}
+conservative set of characters, and they may not be any of the keywords.
+
+>>> parseTest parse'strUnquoted "abc"
+unquoted "abc"
+
+>>> parseTest parse'strUnquoted "x{y"
+unquoted "x"
+
+>>> parseTest parse'strUnquoted "let"
+parse error at (line 1, column 4):
+unexpected end of input
+
+-}
 parse'strUnquoted :: Parser Str'Unquoted
 parse'strUnquoted =
   do
@@ -152,17 +174,37 @@ parse'strUnquoted =
       Just b  -> parse'spaces $> b
 
 {- | Parser for a static string which may be either quoted or unquoted.
-By "static," we mean that the string may /not/ contain antiquotation. -}
+
+>>> parseTest parse'strStatic "\"hello\""
+"hello"
+
+>>> parseTest parse'strStatic "hello"
+"hello"
+
+>>> parseTest parse'strStatic "\"a b\""
+"a b"
+
+>>> parseTest parse'strStatic "a b"
+"a"
+
+By "static," we mean that the string may /not/ contain antiquotation.
+
+>>> parseTest parse'strStatic "\"a${x}b\" xyz"
+parse error at (line 1, column 5):
+antiquotation is not allowed in this context
+
+-}
 parse'strStatic :: Parser Str'Static
 parse'strStatic =
-  parse'strStatic'quoted <|> parse'strStatic'unquoted
+  (parse'strStatic'quoted <|> parse'strStatic'unquoted) <?> "static string"
 
 -- | Parser for a static string that is quoted.
 parse'strStatic'quoted :: Parser Str'Static
 parse'strStatic'quoted =
-  parse'strDynamic'quoted <&> str'dynamicToStatic >>= \case
-    Nothing -> P.parserZero
-    Just x  -> pure x
+  P.char '"' *> parse'str'within'normalQ <* asum
+    [ P.char '"' *> parse'spaces
+    , P.string "${" *> fail "antiquotation is not allowed in this context"
+    ]
 
 -- | Parser for an unquoted static string.
 parse'strStatic'unquoted :: Parser Str'Static
@@ -186,7 +228,11 @@ parse'strDynamic'normalQ =
     go previousParts =
       asum
         [ end $> Str'Dynamic previousParts
-        , (chars <|> anti) >>= \x -> go $ previousParts |> x
+        , asum
+            [ parse'str'within'normalQ <&> Str'1'Literal
+            , anti
+            ]
+          >>= \x -> go $ previousParts |> x
         ]
 
     -- Read the closing " character
@@ -196,28 +242,28 @@ parse'strDynamic'normalQ =
     anti = fmap Str'1'Antiquote $
       P.try (P.string "${") *> parse'spaces *> parse'expression <* P.char '}'
 
-    -- Read some normal characters in the string
-    chars = do
-      xs <- P.many1 $ asum
-        [ do
-            c <- P.satisfy (\c -> c /= '$' && c /= '"' && c /= '\\')
-            pure $ Text.singleton c
-        , P.try $ do
-            c <- P.char '$'
-            _ <- P.notFollowedBy (P.char '{')
-            pure $ Text.singleton c
-        , do
-            _ <- P.char '\\'
-            asum
-              [ P.char '\\'   $> "\\"
-              , P.char '"'    $> "\""
-              , P.char 'n'    $> "\n"
-              , P.char 'r'    $> "\r"
-              , P.char 't'    $> "\t"
-              , P.string "${" $> "${"
-              ]
-        ]
-      pure $ Str'1'Literal (Text.concat xs)
+{- | Parser for at least one normal character, within a normally-quoted string
+context, up to but not including the end of the string or the start of an
+antiquotation. -}
+parse'str'within'normalQ :: Parser Text
+parse'str'within'normalQ = do
+  xs <- P.many1 $ asum
+    [ P.satisfy (\c -> c /= '$' && c /= '"' && c /= '\\') <&> Text.singleton
+    , P.try $ P.char '$' <* P.notFollowedBy (P.char '{')  <&> Text.singleton
+    , parse'str'escape'normalQ
+    ]
+  pure $ Text.concat xs
+
+parse'str'escape'normalQ :: Parser Text
+parse'str'escape'normalQ =
+  P.char '\\' *> asum
+    [ P.char '\\'   $> "\\"
+    , P.char '"'    $> "\""
+    , P.char 'n'    $> "\n"
+    , P.char 'r'    $> "\r"
+    , P.char 't'    $> "\t"
+    , P.string "${" $> "${"
+    ]
 
 {- | Parser for a dynamic string enclosed in "indented string" format,
 delimited by two single-quotes @''@...@''@. This form of string does not have
@@ -302,7 +348,7 @@ parse'param =
         -- If we read an @, then the next thing is a pattern.
         then Param'Both a <$> pattern
         -- Otherwise it's just the variable and we're done.
-        else pure $ Param'Var a
+        else pure $ Param'Name a
 
     -- A dict pattern. This branch backtracks because the beginning of a
     -- dict pattern looks like the beginning of a dict expression.
@@ -351,18 +397,55 @@ parse'dictPattern'start =
     , void $ parse'strUnquoted *> (P.char ',' <|> P.char '?' <|> P.char '}')
     ]
 
--- | Parser for a lambda expression (@x: y@).
+{- | Parser for a lambda expression (@x: y@).
+
+>>> parseTest parse'lambda "x: [x x \"a\"]"
+lambda (param "x") (list [var "x", var "x", str ["a"]])
+
+>>> parseTest parse'lambda "{a,b}:a"
+lambda (dict pattern [param "a", param "b"]) (var "a")
+
+>>> parseTest parse'lambda "{ ... }: \"x\""
+lambda (dict pattern [], ellipsis) (str ["x"])
+
+>>> parseTest parse'lambda "a@{ f, b ? g x, ... }: f b"
+lambda (param "a", dict pattern [param "f", param "b" with default (apply (var "g") (var "x"))], ellipsis) (apply (var "f") (var "b"))
+
+>>> parseTest parse'lambda "a: b: \"x\""
+lambda (param "a") (lambda (param "b") (str ["x"]))
+
+-}
 parse'lambda :: Parser Lambda
 parse'lambda =
   Lambda <$> parse'param <*> parse'expression
 
--- | Parser for a list expression (@[ ... ]@).
+{- | Parser for a list expression (@[ ... ]@).
+
+>>> parseTest parse'list "[]"
+list []
+
+>>> parseTest parse'list "[x \"one\" (a: b) (c d)]"
+list [var "x", str ["one"], lambda (param "a") (var "b"), apply (var "c") (var "d")]
+-}
 parse'list :: Parser List
 parse'list =
-  (P.char '[' *> parse'spaces *> parse'expressionList <* P.char ']' <* parse'spaces)
-  <&> Seq.fromList
+  (start *> parse'expressionList <* end) <&> List . Seq.fromList
+  where
+    start = P.char '[' *> parse'spaces
+    end   = P.char ']' <* parse'spaces
 
--- | Parser for a dict expression, either recursive (@rec@ keyword) or not.
+{- | Parser for a dict expression, either recursive (@rec@ keyword) or not.
+
+>>> parseTest parse'dict "{}"
+dict []
+
+>>> parseTest parse'dict "rec {  }"
+recursive dict []
+
+>>> parseTest parse'dict "{ a = b; inherit (x) y z \"s t\"; }"
+dict [binding (str ["a"]) (var "b"), inherit from (var "x") ["y", "z", "s t"]]
+
+-}
 parse'dict :: Parser Dict
 parse'dict =
   asum

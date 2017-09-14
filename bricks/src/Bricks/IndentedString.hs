@@ -1,5 +1,6 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Bricks.IndentedString
   (
@@ -36,15 +37,11 @@ convenient to use these literals for multi-line strings within an indented
 expression without the whitespace from indentation ending up as part of the
 string. -}
 newtype InStr = InStr { inStr'toSeq :: Seq InStr'1 }
+  deriving (Monoid, Semigroup)
 
-instance Semigroup InStr
+instance Show InStr
   where
-    InStr x <> InStr y = InStr (x <> y)
-
-instance Monoid InStr
-  where
-    mappend = (<>)
-    mempty = InStr Seq.empty
+    show = show . inStr'toList
 
 inStr'toList :: InStr -> [InStr'1]
 inStr'toList =
@@ -59,6 +56,10 @@ data InStr'1 =
     , inStr'1'str :: Str'Dynamic
         -- ^ The rest of the line after any leading spaces.
     }
+
+instance Show InStr'1
+  where
+    show (InStr'1 n s) = "indent-" <> show n <> " " <> show s
 
 {- | Join 'InStr's with newlines interspersed. -}
 inStr'join :: InStr -> Str'Dynamic

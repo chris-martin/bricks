@@ -35,6 +35,10 @@ The constructor is tagged "unsafe" because it lets you construct and invalid
 value. Prefer 'str'tryUnquoted' which does validate the text. -}
 newtype Str'Unquoted = Str'Unquoted'Unsafe { str'unquotedToStatic :: Text }
 
+instance Show Str'Unquoted
+  where
+    showsPrec _ x = ("unquoted " <>) . shows (str'unquotedToStatic x)
+
 str'tryUnquoted :: Text -> Maybe Str'Unquoted
 str'tryUnquoted x =
   if str'canRenderUnquoted x then Just (Str'Unquoted'Unsafe x) else Nothing

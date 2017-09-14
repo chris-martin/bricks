@@ -50,6 +50,8 @@ module Bricks
   -------------------------------------------------
   -- * Strings
   , str'escape
+  , parse'str'within'normalQ
+  , parse'str'escape'normalQ
   -- ** Static strings
   , Str'Static
   , render'strStatic'unquotedIfPossible
@@ -96,7 +98,7 @@ module Bricks
   , inStr'1'modifyLevel
   -------------------------------------------------
   -- * Lists
-  , List
+  , List (..)
   , render'list
   , parse'list
   -------------------------------------------------

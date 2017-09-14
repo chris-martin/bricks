@@ -27,11 +27,12 @@ import qualified Bricks.Internal.Text    as Text
 import qualified Data.Char as Char
 import qualified Data.List as List
 
-{- | A string that can be rendered unquoted. Bare strings are restricted to a
-conservative set of characters; see 'str'canRenderUnquoted' for the full rules.
+{- | A string that can be rendered unquoted. Unquoted strings are restricted to
+a conservative set of characters; see 'str'canRenderUnquoted' for the full
+rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
-value. Prefer 'bareMaybe' which does validate the text. -}
+value. Prefer 'str'tryUnquoted' which does validate the text. -}
 newtype Str'Unquoted = Str'Unquoted'Unsafe { str'unquotedToStatic :: Text }
 
 str'tryUnquoted :: Text -> Maybe Str'Unquoted
@@ -42,7 +43,7 @@ str'tryUnquoted x =
 We allow a string to render unquoted if all these conditions are met:
 
 - The string is nonempty
-- All characters satify 'canBeBare'char'
+- All characters satify 'char'canRenderUnquoted'
 - The string is not a keyword
 
 >>> str'canRenderUnquoted "-ab_c"

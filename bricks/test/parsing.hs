@@ -62,7 +62,7 @@ parseTest p input =
 
     ]
 
-prop_parse_bare = property $ do
+prop_parse_str_unquoted = property $ do
 
   let test = parseTest $ fmap str'unquotedToStatic $ parse'strUnquoted
 
@@ -77,8 +77,8 @@ prop_parse_bare = property $ do
   test "a b"   === [text|a
                         |Remaining input: "b"|]
 
-  -- The bare identifier parser doesn't backtrack.
-  -- Note how in this example fails and consumes input.
+  -- The unquoted string parser doesn't backtrack.
+  -- Note how in this example it fails and consumes input.
   test "rec { }" === [text|Parse error at (line 1, column 4):
                           | - unexpected " "
                           |Parser failed and consumed input|]
@@ -243,7 +243,7 @@ prop_parse_dot_rhs_chain = property $ do
   -- The dots parser consumes any trailing whitespace beyond the dot list.
   test ".a "      === [text|"a"|]
 
-  -- Dot attributes are usually bare identifiers, but they may also be quoted.
+  -- Dot attributes are usually unquoted strings, but they may also be quoted.
   test ".\"a\""   === [text|"a"|]
   test ". \"a\""  === [text|"a"|]
 
@@ -289,7 +289,7 @@ prop_parse_expression = property $ do
                    | - unexpected end of input
                    | - expecting expression|]
 
-  -- A very simple expression: a one-letter bare identifier
+  -- A very simple expression: a one-letter variable
   test "a"         === [text|a|]
 
   -- Parsing an expression consumes any subsequent whitespace.
@@ -344,9 +344,9 @@ prop_parse_expression = property $ do
   -- A minimal dict literal
   test "{ x = y; }"  === [text|{ x = y; }|]
 
-  -- The left-hand side of a binding is allowed to be anything, even something
-  -- that would not be valid as a bare identifier, if it's in quotes.
+  -- The left-hand side of a dict binding is allowed to be any expression.
   test "{ \"a b\" = y; }"  === [text|{ "a b" = y; }|]
+  test "{ ${x} = y; }"     === [text|{ ${x} = y; }|]
 
   -- It may even be the empty string.
   test "{ \"\" = y; }"     === [text|{ "" = y; }|]

@@ -32,11 +32,11 @@ escape'normal =
   Text.replace "\t" "\\t" .
   Text.replace "\\" "\\\\"
 
--- | Render a bare string, in bare (unquoted) form.
+-- | Render an unquoted string in unquoted form.
 render'strUnquoted :: Render Str'Unquoted
 render'strUnquoted = str'unquotedToStatic
 
--- | Render a static string, in bare (unquoted) form if possible.
+-- | Render a static string, in unquoted form if possible.
 render'strStatic'unquotedIfPossible :: Render Str'Static
 render'strStatic'unquotedIfPossible x =
   if str'canRenderUnquoted x then x else render'strStatic'quoted x
@@ -46,7 +46,7 @@ render'strStatic'quoted :: Render Str'Static
 render'strStatic'quoted x =
   "\"" <> escape'normal x <> "\""
 
--- | Render a dynamic string, in bare (unquoted) form if possible.
+-- | Render a dynamic string, in unquoted form if possible.
 render'strDynamic'unquotedIfPossible :: Render Str'Dynamic
 render'strDynamic'unquotedIfPossible d =
   case str'dynamicToStatic d of

@@ -60,8 +60,7 @@ import           Bricks.Internal.Text    (Text)
 
 data Expression
   = Expr'Var Str'Unquoted
-      -- ^ A /bare/ (unquoted) string like @x@ that represents a reference to
-      -- some variable.
+      -- ^ A /variable/, such as @x@.
   | Expr'Str Str'Dynamic
       -- ^ A /string/ may be quoted either in the traditional form using a
       -- single double-quote (@"@...@"@):

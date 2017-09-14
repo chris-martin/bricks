@@ -69,7 +69,7 @@ parse'keyword k =
 
     pure ()
 
-{- | Parser for a bare (unquoted) string. Bare strings are restricted to a
+{- | Parser for an unquoted string. Unquoted strings are restricted to a
 conservative set of characters, and they may not be any of the keywords. -}
 parse'strUnquoted :: Parser Str'Unquoted
 parse'strUnquoted =
@@ -77,12 +77,12 @@ parse'strUnquoted =
     -- Consume at least one character
     a <- Text.pack <$> P.many1 (P.satisfy char'canRenderUnquoted)
 
-    -- Fail if what we just parsed isn't a valid bare string
+    -- Fail if what we just parsed isn't a valid unquoted string
     case str'tryUnquoted a of
       Nothing -> P.parserZero
       Just b  -> parse'spaces $> b
 
-{- | Parser for a static string which may be either bare or a quoted.
+{- | Parser for a static string which may be either quoted or unquoted.
 By "static," we mean that the string may /not/ contain antiquotation. -}
 parse'strStatic :: Parser Str'Static
 parse'strStatic =
@@ -95,7 +95,7 @@ parse'strStatic'quoted =
     Nothing -> P.parserZero
     Just x  -> pure x
 
--- | Parser for a static string that is bare (unquoted).
+-- | Parser for an unquoted static string.
 parse'strStatic'unquoted :: Parser Str'Static
 parse'strStatic'unquoted =
   parse'strUnquoted <&> str'unquotedToStatic
@@ -213,15 +213,15 @@ where it has overlap with other types of expressions. -}
 parse'param :: Parser Param
 parse'param =
   asum
-    [ startBare
+    [ startWithVar
     , pattern <&> Param'DictPattern
     ]
   where
 
-    -- A parameter that starts with a bare string. This could be a simple
-    -- param that consists only of the bare string, or it could be followed by
-    -- a dict pattern.
-    startBare = do
+    -- A parameter that starts with a variable. This could be a simple param
+    -- that consists only of only the variable, or the variable may be followed
+    -- by a dict pattern.
+    startWithVar = do
       -- This part backtracks because until we get to the : or @, we don't
       -- know whether the variable name we're reading is a lambda parameter
       -- or just the name by itself (and not part of a lambda).
@@ -232,7 +232,7 @@ parse'param =
       if b
         -- If we read an @, then the next thing is a pattern.
         then Param'Both a <$> pattern
-        -- Otherwise it's just the bare identifier and we're done.
+        -- Otherwise it's just the variable and we're done.
         else pure $ Param'Var a
 
     -- A dict pattern. This branch backtracks because the beginning of a
@@ -448,7 +448,7 @@ parse'expression'paren =
 
 One of:
 
-- a bare string
+- an unquoted string
 - a quoted dynamic string
 - an arbitrary expression wrapped in antiquotes (@${@...@}@)
 -}

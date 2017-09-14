@@ -282,12 +282,6 @@ parse'dictPattern'start =
     , void $ parse'strUnquoted *> (P.char ',' <|> P.char '?' <|> P.char '}')
     ]
 
-applyArgs :: Expression   -- ^ Function
-          -> [Expression] -- ^ Args
-          -> Expression   -- ^ Function application
-applyArgs =
-  foldl (\acc b -> Expr'Apply (Apply acc b))
-
 -- | Parser for a lambda expression (@x: y@).
 parse'lambda :: Parser Lambda
 parse'lambda =
@@ -329,10 +323,6 @@ parse'dot'rhs'chain :: Parser [Expression]
 parse'dot'rhs'chain =
   P.many $
   P.char '.' *> parse'spaces *> parse'expression'dictKey <* parse'spaces
-
-applyDots :: Expression -> [Expression] -> Expression
-applyDots =
-  foldl (\acc b -> Expr'Dot (Dot acc b))
 
 parse'let :: Parser Let
 parse'let =
@@ -406,7 +396,7 @@ parse'expression =
       , parse'lambda <&> Expr'Lambda
       , parse'expressionList >>= \case
           [] -> P.parserZero
-          f : args -> pure $ applyArgs f args
+          f : args -> pure $ expression'applyArgs f args
       ]
 
 {- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
@@ -420,7 +410,7 @@ This expression is not a lambda, a function application, a @let@-@in@
 expression, or a @with@ expression. -}
 parse'expressionList'1 :: Parser Expression
 parse'expressionList'1 =
-  applyDots
+  expression'applyDots
     <$> parse'expressionList'1'noDot
     <*> parse'dot'rhs'chain
     <?> "expression list item"

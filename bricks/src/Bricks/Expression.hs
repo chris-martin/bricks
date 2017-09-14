@@ -25,6 +25,7 @@ module Bricks.Expression
 
   -- * Dict lookup
   , Dot (..)
+  , expression'applyDots
 
   -- * Lambdas
   , Lambda (..)
@@ -36,6 +37,7 @@ module Bricks.Expression
 
   -- * Function application
   , Apply (..)
+  , expression'applyArgs
 
   -- * @let@
   , Let (..)
@@ -380,3 +382,17 @@ data Inherit =
     { inherit'from :: Maybe Expression
     , inherit'list :: Seq Str'Static
     }
+
+expression'applyArgs
+  :: Expression   -- ^ Function
+  -> [Expression] -- ^ Args
+  -> Expression   -- ^ Function application
+expression'applyArgs =
+  foldl (\acc b -> Expr'Apply (Apply acc b))
+
+expression'applyDots
+  :: Expression   -- ^ Dict
+  -> [Expression] -- ^ Lookups
+  -> Expression   -- ^ Dot expression
+expression'applyDots =
+  foldl (\acc b -> Expr'Dot (Dot acc b))

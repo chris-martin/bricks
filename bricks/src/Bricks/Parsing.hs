@@ -185,7 +185,7 @@ parse'strDynamic'normalQ =
     go :: Seq Str'1 -> Parser Str'Dynamic
     go previousParts =
       asum
-        [ end $> previousParts
+        [ end $> Str'Dynamic previousParts
         , (chars <|> anti) >>= \x -> go $ previousParts |> x
         ]
 
@@ -253,9 +253,9 @@ parse'inStr'1 =
     go :: Seq Str'1 -> Parser Str'Dynamic
     go previousParts =
       asum
-        [ end              $> previousParts
-        , chars           >>= \x  -> go (previousParts |> x)
-        , parse'antiquote >>= \xs -> go (previousParts <> xs)
+        [ end              $> Str'Dynamic previousParts
+        , chars           >>= \x                -> go (previousParts |> x)
+        , parse'antiquote >>= \(Str'Dynamic xs) -> go (previousParts <> xs)
         ]
 
     end = P.lookAhead $ asum
@@ -269,12 +269,12 @@ parse'inStr'1 =
       , P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
       ]
 
-parse'antiquote :: Parser (Seq Str'1)
+parse'antiquote :: Parser Str'Dynamic
 parse'antiquote =
   (P.try (P.string "${") *> parse'spaces *> parse'expression <* P.char '}')
   <&> \case
     Expr'Str x -> x
-    x -> Seq.singleton (Str'1'Antiquote x)
+    x -> strDynamic'singleton (Str'1'Antiquote x)
 
 {- | Parser for a function parameter (the beginning of a 'Lambda'), including
 the colon. This forms part of 'parse'expression', so it backtracks in places

@@ -8,8 +8,11 @@ module Bricks.Expression
 
   -- * Strings
   , Str'Static
-  , Str'Dynamic
+  , Str'Dynamic (..)
   , Str'1 (..)
+  , strDynamic'toList
+  , strDynamic'fromList
+  , strDynamic'singleton
 
   -- * String conversions
   , str'dynamicToStatic
@@ -255,16 +258,37 @@ ${name}!"@. See 'Expr'Str'.
 
 We use the description "dynamic" to mean the string may contain antiquotation,
 in contrast with 'Str'Static' which cannot. -}
-type Str'Dynamic = Seq Str'1
+newtype Str'Dynamic = Str'Dynamic { strDynamic'toSeq :: Seq Str'1 }
+
+instance Semigroup Str'Dynamic
+  where
+    Str'Dynamic x <> Str'Dynamic y = Str'Dynamic (x <> y)
+
+instance Monoid Str'Dynamic
+  where
+    mappend = ((<>))
+    mempty = Str'Dynamic Seq.empty
+
+strDynamic'toList :: Str'Dynamic -> [Str'1]
+strDynamic'toList =
+  Seq.toList . strDynamic'toSeq
+
+strDynamic'fromList :: [Str'1] -> Str'Dynamic
+strDynamic'fromList =
+  Str'Dynamic . Seq.fromList
+
+strDynamic'singleton :: Str'1 -> Str'Dynamic
+strDynamic'singleton =
+  Str'Dynamic . Seq.singleton
 
 str'dynamicToStatic :: Str'Dynamic -> Maybe Str'Static
-str'dynamicToStatic = Seq.toList >>> \case
+str'dynamicToStatic = strDynamic'toList >>> \case
   [Str'1'Literal x] -> Just x
   _                 -> Nothing
 
 str'staticToDynamic :: Str'Static -> Str'Dynamic
-str'staticToDynamic x =
-  Seq.singleton (Str'1'Literal x)
+str'staticToDynamic =
+  strDynamic'singleton . Str'1'Literal
 
 str'unquotedToDynamic :: Str'Unquoted -> Str'Dynamic
 str'unquotedToDynamic =

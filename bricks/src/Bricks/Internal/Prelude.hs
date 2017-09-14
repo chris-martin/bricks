@@ -10,6 +10,7 @@ module Bricks.Internal.Prelude
   , module Data.Foldable
   , module Data.Function
   , module Data.Maybe
+  , module Data.Monoid
   , module Data.Semigroup
   , module Data.String
   , module Numeric.Natural
@@ -26,6 +27,7 @@ import Data.Eq             (Eq ((/=), (==)))
 import Data.Foldable       (asum, fold, foldMap, foldl, foldr)
 import Data.Function       (($), (.))
 import Data.Maybe          (Maybe (Just, Nothing), catMaybes, maybe)
-import Data.Semigroup      ((<>))
+import Data.Monoid         (Monoid (mappend, mempty))
+import Data.Semigroup      (Semigroup ((<>)))
 import Data.String         (String)
 import Numeric.Natural     (Natural)

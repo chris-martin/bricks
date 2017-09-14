@@ -55,12 +55,14 @@ data InStr'1 =
 {- | Join 'InStr's with newlines interspersed. -}
 inStr'join :: InStr -> Str'Dynamic
 inStr'join xs =
-  Seq.concat $ Seq.intersperse (Seq.singleton (Str'1'Literal "\n"))
-                               (f <$> inStr'toSeq xs)
+  Str'Dynamic . Seq.concat $
+    Seq.intersperse
+      (Seq.singleton (Str'1'Literal "\n"))
+      (f <$> inStr'toSeq xs)
   where
     f :: InStr'1 -> Seq Str'1
-    f (InStr'1 n parts) =
-      Str'1'Literal (Text.replicate (fromIntegral n) " ") <| parts
+    f (InStr'1 n parts) = Str'1'Literal (Text.replicate (fromIntegral n) " ")
+                          <| strDynamic'toSeq parts
 
 {- | Determines whether an 'InStr'1' contains any non-space
 characters. The opposite of 'inStr'1'nonEmpty'.
@@ -73,7 +75,7 @@ inStr'1'nonEmpty =
 
 -- | The opposite of 'inStr'1'nonEmpty'.
 inStr'1'empty :: InStr'1 -> Bool
-inStr'1'empty (InStr'1{ inStr'1'str = x }) =
+inStr'1'empty (InStr'1{ inStr'1'str = Str'Dynamic x }) =
   Seq.null x
 
 {- | Determine how many characters of whitespace to strip from an indented

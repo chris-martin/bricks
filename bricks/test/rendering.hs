@@ -31,7 +31,7 @@ prop_render_identifier = property $ do
 
 prop_render_string_dynamic_quoted = property $ do
 
-  let test = render'strDynamic'quoted
+  let test = render'strDynamic'quoted . strDynamic'fromList
 
   test []                        === [text|""|]
   test [ Str'1'Literal "hello" ] === [text|"hello"|]
@@ -47,7 +47,7 @@ prop_render_string_dynamic_quoted = property $ do
 
 prop_render_indented_string_line = property $ do
 
-  let test n xs = render'inStr'1 $ InStr'1 n xs
+  let test n xs = render'inStr'1 $ InStr'1 n (strDynamic'fromList xs)
 
   test 2 [ Str'1'Literal "abc"
          , Str'1'Antiquote (Expr'Var $ Str'Unquoted'Unsafe "x")
@@ -64,7 +64,7 @@ prop_render_dict_pattern = property $ do
   let
     item1 = DictPattern'1 (Str'Unquoted'Unsafe "x") Nothing
     item2 = DictPattern'1 (Str'Unquoted'Unsafe "y") $
-      Just $ Expr'Str [ Str'1'Literal "abc" ]
+      Just $ Expr'Str (strDynamic'singleton (Str'1'Literal "abc"))
 
   test [ item1, item2 ] False === [text|{ x, y ? "abc" }|]
   test [ item1, item2 ] True  === [text|{ x, y ? "abc", ... }|]

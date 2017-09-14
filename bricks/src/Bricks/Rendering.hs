@@ -110,7 +110,7 @@ render'strDynamic'unquotedIfPossible d =
 -- | Render a dynamic string, in quoted form.
 render'strDynamic'quoted :: Render Str'Dynamic
 render'strDynamic'quoted xs =
-  "\"" <> foldMap r xs <> "\""
+  "\"" <> foldMap r (strDynamic'toSeq xs) <> "\""
   where
     r = \case
       Str'1'Literal x   -> str'escape x
@@ -119,7 +119,7 @@ render'strDynamic'quoted xs =
 -- | Render one line of an indented string ('InStr').
 render'inStr'1 :: Render InStr'1
 render'inStr'1 (InStr'1 n xs) =
-  Text.replicate (fromIntegral n) " " <> foldMap r xs
+  Text.replicate (fromIntegral n) " " <> foldMap r (strDynamic'toSeq xs)
   where
     r = \case
       Str'1'Literal x -> x
@@ -131,7 +131,7 @@ render'inStr'1 (InStr'1 n xs) =
 render'param :: Render Param
 render'param =
   \case
-    Param'Var a        -> render'strUnquoted a
+    Param'Var a         -> render'strUnquoted a
     Param'DictPattern b -> render'dictPattern b
     Param'Both a b      -> render'strUnquoted a <> "@" <>
                            render'dictPattern b

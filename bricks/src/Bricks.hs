@@ -58,8 +58,11 @@ module Bricks
   , parse'strStatic'quoted
   , parse'strStatic'unquoted
   -- ** Dynamic strings
-  , Str'Dynamic
+  , Str'Dynamic (..)
   , Str'1 (..)
+  , strDynamic'toList
+  , strDynamic'fromList
+  , strDynamic'singleton
   , render'strDynamic'unquotedIfPossible
   , render'strDynamic'quoted
   , parse'strDynamic'quoted

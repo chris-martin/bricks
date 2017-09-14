@@ -1,6 +1,9 @@
 module Bricks.Internal.Functor
+
   ( module Data.Functor
+
   , (<&>)
+
   ) where
 
 import Data.Functor

@@ -1,9 +1,12 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Bricks.Internal.Text
+
   ( module Data.Text
+
   , concat
   , intercalate
+
   ) where
 
 -- Text

@@ -1,4 +1,5 @@
 module Bricks.Internal.Prelude
+
   ( module Control.Applicative
   , module Control.Arrow
   , module Control.Monad
@@ -12,6 +13,7 @@ module Bricks.Internal.Prelude
   , module Data.Semigroup
   , module Data.String
   , module Numeric.Natural
+
   ) where
 
 import Control.Applicative (pure, (*>), (<*), (<*>), (<|>))

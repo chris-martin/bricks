@@ -1,12 +1,15 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Bricks.Internal.Seq
+
   ( module Data.Sequence
+
   , concat
   , intersperse
   , map
   , minimum
   , toList
+
   ) where
 
 -- Containers

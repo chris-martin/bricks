@@ -8,6 +8,7 @@ module Bricks.UnquotedString
 
   -- * Constructor
   , str'tryUnquoted
+  , str'unquoted'orThrow
 
   -- * Predicates
   , str'canRenderUnquoted
@@ -26,6 +27,7 @@ import qualified Bricks.Internal.Text    as Text
 -- Base
 import qualified Data.Char as Char
 import qualified Data.List as List
+import Prelude (error)
 
 {- | A string that can be rendered unquoted. Unquoted strings are restricted to
 a conservative set of characters; see 'str'canRenderUnquoted' for the full
@@ -42,6 +44,12 @@ instance Show Str'Unquoted
 str'tryUnquoted :: Text -> Maybe Str'Unquoted
 str'tryUnquoted x =
   if str'canRenderUnquoted x then Just (Str'Unquoted'Unsafe x) else Nothing
+
+-- | Throws an exception if the string cannot render unquoted.
+str'unquoted'orThrow :: Text -> Str'Unquoted
+str'unquoted'orThrow x =
+  if str'canRenderUnquoted x then Str'Unquoted'Unsafe x else
+  error $ "String " <> show x <> " cannot render unquoted"
 
 {- | Whether a string having this name can be rendered without quoting it.
 We allow a string to render unquoted if all these conditions are met:

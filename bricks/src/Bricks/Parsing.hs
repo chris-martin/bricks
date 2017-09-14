@@ -404,13 +404,13 @@ parse'dictPattern'start =
 lambda (param "x") (list [var "x", var "x", str ["a"]])
 
 >>> parseTest parse'lambda "{a,b}:a"
-lambda (dict pattern [param "a", param "b"]) (var "a")
+lambda (pattern [param "a", param "b"]) (var "a")
 
 >>> parseTest parse'lambda "{ ... }: \"x\""
-lambda (dict pattern [], ellipsis) (str ["x"])
+lambda (pattern [] <> ellipsis) (str ["x"])
 
 >>> parseTest parse'lambda "a@{ f, b ? g x, ... }: f b"
-lambda (param "a", dict pattern [param "f", param "b" with default (apply (var "g") (var "x"))], ellipsis) (apply (var "f") (var "b"))
+lambda (param "a" <> pattern [param "f", param "b" & def (apply (var "g") (var "x"))] <> ellipsis) (apply (var "f") (var "b"))
 
 >>> parseTest parse'lambda "a: b: \"x\""
 lambda (param "a") (lambda (param "b") (str ["x"]))
@@ -442,10 +442,10 @@ parse'list =
 dict []
 
 >>> parseTest parse'dict "rec {  }"
-recursive dict []
+rec'dict []
 
 >>> parseTest parse'dict "{ a = b; inherit (x) y z \"s t\"; }"
-dict [binding (str ["a"]) (var "b"), inherit from (var "x") ["y", "z", "s t"]]
+dict [binding (str ["a"]) (var "b"), inherit'from (var "x") ["y", "z", "s t"]]
 
 -}
 parse'dict :: Parser Dict
@@ -455,12 +455,28 @@ parse'dict =
     , parse'dict'rec   <&> Dict True
     ]
 
--- | Parser for a recursive (@rec@ keyword) dict.
+{- | Parser for a recursive (@rec@ keyword) dict.
+
+>>> parseTest parse'dict "rec {  }"
+rec'dict []
+
+>>> parseTest parse'dict "rec { a = \"1\"; b = \"${a}2\"; }"
+rec'dict [binding (str ["a"]) (str ["1"]), binding (str ["b"]) (str [antiquote (var "a"), "2"])]
+
+-}
 parse'dict'rec :: Parser (Seq DictBinding)
 parse'dict'rec =
   parse'keyword keyword'rec *> parse'dict'noRec
 
--- | Parser for a non-recursive (no @rec@ keyword) dict.
+{- | Parser for a non-recursive (no @rec@ keyword) dict.
+
+>>> parseTest parse'dict "{  }"
+dict []
+
+>>> parseTest parse'dict "{ a = \"1\"; b = \"${a}2\"; }"
+dict [binding (str ["a"]) (str ["1"]), binding (str ["b"]) (str [antiquote (var "a"), "2"])]
+
+-}
 parse'dict'noRec :: Parser (Seq DictBinding)
 parse'dict'noRec =
   P.char '{' *> parse'spaces *> go Seq.empty
@@ -472,7 +488,18 @@ parse'dict'noRec =
       ]
 
 {- | Parser for a chain of dict lookups (like @.a.b.c@) on the right-hand side
-of a 'Dot' expression. -}
+of a 'Dot' expression.
+
+>>> parseTest parse'dot'rhs'chain ""
+[]
+
+>>> parseTest parse'dot'rhs'chain ".abc"
+[str ["abc"]]
+
+>>> parseTest parse'dot'rhs'chain ".a.${b}.\"c\".\"d${e}\""
+[str ["a"],var "b",str ["c"],str ["d", antiquote (var "e")]]
+
+-}
 parse'dot'rhs'chain :: Parser [Expression]
 parse'dot'rhs'chain =
   P.many $
@@ -635,6 +662,7 @@ One of:
 - an unquoted string
 - a quoted dynamic string
 - an arbitrary expression wrapped in antiquotes (@${@...@}@)
+
 -}
 parse'expression'dictKey :: Parser Expression
 parse'expression'dictKey =

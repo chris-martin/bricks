@@ -406,8 +406,8 @@ data With =
 
 data Inherit =
   Inherit
-    { inherit'from :: Maybe Expression
-    , inherit'list :: Seq Str'Static
+    { inherit'source :: Maybe Expression
+    , inherit'names :: Seq Str'Static
     }
 
 expression'applyArgs
@@ -424,19 +424,18 @@ expression'applyDots
 expression'applyDots =
   foldl (\acc b -> Expr'Dot (Dot acc b))
 
-
 --------------------------------------------------------------------------------
 --  Show
 --------------------------------------------------------------------------------
 
-{- The Show instances exist for the sake of doctests and REPL experimentation.
-They are designed to strike a balance in verbosity between the derived Show
+{- | This instance is designed for doctests and REPL experimentation. The
+format is designed to strike a balance in verbosity between the derived 'Show'
 implementations (which are unwieldily long) and the Bricks language itself
 (which is quite terse but unsuitable for demonstrating the parser, as
 outputting a Bricks rendering of parse result wouldn't illumunate anyone's
-understanding of the AST that the Show instances are here to depict). -}
-
+understanding of the AST that the 'Show' instances are here to depict). -}
 instance Show Expression        where showsPrec = showsPrec'
+
 instance Show Str'Dynamic       where showsPrec = showsPrec'
 instance Show Str'1             where showsPrec = showsPrec'
 instance Show List              where showsPrec = showsPrec'
@@ -475,7 +474,8 @@ instance Show' Expression
 
 instance Show' Str'Dynamic
   where
-    show' x = Text.unwords ["str", show'list (strDynamic'toList x)]
+    show' x =
+      Text.unwords ["str", show'list (strDynamic'toList x)]
 
 instance Show' Str'1
   where
@@ -490,7 +490,8 @@ instance Show' List
 instance Show' Dict
   where
     show' (Dict r bs) =
-      Text.unwords $ (if r then ("recursive":) else id) ["dict", show'list bs]
+      Text.unwords
+        [if r then "rec'dict" else "dict", show'list bs]
 
 instance Show' DictBinding
   where
@@ -511,14 +512,14 @@ instance Show' Param
     show' = \case
       Param'Name a -> show'param a
       Param'DictPattern b -> show' b
-      Param'Both a b -> Text.intercalate ", " [ show'param a, show' b ]
+      Param'Both a b -> Text.intercalate " <> " [ show'param a, show' b ]
 
 instance Show' DictPattern
   where
     show' = \case
       DictPattern xs e ->
-        Text.intercalate ", " $
-        [Text.unwords ["dict pattern", show'list xs]] <>
+        Text.intercalate " <> " $
+        [Text.unwords ["pattern", show'list xs]] <>
         (if e then ["ellipsis"] else [])
 
 instance Show' DictPattern'1
@@ -526,7 +527,7 @@ instance Show' DictPattern'1
     show' (DictPattern'1 a mb) =
       Text.unwords $
         show'param a :
-        maybe [] (\b -> [Text.unwords ["with default", show'paren b]]) mb
+        maybe [] (\b -> [Text.unwords ["& def", show'paren b]]) mb
 
 instance Show' Apply
   where
@@ -534,7 +535,7 @@ instance Show' Apply
 
 instance Show' Let
   where
-    show' (Let xs y) = Text.unwords ["let", show'list xs, show'paren y]
+    show' (Let xs y) = Text.unwords ["let'in", show'list xs, show'paren y]
 
 instance Show' LetBinding
   where
@@ -551,8 +552,7 @@ instance Show' Inherit
   where
     show' (Inherit mf xs) =
       Text.unwords $
-        ("inherit" :) $
-        (maybe id (\a -> ("from" :) . (show'paren a :)) mf) $
+        (maybe ("inherit":) (\a -> ("inherit'from" :) . (show'paren a :)) mf) $
         [show'list' $ fmap show'quoted' xs]
 
 show'list :: (Foldable f, Show' a) => f a -> Text

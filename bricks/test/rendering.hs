@@ -6,6 +6,7 @@
 
 -- Bricks
 import Bricks
+import Bricks.Expression.Construction
 
 -- Bricks internal
 import Bricks.Internal.Prelude
@@ -23,6 +24,34 @@ import System.IO (IO)
 
 main :: IO ()
 main = runTests $$(Hedgehog.discover)
+
+prop_render_expression :: Property
+prop_render_expression = property $ do
+
+  render'expression (dot (var "a") (str ["b"])) === [text|a.b|]
+
+  render'expression (dot (var "a") (var "b"))   === [text|a.${b}|]
+
+  render'expression (dot (str ["a"])
+    (str ["b", antiquote (var "c")]))           === [text|"a"."b${c}"|]
+
+  render'expression
+    (lambda
+      (param "a" <> pattern
+        [ param "f"
+        , param "b" & def (apply (var "g") (var "x"))
+        ] <> ellipsis)
+      (apply (var "f") (var "b")))
+    === [text|a@{ f, b ? g x, ... }: f b|]
+
+  render'expression
+    (let'in
+      [ binding "d" (dict
+        [ binding (str ["a"]) (str ["b", antiquote (var "c")])
+        , inherit'from (var "x") ["y", "z"]
+        ])]
+      (dot (var "d") (str ["y"])))
+    === [text|let d = { a = "b${c}"; inherit (x) y z; }; in d.y|]
 
 prop_render_identifier :: Property
 prop_render_identifier = property $ do

@@ -11,7 +11,7 @@ Notable differences from Nix:
 - The concept of "set" is referred to as "dict" (this is not actually a language
   difference, I just use a different word to talk about the same concept)
 
-Everything is re-exported from this module. Overview of the smaller modules:
+The following modules are re-exported from this module in their entireties:
 
 - "Bricks.Expression" - Defines most of the types, notably 'Expression'
 - "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
@@ -23,6 +23,11 @@ Everything is re-exported from this module. Overview of the smaller modules:
   into Bricks code
 - "Bricks.UnquotedString" - Defines the rules for what strings are allowed to
   appear unquoted in Bricks code
+
+Other modules:
+
+- "Bricks.Expression.Construction" - Functions for constructing 'Expression's
+  in a way that matches their 'Show' implementations.
 
 -}
 module Bricks
@@ -73,6 +78,7 @@ module Bricks
   -- ** Unquoted strings
   , Str'Unquoted (..)
   , str'tryUnquoted
+  , str'unquoted'orThrow
   , str'canRenderUnquoted
   , char'canRenderUnquoted
   , render'strUnquoted

@@ -247,12 +247,11 @@ context, up to but not including the end of the string or the start of an
 antiquotation. -}
 parse'str'within'normalQ :: Parser Text
 parse'str'within'normalQ = do
-  xs <- P.many1 $ asum
+  fmap Text.concat $ P.many1 $ asum
     [ P.satisfy (\c -> c /= '$' && c /= '"' && c /= '\\') <&> Text.singleton
     , P.try $ P.char '$' <* P.notFollowedBy (P.char '{')  <&> Text.singleton
     , parse'str'escape'normalQ
     ]
-  pure $ Text.concat xs
 
 parse'str'escape'normalQ :: Parser Text
 parse'str'escape'normalQ =

@@ -62,7 +62,7 @@ parse'keyword k =
     -- of a valid identifier. For example, this prevents this parser from
     -- interpreting the beginning of an identifier named "letter" as the
     -- keyword "let".
-    _ <- P.notFollowedBy (P.satisfy canBeBare'char)
+    _ <- P.notFollowedBy (P.satisfy char'canRenderUnquoted)
 
     -- As usual, consume trailing spaces.
     _ <- parse'spaces
@@ -75,7 +75,7 @@ parse'bare :: Parser Str'Unquoted
 parse'bare =
   do
     -- Consume at least one character
-    a <- Text.pack <$> P.many1 (P.satisfy canBeBare'char)
+    a <- Text.pack <$> P.many1 (P.satisfy char'canRenderUnquoted)
 
     -- Fail if what we just parsed isn't a valid bare string
     case bareMaybe a of

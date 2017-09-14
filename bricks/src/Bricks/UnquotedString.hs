@@ -10,8 +10,8 @@ module Bricks.UnquotedString
   , bareMaybe
 
   -- * Predicates
-  , canBeBare'str
-  , canBeBare'char
+  , str'canRenderUnquoted
+  , char'canRenderUnquoted
 
   ) where
 
@@ -28,7 +28,7 @@ import qualified Data.Char as Char
 import qualified Data.List as List
 
 {- | A string that can be rendered unquoted. Bare strings are restricted to a
-conservative set of characters; see 'canBeBare'str' for the full rules.
+conservative set of characters; see 'str'canRenderUnquoted' for the full rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
 value. Prefer 'bareMaybe' which does validate the text. -}
@@ -36,7 +36,7 @@ newtype Str'Unquoted = Str'Unquoted'Unsafe { bare'str :: Text }
 
 bareMaybe :: Text -> Maybe Str'Unquoted
 bareMaybe x =
-  if canBeBare'str x then Just (Str'Unquoted'Unsafe x) else Nothing
+  if str'canRenderUnquoted x then Just (Str'Unquoted'Unsafe x) else Nothing
 
 {- | Whether a string having this name can be rendered without quoting it.
 We allow a string to render unquoted if all these conditions are met:
@@ -45,26 +45,26 @@ We allow a string to render unquoted if all these conditions are met:
 - All characters satify 'canBeBare'char'
 - The string is not a keyword
 
->>> canBeBare'str "-ab_c"
+>>> str'canRenderUnquoted "-ab_c"
 True
 
->>> canBeBare'str ""
+>>> str'canRenderUnquoted ""
 False
 
->>> canBeBare'str "a\"b"
+>>> str'canRenderUnquoted "a\"b"
 False
 
->>> canBeBare'str "let"
+>>> str'canRenderUnquoted "let"
 False
 
 -}
-canBeBare'str :: Text -> Bool
-canBeBare'str x =
-  Text.all canBeBare'char x
+str'canRenderUnquoted :: Text -> Bool
+str'canRenderUnquoted x =
+  Text.all char'canRenderUnquoted x
   && not (Text.null x)
   && List.all ((/= x) . keywordText) keywords
 
 -- | Letters, @-@, and @_@.
-canBeBare'char :: Char -> Bool
-canBeBare'char c =
+char'canRenderUnquoted :: Char -> Bool
+char'canRenderUnquoted c =
   Char.isLetter c || c == '-' || c == '_'

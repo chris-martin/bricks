@@ -39,7 +39,7 @@ render'bare = bare'str
 -- | Render a static string, in bare (unquoted) form if possible.
 render'strStatic'maybeBare :: Render Str'Static
 render'strStatic'maybeBare x =
-  if canBeBare'str x then x else render'strStatic'quoted x
+  if str'canRenderUnquoted x then x else render'strStatic'quoted x
 
 -- | Render a static string, in quoted form.
 render'strStatic'quoted :: Render Str'Static

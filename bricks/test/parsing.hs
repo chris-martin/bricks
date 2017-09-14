@@ -147,7 +147,7 @@ prop_parse_strDynamic_indentedQ = property $ do
 prop_parse_inStr = property $ do
 
   let test = parseTest
-           $ fmap (Text.pack . show . Seq.toList . fmap render'inStr'1)
+           $ fmap (Text.pack . show . fmap render'inStr'1 . inStr'toList)
            $ P.spaces *> parse'inStr
 
   test [text|  ''

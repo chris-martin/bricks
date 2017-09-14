@@ -4,11 +4,12 @@
 module Bricks.IndentedString
   (
   -- * Indented string
-    InStr
+    InStr (..)
   , inStr'join
   , inStr'level
   , inStr'dedent
   , inStr'trim
+  , inStr'toList
 
   -- * Single line of an indented string
   , InStr'1 (..)
@@ -35,7 +36,11 @@ convenient to use these literals for multi-line strings within an indented
 expression without the whitespace from indentation ending up as part of the
 string.
 -}
-type InStr = Seq InStr'1
+newtype InStr = InStr { inStr'toSeq :: Seq InStr'1 }
+
+inStr'toList :: InStr -> [InStr'1]
+inStr'toList =
+  Seq.toList . inStr'toSeq
 
 -- | One line of an 'InStr'.
 data InStr'1 =
@@ -47,10 +52,11 @@ data InStr'1 =
         -- ^ The rest of the line after any leading spaces.
     }
 
--- | Join 'InStr's with newlines interspersed.
+{- | Join 'InStr's with newlines interspersed. -}
 inStr'join :: InStr -> Str'Dynamic
 inStr'join xs =
-  Seq.concat $ Seq.intersperse (Seq.singleton (Str'1'Literal "\n")) (f <$> xs)
+  Seq.concat $ Seq.intersperse (Seq.singleton (Str'1'Literal "\n"))
+                               (f <$> inStr'toSeq xs)
   where
     f :: InStr'1 -> Seq Str'1
     f (InStr'1 n parts) =
@@ -74,7 +80,11 @@ inStr'1'empty (InStr'1{ inStr'1'str = x }) =
 string. -}
 inStr'level :: InStr -> Natural
 inStr'level =
-  maybe 0 id . Seq.minimum . Seq.map inStr'1'level . Seq.filter inStr'1'nonEmpty
+  maybe 0 id
+  . Seq.minimum
+  . Seq.map inStr'1'level
+  . Seq.filter inStr'1'nonEmpty
+  . inStr'toSeq
 
 -- | Modify an 'InStr' by applying a function to its number of leading spaces.
 inStr'1'modifyLevel :: (Natural -> Natural) -> (InStr'1 -> InStr'1)
@@ -89,11 +99,11 @@ inStr'dedent xs =
     b = inStr'level xs
     f a = if a >= b then a - b else 0
   in
-    inStr'1'modifyLevel f <$> xs
+    InStr $ inStr'1'modifyLevel f <$> inStr'toSeq xs
 
 -- | Remove any empty lines from the beginning or end of an indented string.
 inStr'trim :: InStr -> InStr
-inStr'trim xs =
-  trimWhile inStr'1'empty xs
+inStr'trim =
+  InStr . trimWhile inStr'1'empty . inStr'toSeq
   where
     trimWhile f = Seq.dropWhileL f . Seq.dropWhileR f

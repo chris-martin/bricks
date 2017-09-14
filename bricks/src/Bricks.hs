@@ -77,7 +77,8 @@ module Bricks
   , str'staticToDynamic
   , str'unquotedToDynamic
   -- ** Indented strings
-  , InStr
+  , InStr (..)
+  , inStr'toList
   , inStr'join
   , inStr'level
   , inStr'dedent

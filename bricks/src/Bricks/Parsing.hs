@@ -238,7 +238,7 @@ parse'inStr =
         line <- parse'inStr'1
         let newLines = previousLines |> line
         asum
-          [ P.string "''" *> parse'spaces $> newLines
+          [ P.string "''" *> parse'spaces $> InStr newLines
           , P.char '\n'   *> go newLines
           ]
 

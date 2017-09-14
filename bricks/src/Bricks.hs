@@ -9,7 +9,7 @@ Notable differences from Nix:
 - The inline comment keyword is @--@ rather than @#@
 - There are block comments in the form @{\-@...@-\}@
 - The concept of "set" is referred to as "dict" (this is not actually a language
-  difference, I just use a different word to talk about the same concept)
+  difference, we just use a different word to talk about the same concept)
 
 The following modules are re-exported from this module in their entireties:
 

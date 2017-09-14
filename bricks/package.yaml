@@ -4,6 +4,13 @@ license: Apache-2.0
 license-file: license.txt
 github: chris-martin/bricks
 
+synopsis: Bricks is a lazy functional language based on Nix.
+
+description: |
+  Bricks is a lazy functional language based on Nix.
+  This package provides parsing, rendering, and
+  evaluation (forthcoming) for the Bricks language.
+
 ghc-options:
   - -Wall
 

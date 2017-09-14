@@ -1,5 +1,6 @@
-{-# LANGUAGE NoImplicitPrelude, GeneralizedNewtypeDeriving,
-      FunctionalDependencies #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
 
 {- | Functions for constructing 'Expression's that match the 'Show'
 implementations.
@@ -25,15 +26,15 @@ import Bricks.Expression
 import Bricks.UnquotedString
 
 -- Bricks internal
-import Bricks.Internal.Text (Text)
-import qualified Bricks.Internal.Text as Text
-import qualified Bricks.Internal.Seq as Seq
-import Bricks.Internal.Prelude
-import Bricks.Internal.Functor (fmap)
+import           Bricks.Internal.Functor (fmap)
+import           Bricks.Internal.Prelude
+import qualified Bricks.Internal.Seq     as Seq
+import           Bricks.Internal.Text    (Text)
+import qualified Bricks.Internal.Text    as Text
 
 -- Base
-import Data.String (IsString (fromString))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.String        (IsString (fromString))
 
 
 --------------------------------------------------------------------------------

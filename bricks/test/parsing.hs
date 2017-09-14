@@ -25,8 +25,8 @@ import           Hedgehog (Property, property, (===))
 import qualified Hedgehog
 
 -- Base
-import Text.Show (show)
 import System.IO (IO)
+import Text.Show (show)
 
 main :: IO ()
 main = runTests $$(Hedgehog.discover)

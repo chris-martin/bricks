@@ -27,7 +27,7 @@ import qualified Bricks.Internal.Text    as Text
 -- Base
 import qualified Data.Char as Char
 import qualified Data.List as List
-import Prelude (error)
+import           Prelude   (error)
 
 {- | A string that can be rendered unquoted. Unquoted strings are restricted to
 a conservative set of characters; see 'str'canRenderUnquoted' for the full

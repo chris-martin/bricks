@@ -575,7 +575,7 @@ parse'expressionList'1'noDot =
     [ parse'strDynamic'quoted <&> Expr'Str
     , parse'list              <&> Expr'List
     , parse'dict              <&> Expr'Dict
-    , parse'strUnquoted              <&> Expr'Var
+    , parse'strUnquoted       <&> Expr'Var
     , parse'expression'paren
     ]
     <?> "expression list item without a dot"

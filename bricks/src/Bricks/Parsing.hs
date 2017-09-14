@@ -78,7 +78,7 @@ parse'bare =
     a <- Text.pack <$> P.many1 (P.satisfy char'canRenderUnquoted)
 
     -- Fail if what we just parsed isn't a valid bare string
-    case bareMaybe a of
+    case str'tryUnquoted a of
       Nothing -> P.parserZero
       Just b  -> parse'spaces $> b
 

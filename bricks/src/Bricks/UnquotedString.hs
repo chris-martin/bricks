@@ -7,7 +7,7 @@ module Bricks.UnquotedString
     Str'Unquoted (..)
 
   -- * Constructor
-  , bareMaybe
+  , str'tryUnquoted
 
   -- * Predicates
   , str'canRenderUnquoted
@@ -34,8 +34,8 @@ The constructor is tagged "unsafe" because it lets you construct and invalid
 value. Prefer 'bareMaybe' which does validate the text. -}
 newtype Str'Unquoted = Str'Unquoted'Unsafe { bare'str :: Text }
 
-bareMaybe :: Text -> Maybe Str'Unquoted
-bareMaybe x =
+str'tryUnquoted :: Text -> Maybe Str'Unquoted
+str'tryUnquoted x =
   if str'canRenderUnquoted x then Just (Str'Unquoted'Unsafe x) else Nothing
 
 {- | Whether a string having this name can be rendered without quoting it.

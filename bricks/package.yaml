@@ -10,6 +10,11 @@ description: |
   This package provides parsing, rendering, and
   evaluation (forthcoming) for the Bricks language.
 
+category: Language
+
+author:     Chris Martin <ch.martin@gmail.com>
+maintainer: Chris Martin <ch.martin@gmail.com>
+
 license: Apache-2.0
 license-file: license.txt
 

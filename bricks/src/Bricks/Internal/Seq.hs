@@ -2,18 +2,28 @@
 
 module Bricks.Internal.Seq
 
-  ( module Data.Sequence
+  ( Seq
+
+  , (<|), (|>)
 
   , concat
+  , dropWhileL
+  , dropWhileR
+  , empty
+  , filter
+  , fromList
   , intersperse
   , map
   , minimum
+  , null
   , toList
+  , singleton
 
   ) where
 
 -- Containers
-import Data.Sequence
+import Data.Sequence (Seq, dropWhileL, dropWhileR, empty, filter, fromList,
+                      null, singleton, (<|), (|>))
 
 -- Base
 import           Data.Foldable (Foldable, fold, toList)

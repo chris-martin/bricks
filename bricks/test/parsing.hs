@@ -7,7 +7,6 @@
 import Bricks
 
 -- Bricks internal
-import           Bricks.Internal.Functor (fmap, void, ($>))
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text

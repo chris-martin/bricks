@@ -1,15 +1,17 @@
 name: bricks
 version: 0.0.0.1
-license: Apache-2.0
-license-file: license.txt
 github: chris-martin/bricks
 
-synopsis: Bricks is a lazy functional language based on Nix.
+synopsis: |
+  Bricks is a lazy functional language based on Nix.
 
 description: |
   Bricks is a lazy functional language based on Nix.
   This package provides parsing, rendering, and
   evaluation (forthcoming) for the Bricks language.
+
+license: Apache-2.0
+license-file: license.txt
 
 ghc-options:
   - -Wall
@@ -28,16 +30,15 @@ library:
     - Bricks.Rendering
     - Bricks.UnquotedString
 
-    - Bricks.Internal.Functor
     - Bricks.Internal.Prelude
     - Bricks.Internal.Seq
     - Bricks.Internal.Text
 
 dependencies:
-  - base
-  - containers
-  - parsec
-  - text
+  - base       >= 4.9   && < 4.10
+  - containers >= 0.5.7 && < 0.6
+  - parsec     >= 3.1.6 && < 3.2
+  - text       >= 1.2.2 && < 1.3
 
 tests:
 
@@ -47,9 +48,9 @@ tests:
     ghc-options:
       - -threaded
     dependencies:
-      - base
       - bricks
-      - doctest
+      - base    >= 4.9  && < 4.10
+      - doctest >= 0.11 && < 0.14
 
   rendering:
     source-dirs: test
@@ -57,10 +58,10 @@ tests:
     ghc-options:
       - -threaded
     dependencies:
-      - base
       - bricks
-      - hedgehog
-      - template-haskell
+      - base             >= 4.9 && < 4.10
+      - hedgehog         >= 0.5 && < 0.6
+      - template-haskell >= 2.2 && < 2.12
 
   parsing:
     source-dirs: test
@@ -68,7 +69,7 @@ tests:
     ghc-options:
       - -threaded
     dependencies:
-      - base
       - bricks
-      - hedgehog
-      - template-haskell
+      - base             >= 4.9 && < 4.10
+      - hedgehog         >= 0.5 && < 0.6
+      - template-haskell >= 2.2 && < 2.12

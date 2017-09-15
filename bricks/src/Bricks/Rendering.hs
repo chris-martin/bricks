@@ -65,7 +65,6 @@ import Bricks.Keyword
 import Bricks.UnquotedString
 
 -- Bricks internal
-import           Bricks.Internal.Functor (Functor (..))
 import           Bricks.Internal.Prelude
 import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)

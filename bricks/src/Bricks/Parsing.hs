@@ -90,7 +90,6 @@ import Bricks.Keyword
 import Bricks.UnquotedString
 
 -- Bricks internal
-import           Bricks.Internal.Functor (fmap, void, ($>), (<$>), (<&>))
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Seq     (Seq, (|>))
 import qualified Bricks.Internal.Seq     as Seq

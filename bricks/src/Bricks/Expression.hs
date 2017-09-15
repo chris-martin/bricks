@@ -61,7 +61,6 @@ module Bricks.Expression
 import Bricks.UnquotedString
 
 -- Bricks internal
-import           Bricks.Internal.Functor (fmap)
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Seq     (Seq)
 import qualified Bricks.Internal.Seq     as Seq

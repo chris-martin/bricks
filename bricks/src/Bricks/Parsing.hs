@@ -114,7 +114,7 @@ import Prelude       (succ)
 
 parse'spaces :: Parser ()
 parse'spaces =
-  (void $ P.many (void (P.space <?> "") <|> parse'comment))
+  void $ P.many (void (P.space <?> "") <|> parse'comment)
 
 parse'comment :: Parser ()
 parse'comment =
@@ -135,20 +135,20 @@ parse'comment'block =
 -- | Backtracking parser for a particular keyword.
 parse'keyword :: Keyword -> Parser ()
 parse'keyword k =
-  P.try $ do
-    -- Consume the keyword
-    _ <- P.string (keywordString k)
+  P.try (void p)
+  where
+    p =
+      -- Consume the keyword
+      P.string (keywordString k) *>
 
-    -- Do /not/ consume any subsequent character that are allowed to be part
-    -- of a valid identifier. For example, this prevents this parser from
-    -- interpreting the beginning of an identifier named "letter" as the
-    -- keyword "let".
-    _ <- P.notFollowedBy (P.satisfy char'canRenderUnquoted)
+      -- Do /not/ consume any subsequent character that are allowed to be part
+      -- of a valid identifier. For example, this prevents this parser from
+      -- interpreting the beginning of an identifier named "letter" as the
+      -- keyword "let".
+      P.notFollowedBy (P.satisfy char'canRenderUnquoted) *>
 
-    -- As usual, consume trailing spaces.
-    _ <- parse'spaces
-
-    pure ()
+      -- As usual, consume trailing spaces.
+      parse'spaces
 
 {- | Parser for an unquoted string. Unquoted strings are restricted to a
 conservative set of characters, and they may not be any of the keywords.
@@ -166,14 +166,13 @@ unexpected end of input
 -}
 parse'strUnquoted :: Parser Str'Unquoted
 parse'strUnquoted =
-  do
-    -- Consume at least one character
-    a <- Text.pack <$> P.many1 (P.satisfy char'canRenderUnquoted)
-
-    -- Fail if what we just parsed isn't a valid unquoted string
-    case str'tryUnquoted a of
-      Nothing -> P.parserZero
-      Just b  -> parse'spaces $> b
+  -- Consume at least one character
+  P.many1 (P.satisfy char'canRenderUnquoted) <&> Text.pack
+  -- Fail if what we just parsed isn't a valid unquoted string
+  <&> str'tryUnquoted
+  >>= \case
+    Nothing -> P.parserZero
+    Just b  -> parse'spaces $> b
 
 {- | Parser for a static string which may be either quoted or unquoted.
 
@@ -203,10 +202,10 @@ parse'strStatic =
 -- | Parser for a static string that is quoted.
 parse'strStatic'quoted :: Parser Str'Static
 parse'strStatic'quoted =
-  P.char '"' *> parse'str'within'normalQ <* asum
-    [ P.char '"' *> parse'spaces
-    , P.string "${" *> fail "antiquotation is not allowed in this context"
-    ]
+  P.char '"' *> parse'str'within'normalQ <* (end <|> anti)
+  where
+    end = P.char '"' *> parse'spaces
+    anti = P.string "${" *> fail "antiquotation is not allowed in this context"
 
 -- | Parser for an unquoted static string.
 parse'strStatic'unquoted :: Parser Str'Static
@@ -230,15 +229,14 @@ parse'strDynamic'normalQ =
     go previousParts =
       asum
         [ end $> Str'Dynamic previousParts
-        , asum
-            [ parse'str'within'normalQ <&> Str'1'Literal
-            , anti
-            ]
-          >>= \x -> go $ previousParts |> x
+        , (lit <|> anti) >>= \x -> go $ previousParts |> x
         ]
 
     -- Read the closing " character
     end = P.char '"' *> parse'spaces
+
+    -- Read some literal characters
+    lit = parse'str'within'normalQ <&> Str'1'Literal
 
     -- Read an antiquote
     anti = fmap Str'1'Antiquote $
@@ -248,30 +246,34 @@ parse'strDynamic'normalQ =
 context, up to but not including the end of the string or the start of an
 antiquotation. -}
 parse'str'within'normalQ :: Parser Text
-parse'str'within'normalQ = do
-  fmap Text.concat $ P.many1 $ asum
-    [ P.satisfy (\c -> c /= '$' && c /= '"' && c /= '\\') <&> Text.singleton
-    , P.try $ P.char '$' <* P.notFollowedBy (P.char '{')  <&> Text.singleton
-    , parse'str'escape'normalQ
-    ]
+parse'str'within'normalQ =
+  P.many1 (char <|> parse'str'escape'normalQ) <&> Text.concat
+  where
+    char :: Parser Text
+    char = asum
+      [ P.satisfy (\x -> x /= '$' && x /= '"' && x /= '\\')
+      , P.try $ P.char '$' <* P.notFollowedBy (P.char '{')
+      ] <&> Text.singleton
 
 parse'str'escape'normalQ :: Parser Text
 parse'str'escape'normalQ =
-  P.char '\\' *> asum
-    [ P.char '\\'   $> "\\"
-    , P.char '"'    $> "\""
-    , P.char 'n'    $> "\n"
-    , P.char 'r'    $> "\r"
-    , P.char 't'    $> "\t"
-    , P.string "${" $> "${"
-    ]
+  P.char '\\' *> esc
+  where
+    esc = asum
+      [ P.char '\\'   $> "\\"
+      , P.char '"'    $> "\""
+      , P.char 'n'    $> "\n"
+      , P.char 'r'    $> "\r"
+      , P.char 't'    $> "\t"
+      , P.string "${" $> "${"
+      ]
 
 {- | Parser for a dynamic string enclosed in "indented string" format,
 delimited by two single-quotes @''@...@''@. This form of string does not have
 any escape sequences. -}
 parse'strDynamic'indentedQ :: Parser Str'Dynamic
 parse'strDynamic'indentedQ =
-  inStr'join . inStr'dedent . inStr'trim <$> parse'inStr
+  parse'inStr <&> inStr'join . inStr'dedent . inStr'trim
 
 {- | Parser for an indented string. This parser produces a representation of
 the lines from the source as-is, before the whitespace is cleaned up. -}
@@ -501,8 +503,9 @@ of a 'Dot' expression.
 -}
 parse'dot'rhs'chain :: Parser [Expression]
 parse'dot'rhs'chain =
-  P.many $
-  P.char '.' *> parse'spaces *> parse'expression'dictKey <* parse'spaces
+  P.many dot
+  where
+    dot = P.char '.' *> parse'spaces *> parse'expression'dictKey <* parse'spaces
 
 parse'let :: Parser Let
 parse'let =
@@ -519,9 +522,10 @@ parse'let =
 
 parse'with :: Parser With
 parse'with =
-  With
-    <$> (parse'keyword keyword'with *> parse'expression)
-    <*> (P.char ';' *> parse'spaces *> parse'expression)
+  With <$> with <*> parse'expression
+  where
+    with = parse'keyword keyword'with *> parse'expression
+             <* P.char ';' <* parse'spaces
 
 parse'dictBinding :: Parser DictBinding
 parse'dictBinding =
@@ -533,9 +537,10 @@ parse'dictBinding'inherit =
 
 parse'dictBinding'eq :: Parser DictBinding
 parse'dictBinding'eq =
-  DictBinding'Eq
-    <$> (parse'expression'dictKey <* parse'spaces <* P.char '=' <* parse'spaces)
-    <*> (parse'expression         <* parse'spaces <* P.char ';' <* parse'spaces)
+  DictBinding'Eq <$> key <*> val
+  where
+    key = parse'expression'dictKey <* parse'spaces <* P.char '=' <* parse'spaces
+    val = parse'expression         <* parse'spaces <* P.char ';' <* parse'spaces
 
 parse'letBinding :: Parser LetBinding
 parse'letBinding =
@@ -543,9 +548,10 @@ parse'letBinding =
 
 parse'letBinding'eq :: Parser LetBinding
 parse'letBinding'eq =
-  LetBinding'Eq
-    <$> (parse'strStatic  <* parse'spaces <* P.char '=' <* parse'spaces)
-    <*> (parse'expression <* parse'spaces <* P.char ';' <* parse'spaces)
+  LetBinding'Eq <$> key <*> val
+  where
+    key = parse'strStatic  <* parse'spaces <* P.char '=' <* parse'spaces
+    val = parse'expression <* parse'spaces <* P.char ';' <* parse'spaces
 
 parse'letBinding'inherit :: Parser LetBinding
 parse'letBinding'inherit =
@@ -581,10 +587,11 @@ parse'expression =
       [ parse'let    <&> Expr'Let
       , parse'with   <&> Expr'With
       , parse'lambda <&> Expr'Lambda
-      , parse'expressionList >>= \case
-          [] -> P.parserZero
-          f : args -> pure $ expression'applyArgs f args
+      , list
       ]
+    list = parse'expressionList >>= \case
+      [] -> P.parserZero
+      f : args -> pure $ expression'applyArgs f args
 
 {- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
 chain of function arguments (@f x y z@).
@@ -665,15 +672,16 @@ One of:
 -}
 parse'expression'dictKey :: Parser Expression
 parse'expression'dictKey =
-  asum
-    [ parse'strDynamic'quoted <&> Expr'Str
-    , P.string "${" *> parse'spaces *> parse'expression
-        <* P.char '}' <* parse'spaces
-    , parse'strUnquoted <&> Expr'Str . str'unquotedToDynamic
-    ]
+  quoted <|> antiquoted <|> unquoted
+  where
+    quoted = parse'strDynamic'quoted <&> Expr'Str
+    antiquoted = P.string "${" *> parse'spaces *> parse'expression
+                   <* P.char '}' <* parse'spaces
+    unquoted = parse'strUnquoted <&> Expr'Str . str'unquotedToDynamic
 
 parse'count :: Parser a -> Parser Natural
-parse'count p = go 0
+parse'count p =
+  go 0
   where
     go :: Natural -> Parser Natural
     go n = (p *> go (succ n)) <|> pure n

@@ -436,7 +436,7 @@ prop_parse_expression = property $ do
             |  Isn't it
             |  ${"''"}interesting
             |''
-            |] === [text|"Isn't it\n''interesting"|]
+            |] === [text|"Isn't it\n${"''"}interesting"|]
 
   -- Comments
   test [text|let                -- hi

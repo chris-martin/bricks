@@ -109,6 +109,7 @@ import Prelude       (succ)
 
 >>> import Data.Foldable (length)
 >>> import Text.Parsec (parseTest)
+>>> import Prelude (putStrLn)
 
 -}
 
@@ -269,8 +270,18 @@ parse'str'escape'normalQ =
       ]
 
 {- | Parser for a dynamic string enclosed in "indented string" format,
-delimited by two single-quotes @''@...@''@. This form of string does not have
-any escape sequences. -}
+delimited by two single-quotes @''@...@''@.
+
+This form of string does not have any escape sequences. Therefore the only way
+to express @''@ or @${@ within an indented string is to antiquote them.
+
+>>> x = "''${\"''\"} and ${\"\\${\"}''"
+>>> putStrLn x
+''${"''"} and ${"\${"}''
+>>> parseTest parse'strDynamic'indentedQ x
+str [antiquote (str ["''"]), " and ", antiquote (str ["${"])]
+
+-}
 parse'strDynamic'indentedQ :: Parser Str'Dynamic
 parse'strDynamic'indentedQ =
   parse'inStr <&> inStr'join . inStr'dedent . inStr'trim
@@ -321,9 +332,7 @@ parse'inStr'1 =
 parse'antiquote :: Parser Str'Dynamic
 parse'antiquote =
   (P.try (P.string "${") *> parse'spaces *> parse'expression <* P.char '}')
-  <&> \case
-    Expr'Str x -> x
-    x -> strDynamic'singleton (Str'1'Antiquote x)
+  <&> strDynamic'singleton . Str'1'Antiquote
 
 {- | Parser for a function parameter (the beginning of a 'Lambda'), including
 the colon. This forms part of 'parse'expression', so it backtracks in places

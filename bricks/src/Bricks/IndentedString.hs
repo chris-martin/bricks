@@ -70,6 +70,7 @@ inStr'join xs =
       (f <$> inStr'toSeq xs)
   where
     f :: InStr'1 -> Seq Str'1
+    f (InStr'1 0 parts) = strDynamic'toSeq parts
     f (InStr'1 n parts) = Str'1'Literal (Text.replicate (fromIntegral n) " ")
                           <| strDynamic'toSeq parts
 

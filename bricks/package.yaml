@@ -80,3 +80,14 @@ tests:
       - base             >= 4.9 && < 4.10
       - hedgehog         >= 0.5 && < 0.6
       - template-haskell >= 2.2 && < 2.12
+
+  evaluation:
+    source-dirs: test
+    main: evaluation.hs
+    ghc-options:
+      - -threaded
+    dependencies:
+      - bricks
+      - base             >= 4.9 && < 4.10
+      - hedgehog         >= 0.5 && < 0.6
+      - template-haskell >= 2.2 && < 2.12

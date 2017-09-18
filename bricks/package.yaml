@@ -35,7 +35,6 @@ library:
     - Bricks.Rendering
     - Bricks.UnquotedString
 
-    - Bricks.Internal.Magma
     - Bricks.Internal.Prelude
     - Bricks.Internal.Seq
     - Bricks.Internal.Text

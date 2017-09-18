@@ -3,7 +3,9 @@
 Notable differences from Nix:
 
 - No built-in null, integer, or boolean types
-- No @builtins@ and no infix operators (@+@, @-@, @//@)
+- No @builtins@
+- No infix operators (@+@, @-@, @//@)
+- No @if@-@then@-@else@
 - No URI literals
 - No escape sequences in indented strings (@''@...@''@)
 - The inline comment keyword is @--@ rather than @#@

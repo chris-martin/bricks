@@ -195,8 +195,12 @@ module Bricks
   , Render
   , parse'antiquote
   -------------------------------------------------
+
+  , module Bricks.Evaluation -- todo: export individual things
+
   ) where
 
+import Bricks.Evaluation
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword

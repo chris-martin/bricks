@@ -29,6 +29,7 @@ library:
 
     - Bricks.Expression
     - Bricks.Expression.Construction
+    - Bricks.Evaluation
     - Bricks.IndentedString
     - Bricks.Keyword
     - Bricks.Parsing

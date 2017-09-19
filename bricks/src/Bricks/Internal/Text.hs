@@ -5,6 +5,7 @@ module Bricks.Internal.Text
   ( Text
 
   , all
+  , append
   , concat
   , intercalate
   , null
@@ -19,7 +20,7 @@ module Bricks.Internal.Text
 
 -- Text
 import           Data.Text (Text, all, null, pack, replace, replicate,
-                            singleton, unpack, unwords)
+                            singleton, unpack, unwords, append)
 import qualified Data.Text as Text
 
 -- Base

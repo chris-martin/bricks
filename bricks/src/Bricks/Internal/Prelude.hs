@@ -27,7 +27,7 @@ module Bricks.Internal.Prelude
 
 import Control.Applicative (Applicative, pure, (*>), (<*), (<*>), (<|>))
 import Control.Arrow       ((>>>))
-import Control.Monad       ((>>=))
+import Control.Monad       ((>>=), (=<<))
 import Data.Bool           (Bool (False, True), not, (&&), (||))
 import Data.Char           (Char)
 import Data.Either         (Either (..))

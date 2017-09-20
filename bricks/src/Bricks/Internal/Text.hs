@@ -19,8 +19,8 @@ module Bricks.Internal.Text
   ) where
 
 -- Text
-import           Data.Text (Text, all, null, pack, replace, replicate,
-                            singleton, unpack, unwords, append)
+import           Data.Text (Text, all, append, null, pack, replace, replicate,
+                            singleton, unpack, unwords)
 import qualified Data.Text as Text
 
 -- Base

@@ -26,10 +26,10 @@ import           Hedgehog (Property, property, (===))
 import qualified Hedgehog
 
 -- Base
-import Prelude   ((+), Int, Integer)
+import Prelude   (Int, Integer, (+))
 import System.IO (IO)
-import Text.Show (show)
 import Text.Read (readMaybe)
+import Text.Show (show)
 
 main :: IO ()
 main = runTests $$(Hedgehog.discover)
@@ -42,7 +42,7 @@ prop_evaluation = property $ do
     dictTerm'fromList = undefined
     function'of'data = undefined
     function'of'str = undefined
-    evaluate'as'data = undefined
+    reduce'to'data = undefined
     (/@\) = undefined
 
   Right f <- expression'to'term $ P.parse parse'expression
@@ -56,5 +56,5 @@ prop_evaluation = property $ do
             maybe (Left "invalid int") Right)
         ]
 
-  result <- evaluate'as'data (f /@\ args)
+  result <- reduce'to'data (f /@\ args)
   result === (3 :: Integer)

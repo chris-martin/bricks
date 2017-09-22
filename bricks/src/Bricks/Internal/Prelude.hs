@@ -19,6 +19,7 @@ module Bricks.Internal.Prelude
   , module Data.Semigroup
   , module Data.String
   , module Data.Traversable
+  , module Data.Tuple
   , module Numeric.Natural
   , module Prelude
   , module Text.Show
@@ -27,19 +28,20 @@ module Bricks.Internal.Prelude
 
 import Control.Applicative (Applicative, pure, (*>), (<*), (<*>), (<|>))
 import Control.Arrow       ((>>>))
-import Control.Monad       ((=<<), (>>=))
+import Control.Monad       (Monad, (<=<), (=<<), (>=>), (>>=))
 import Data.Bool           (Bool (False, True), not, (&&), (||))
 import Data.Char           (Char)
 import Data.Either         (Either (..))
 import Data.Eq             (Eq ((/=), (==)))
 import Data.Foldable       (asum, fold, foldMap, foldl, foldl1, foldr, foldr1)
-import Data.Function       (flip, id, ($), (&), (.))
+import Data.Function       (const, flip, id, ($), (&), (.))
 import Data.Functor        (Functor, fmap, void, ($>), (<$), (<$>))
 import Data.Maybe          (Maybe (Just, Nothing), catMaybes, maybe)
 import Data.Monoid         (Monoid (mappend, mempty))
 import Data.Semigroup      (Semigroup ((<>)))
 import Data.String         (String)
 import Data.Traversable    (traverse)
+import Data.Tuple          (fst, snd)
 import Numeric.Natural     (Natural)
 import Prelude             (undefined)
 import Text.Show           (Show (show, showList, showsPrec), shows)

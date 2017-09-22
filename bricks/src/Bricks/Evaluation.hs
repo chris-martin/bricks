@@ -1,8 +1,12 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections     #-}
-{-# LANGUAGE ViewPatterns      #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TupleSections              #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE ViewPatterns               #-}
 
 {- | This module lets you evaluate Bricks expressions. First
 'expression'to'term's converts the abstract syntax tree ('Expression')
@@ -32,103 +36,172 @@ list of some important connections to the book:
   - The implementation of 'term'substitute' closely follows the
     description of /Instantiate/, page 210.
 
+  - Page 20 introduces the name capture problem. Pages 199 and 210 discuss
+    how we avoid it by only reducing the top-level redex, which has no free
+    variables.
+
 -}
 module Bricks.Evaluation where
 
 -- Bricks
 import Bricks.Expression
-import Bricks.Rendering
 import Bricks.UnquotedString
 
 -- Bricks internal
 import           Bricks.Internal.Prelude
-import           Bricks.Internal.Seq     (Seq)
-import qualified Bricks.Internal.Seq     as Seq
-import           Bricks.Internal.Text    (Text)
-import qualified Bricks.Internal.Text    as Text
+import           Bricks.Internal.Seq          (Seq)
+import qualified Bricks.Internal.Seq          as Seq
+import           Bricks.Internal.Text         (Text)
+import qualified Bricks.Internal.Text         as Text
+import           Bricks.Internal.Transformers
 
 -- Containers
 import           Data.Map (Map)
 import qualified Data.Map as Map
 
 -- Base
+import Data.Dynamic  (Dynamic, fromDynamic, toDyn)
 import Data.IORef
-import System.IO  (IO)
+import Data.Typeable (Typeable)
+import System.IO     (IO)
 
-data Term a
-  = Term'Data a
-  | Term'Function (Function a)
-  | Term'Lambda Text (Term a)
-  | Term'Lambda'DictPattern (Term'DictPattern a) (Term a)
-  | Term'Str Text
-  | Term'List (Seq (Term a))
-  | Term'Dict (DictTerm a)
+newtype Eval a = Eval (ExceptT Text IO a)
+  deriving (Functor, Applicative, Monad, MonadIO)
+
+data Term
+  = Term'Data Text Dynamic
+  | Term'Function (Term -> Eval Term)
+  | Term'Lambda Text Term
+  | Term'Lambda'DictPattern Term'DictPattern Term
+  | Term'List (Seq Term)
+  | Term'Dict DictTerm
   | Term'Var Text
-  | Term'Apply (Term a) (Term a)
-  | Term'Pointer (Pointer a)
-  | Term'Error Text
+  | Term'Apply Term Term
+  | Term'Pointer TermPtr
 
-create'pointer :: Term a -> IO (Term a)
+termTypeName :: Term -> Eval Text
+termTypeName = \case
+  Term'Data x _   -> pure x
+  Term'Function _ -> pure "built-in function"
+  Term'Lambda _ _ -> pure "lambda"
+  Term'Lambda'DictPattern _ _ -> pure "lambda"
+  Term'List _     -> pure "list"
+  Term'Dict _     -> pure "dict"
+  Term'Var _      -> pure "variable"
+  Term'Apply _ _  -> pure "function application"
+  Term'Pointer p  -> readTermPtr p >>= termTypeName
+
+create'pointer :: Term -> Eval Term
 create'pointer x = case x of
-  Term'Pointer _ -> pure x  -- The term is already a pointer, nothing to do
-  _              -> Term'Pointer . Pointer <$> newIORef x
+  Term'Pointer _ -> pure x  -- The term is already a pointer, don't make another
+  _              -> Term'Pointer <$> liftIO (newIORef x)
 
-(/@\) :: Term a -> Term a -> Term a
+dereference :: Term -> Eval Term
+dereference = \case
+  Term'Pointer p -> readTermPtr p >>= dereference
+  x -> pure x
+
+(/@\) :: Term -> Term -> Term
 (/@\) = Term'Apply
 infixl /@\
 
-data Term'DictPattern a =
+type TermPtr = IORef Term
+
+newTermPtr :: Term -> Eval Term
+newTermPtr x = case x of
+   Term'Pointer _ -> pure x  -- The term is already a pointer, nothing to do
+   _              -> Term'Pointer <$> liftIO (newIORef x)
+
+readTermPtr :: TermPtr -> Eval Term
+readTermPtr = liftIO . readIORef
+
+writeTermPtr :: TermPtr -> Term -> Eval ()
+writeTermPtr ptr = liftIO . writeIORef ptr
+
+evalError :: Text -> Eval a
+evalError = Eval . throwE
+
+data Term'DictPattern =
   Term'DictPattern
-    { term'dictPattern'items :: Map Text (Maybe (Term a))
+    { term'dictPattern'items :: Map Text (Maybe Term)
     , term'dictPattern'ellipsis :: Bool
     }
 
-data DictTerm a =
+data DictTerm =
   DictTerm
-    { dictTerm'map :: Map Text (Term a)
-    , dictTerm'seq :: Seq (Term a, Term a)
+    { dictTerm'map :: Map Text Term
+    , dictTerm'seq :: Seq (Term, Term)
     }
 
-instance Semigroup (DictTerm a)
+instance Semigroup DictTerm
   where
     DictTerm a1 b1 <> DictTerm a2 b2 = DictTerm (a1 <> a2) (b1 <> b2)
 
-instance Monoid (DictTerm a)
+instance Monoid DictTerm
   where
     mappend = ((<>))
     mempty = DictTerm mempty mempty
 
-data Function a = Function (Term a -> IO (Term a))
+function'id :: Term
+function'id = Term'Function pure
 
-function'id :: Term a
-function'id = Term'Function $ Function pure
+term'data :: forall a. Typeable a => Type a -> a -> Term
+term'data (Type n) = Term'Data n . toDyn @a
 
-function'dict'lookup :: Term a
+function'const'data :: forall a. Typeable a => Type a -> a -> Term
+function'const'data t = Term'Function . const . pure . term'data t
+
+function'dict'lookup :: Term
 function'dict'lookup = undefined
 
-function'str'concat :: Term a
-function'str'concat =
-  function'of'str $ \s ->
-  function'of'str $ \s' ->
-  Term'Str $ Text.append s s'
+function'boolean'or :: Term
+function'boolean'or =
+  Term'Function $ \x -> require'data'value type'boolean x <&> \case
+    True -> function'const'data type'boolean True
+    False -> Term'Function $ require'data'term type'boolean
 
-function'of'str :: (Text -> Term a) -> Term a
-function'of'str =
-  Term'Function . Function . require'str
+function'boolean'and :: Term
+function'boolean'and =
+  Term'Function $ \x -> require'data'value type'boolean x <&> \case
+    False -> function'const'data type'boolean False
+    True -> Term'Function $ require'data'term type'boolean
 
-require'str :: (Text -> Term a) -> Term a -> IO (Term a)
-require'str f = reduce'term >>> (<&> \case
-  Term'Str x       -> f x
-  e@(Term'Error _) -> e
-  _                -> Term'Error "expected string")
+function'string'append :: Term
+function'string'append =
+  Term'Function $ \x -> require'data'value type'string x <&> \x' ->
+  Term'Function $ \y -> require'data'value type'string y <&> \y' ->
+  term'data type'string $ Text.append x' y'
 
-function'dict'merge'preferLeft :: Term a
+function'dict'merge'preferLeft :: Term
 function'dict'merge'preferLeft = undefined
 
-function'dict'merge'preferRight :: Term a
+function'dict'merge'preferRight :: Term
 function'dict'merge'preferRight = undefined
 
-expression'to'term :: Expression -> IO (Term a)
+data Type a = Type { type'name :: Text }
+
+type'boolean :: Type Bool
+type'boolean = Type "boolean"
+
+type'string :: Type Text
+type'string = Type "string"
+
+require'data'value :: Typeable a => Type a -> Term -> Eval a
+require'data'value = req fst
+
+require'data'term :: Typeable a => Type a -> Term -> Eval Term
+require'data'term = req snd
+
+req :: forall a b. Typeable a => ((a, Term) -> b) -> Type a -> Term -> Eval b
+req s (Type n) = reduce >=> \case
+  t@(Term'Data n' x) ->
+    case fromDynamic @a x of
+      Nothing -> evalError ("Expected " <> n <> ", got " <> n')
+      Just a -> pure (s (a, t))
+  x ->
+    termTypeName x >>= \n' -> evalError ("Expected " <> n <> ", got " <> n')
+
+expression'to'term :: Expression -> Eval Term
 expression'to'term =
   \case
     Expr'Var x -> var'to'term x
@@ -143,40 +216,40 @@ expression'to'term =
     Expr'With x ->
       undefined
 
-var'to'term :: Str'Unquoted -> IO (Term a)
+var'to'term :: Str'Unquoted -> Eval Term
 var'to'term =
   pure . Term'Var . str'unquotedToStatic
 
-apply'to'term :: Apply -> IO (Term a)
+apply'to'term :: Apply -> Eval Term
 apply'to'term (Apply a b) =
-  (/@\) <$> (expression'to'term a) <*> (expression'to'term b)
+  (/@\) <$> expression'to'term a <*> expression'to'term b
 
-str'to'term :: Str'Dynamic -> IO (Term a)
+str'to'term :: Str'Dynamic -> Eval Term
 str'to'term (Str'Dynamic (Seq.toList -> xs)) =
   case xs of
-    [] -> pure $ Term'Str ""
-    ys -> foldr1 (\x y -> function'str'concat /@\ x /@\ y)
+    [] -> pure $ term'data type'string ""
+    ys -> foldr1 (\x y -> function'string'append /@\ x /@\ y)
             <$> traverse str'1'to'term ys
 
-str'1'to'term :: Str'1 -> IO (Term a)
+str'1'to'term :: Str'1 -> Eval Term
 str'1'to'term = \case
-  Str'1'Literal x -> pure $ Term'Str x
+  Str'1'Literal x -> pure $ term'data type'string x
   Str'1'Antiquote x -> expression'to'term x
 
-list'to'term :: List -> IO (Term a)
+list'to'term :: List -> Eval Term
 list'to'term (List x) =
   Term'List <$> traverse expression'to'term x
 
-dict'to'term :: Dict -> IO (Term a)
+dict'to'term :: Dict -> Eval Term
 dict'to'term = undefined
 
-dot'to'term :: Dot -> IO (Term a)
+dot'to'term :: Dot -> Eval Term
 dot'to'term (Dot a b) = do
   a' <- expression'to'term a
   b' <- expression'to'term b
   pure $ function'dict'lookup /@\ a' /@\ b'
 
-lambda'to'term :: Lambda -> IO (Term a)
+lambda'to'term :: Lambda -> Eval Term
 lambda'to'term (Lambda head body) =
   case head of
 
@@ -202,7 +275,7 @@ lambda'to'term (Lambda head body) =
           <*> expression'to'term body
       )
 
-dictPattern'to'termDictPattern :: DictPattern -> IO (Term'DictPattern a)
+dictPattern'to'termDictPattern :: DictPattern -> Eval Term'DictPattern
 dictPattern'to'termDictPattern (DictPattern (Seq.toList -> items) ellipsis) =
   Term'DictPattern
     <$> (Map.fromList <$> traverse f items)
@@ -211,23 +284,25 @@ dictPattern'to'termDictPattern (DictPattern (Seq.toList -> items) ellipsis) =
     f (DictPattern'1 (str'unquotedToStatic -> a) b) =
       (a,) <$> traverse expression'to'term b
 
-{- | @term'substitute var value body@ produces a copy of the term @body@,
+{- | @instantiate var value body@ produces a copy of the term @body@,
 substituting @value@ for free occurrences of @var@. -}
-term'substitute
-  :: Text   -- ^ @var@   - Variable name
-  -> Term a -- ^ @value@ - The argument being substituted
-  -> Term a -- ^ @body@  - The term being copied
-  -> IO (Term a)
+instantiate
+  :: Text  -- ^ @var@   - Variable name
+  -> Term  -- ^ @value@ - The argument being substituted. We assume that this
+           --             term has no free variables; or else we will suffer
+           --             the /name capture problem/.
+  -> Term  -- ^ @body@  - The term being copied
+  -> Eval Term
 
 -- The numbered comments within this definition are nearly verbatim from
 -- page 210 of /The Implementation of Functional Programming Languages/.
--- There SPJ denotes this construction as body[value/var] and refers to the
--- substitution process as "instantiation."
+-- There SPJ denotes this construction as body[value/var].
 
-term'substitute var value = go
+instantiate var value =
+  go
   where
+    go :: Term -> Eval Term
     go body = case body of
-
       Term'Var x ->
 
         -- 1. If /body/ is a variable x and /var/ = x, then return /value/
@@ -238,8 +313,7 @@ term'substitute var value = go
         else pure body
 
       -- 3. If /body/ is a constant or built-in function, then return /body/.
-      Term'Data _     -> pure body -- constant
-      Term'Str _      -> pure body -- constant
+      Term'Data _ _   -> pure body -- constant
       Term'Function _ -> pure body -- built-in function
 
       -- 4. If /body/ is an application (e1 e2), then return the application
@@ -254,8 +328,8 @@ term'substitute var value = go
         if a == var then pure body
 
         -- 6. If /body/ is a lambda abstraction λx.E and /var/ ≠ x, then return
-        --    λx.E[value/var] - we must instantiate the lambda abstraction in
-        --    case there are any free occurrences of /var/ inside it.
+        --    λx.E[value/var] - we must instantiate the body in case there are
+        --    any free occurrences of /var/ inside it.
         else Term'Lambda a <$> go b
 
       Term'Lambda'DictPattern (Term'DictPattern map ellipsis) b ->
@@ -281,20 +355,33 @@ term'substitute var value = go
 
       Term'Dict _ -> undefined
 
-      -- When substituting into a pointer, we do /not/ overwrite the pointer.
-      -- The body is a template for instantiation which creates a /copy/ of it.
       -- todo - Is this right?
-      Term'Pointer (Pointer ref) -> readIORef ref >>= go
+      Term'Pointer _ -> evalError "Cannot substitute through a pointer"
 
-      -- There's no substituting into an error; the error just propagates.
-      Term'Error _ -> pure body
+reduce :: Term -> Eval Term
+reduce =
+  \case
+    Term'Apply f value ->
+      reduce f >>= \case
 
-data Pointer a = Pointer
-  { pointer'ref :: IORef (Term a)
-  }
+        -- The function is normal lambda. Perform pointer substitution.
+        Term'Lambda var body ->
+          create'pointer value >>= \value'ptr ->
+            instantiate var value'ptr body
 
-reduce'term :: Term a -> IO (Term a)
-reduce'term t =
+        -- The function is a lambda with a dict pattern.
+        Term'Lambda'DictPattern dp body ->
+
+          -- Reduce the argument, and require it to be a dict.
+          reduce value >>= \case
+            Term'Dict dict -> undefined
+            x -> termTypeName x >>= \n -> evalError ("Expected dict, got " <> n)
+
+    t@(Term'Pointer p) ->
+      (readTermPtr p >>= reduce >>= writeTermPtr p) $> t
+    x -> pure x
+
+{-
   case t of
 
     Term'Apply f x ->
@@ -326,3 +413,5 @@ reduce'term t =
       pure t''
 
     _ -> pure t
+
+-}

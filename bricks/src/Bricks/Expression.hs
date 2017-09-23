@@ -247,15 +247,6 @@ data Expression
       -- The previous example also demonstrates how the bindings in a /let/
       -- expression may refer to each other (much like a dict with the @rec@
       -- keyword). As with dicts, the order of the bindings does not matter.
-  | Expr'With With
-      -- ^ A /with/ expression is similar to a /let/-/in/ expression, but the
-      -- bindings come from a dict.
-      --
-      -- > with {
-      -- >   greet = x: "Hello, ${x}!";
-      -- >   name = "Chris";
-      -- > };
-      -- >   greet name
 
 {- | A fixed string value. We use the description "static" to mean the string
 may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
@@ -469,7 +460,6 @@ instance Show' Expression
       Expr'Lambda x -> show' x
       Expr'Apply x  -> show' x
       Expr'Let x    -> show' x
-      Expr'With x   -> show' x
 
 instance Show' Str'Dynamic
   where

@@ -63,9 +63,6 @@ module Bricks.Parsing
   , parse'letBinding'eq
   , parse'letBinding'inherit
 
-  -- * @with@
-  , parse'with
-
   -- * @inherit@
   , parse'inherit
 
@@ -529,13 +526,6 @@ parse'let =
 
     end = parse'keyword keyword'in *> parse'expression
 
-parse'with :: Parser With
-parse'with =
-  With <$> with <*> parse'expression
-  where
-    with = parse'keyword keyword'with *> parse'expression
-             <* P.char ';' <* parse'spaces
-
 parse'dictBinding :: Parser DictBinding
 parse'dictBinding =
   parse'dictBinding'inherit <|> parse'dictBinding'eq
@@ -594,7 +584,6 @@ parse'expression =
   where
     p = asum
       [ parse'let    <&> Expr'Let
-      , parse'with   <&> Expr'With
       , parse'lambda <&> Expr'Lambda
       , list
       ]

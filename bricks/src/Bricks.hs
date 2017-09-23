@@ -6,6 +6,7 @@ Notable differences from Nix:
 - No @builtins@
 - No infix operators (@+@, @-@, @//@)
 - No @if@-@then@-@else@
+- No @with@
 - No URI literals
 - No escape sequences in indented strings (@''@...@''@)
 - The inline comment keyword is @--@ rather than @#@
@@ -164,12 +165,6 @@ module Bricks
   , parse'letBinding
   , parse'letBinding'eq
   , parse'letBinding'inherit
-  -------------------------------------------------
-  -- * @with@
-  , With (..)
-  , keyword'with
-  , render'with
-  , parse'with
   -------------------------------------------------
   -- * @inherit@
   , Inherit (..)

@@ -50,9 +50,6 @@ module Bricks.Rendering
   , render'let
   , render'letBinding
 
-  -- * @with@
-  , render'with
-
   -- * @inherit@
   , render'inherit
 
@@ -237,7 +234,6 @@ render'expression =
     Expr'Lambda x -> render'lambda x
     Expr'Apply  x -> render'apply x
     Expr'Let    x -> render'let x
-    Expr'With   x -> render'with x
 
 -- | Render an expression in a list context.
 render'expression'listContext :: Render Expression
@@ -246,7 +242,6 @@ render'expression'listContext x =
     Expr'Lambda _ -> render'expression'inParens x
     Expr'Apply  _ -> render'expression'inParens x
     Expr'Let    _ -> render'expression'inParens x
-    Expr'With   _ -> render'expression'inParens x
     _             -> render'expression x
 
 -- | Render an expression in the context of the left-hand side of a 'Dot'.
@@ -259,7 +254,6 @@ render'expression'applyLeftContext x =
   case x of
     Expr'Lambda _ -> render'expression'inParens x
     Expr'Let    _ -> render'expression'inParens x
-    Expr'With   _ -> render'expression'inParens x
     _             -> render'expression x
 
 -- | Render an expression in the context of the right-hand side of an 'Apply'.
@@ -268,7 +262,6 @@ render'expression'applyRightContext x =
   case x of
     Expr'Apply  _ -> render'expression'inParens x
     Expr'Let    _ -> render'expression'inParens x
-    Expr'With   _ -> render'expression'inParens x
     _             -> render'expression x
 
 render'expression'inParens :: Render Expression

@@ -98,6 +98,10 @@ import           Text.Parsec      ((<?>))
 import qualified Text.Parsec      as P
 import           Text.Parsec.Text (Parser)
 
+-- Containers
+import           Data.Set (Set)
+import qualified Data.Set as Set
+
 -- Base
 import Control.Monad (fail)
 import Prelude       (succ)
@@ -372,27 +376,51 @@ parse'param'noVar = Param'DictPattern <$> do
 destructuring. This parser does not backtrack. -}
 parse'dictPattern :: Parser DictPattern
 parse'dictPattern =
-  P.char '{' *> parse'spaces *> go Seq.empty
+  P.char '{' *> parse'spaces *> go Seq.empty Set.empty
   where
-    go :: Seq DictPattern'1 -> Parser DictPattern
-    go previousItems =
+
+    -- We keep track of what we've parsed so far in two forms:
+    go :: Seq DictPattern'1 -- 1. A sequence of items (which will be
+                            --    included directly in the result)
+       -> Set Text          -- 2. A set of the names of the items (which is
+                            --    used to test each new item so we can issue
+                            --    an error message if the list contains two
+                            --    items having the same name)
+       -> Parser DictPattern
+
+    go previousItems previousNames =
       asum
         [ end $> DictPattern previousItems False
         , ellipsis $> DictPattern previousItems True
-        , do
-            newItems <- item <&> \x -> previousItems |> x
-            asum
-              [ P.char ',' *> parse'spaces *> go newItems
+        , more
+        ]
+      where
+        more :: Parser DictPattern
+        more = item >>= \newItem ->
+          let
+            newName = str'unquotedToStatic (dictPattern'1'name newItem)
+            newItems = previousItems |> newItem
+            newNames = Set.insert newName previousNames
+
+          in
+            if newName `Set.member` previousNames
+            then fail $ "Name " <> Text.unpack newName <>
+                      " appears twice in a dict pattern"
+            else asum
+              [ P.char ',' *> parse'spaces *> go newItems newNames
               , end $> DictPattern newItems False
               ]
-        ]
 
+    item :: Parser DictPattern'1
     item = DictPattern'1 <$> parse'strUnquoted <*> P.optionMaybe def
 
-    ellipsis = P.string "..." *> parse'spaces *> end
-
+    def :: Parser Expression
     def = P.char '?' *> parse'spaces *> parse'expression
 
+    ellipsis :: Parser ()
+    ellipsis = P.string "..." *> parse'spaces *> end
+
+    end :: Parser ()
     end = P.char '}' *> parse'spaces
 
 {- | This is used in a lookahead by 'parse'param' to determine whether we're

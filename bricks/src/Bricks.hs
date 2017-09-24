@@ -16,16 +16,22 @@ Notable differences from Nix:
 
 The following modules are re-exported from this module in their entireties:
 
-- "Bricks.Expression" - Defines most of the types, notably 'Expression'
-- "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
-  parsing indented strings (@''@...@''@)
-- "Bricks.Keyword" - Enumerates the language's keywords
-- "Bricks.Parsing" - Defines all of the Parsec parsers for parsing Bricks code
-  into 'Expression's
-- "Bricks.Rendering" - Defines all of the renderers for turning 'Expression's
-  into Bricks code
-- "Bricks.UnquotedString" - Defines the rules for what strings are allowed to
-  appear unquoted in Bricks code
+- Syntax
+  - "Bricks.Keyword" - Enumerates the language's keywords
+  - "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
+    parsing indented strings (@''@...@''@)
+  - "Bricks.UnquotedString" - Defines the rules for what strings are allowed to
+    appear unquoted in Bricks code
+  - "Bricks.Expression" - Defines most of the types related to the AST, notably
+    'Expression'
+  - "Bricks.Parsing" - Defines all of the Parsec parsers for parsing Bricks code
+    into 'Expression's
+  - "Bricks.Rendering" - Defines all of the renderers for turning 'Expression's
+    into Bricks code
+- Evaluation
+  - "Bricks.Term" - ...
+  - "Bricks.ExpressionToTerm" - ...
+  - "Bricks.Evaluation" - ...
 
 Other modules:
 
@@ -191,11 +197,8 @@ module Bricks
   , parse'antiquote
   -------------------------------------------------
 
-  , module Bricks.Evaluation -- todo: export individual things
-
   ) where
 
-import Bricks.Evaluation
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword

@@ -6,10 +6,16 @@
 {-# LANGUAGE TypeApplications  #-}
 
 -- Bricks
-import Bricks
+import Bricks.BuiltinFunctions
+import Bricks.Evaluation
+import Bricks.ExpressionToTerm
+import Bricks.Parsing
+import Bricks.Term
+import Bricks.Type
 
 -- Bricks internal
 import           Bricks.Internal.Prelude
+import           Bricks.Internal.Monad
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
 
@@ -37,24 +43,11 @@ main = runTests $$(Hedgehog.discover)
 prop_evaluation :: Property
 prop_evaluation = property $ do
 
-  let
-    expression'to'term = undefined
-    dictTerm'fromList = undefined
-    function'of'data = undefined
-    function'of'str = undefined
-    reduce'to'data = undefined
-    (/@\) = undefined
+  let (Right expr) = P.parse parse'expression ""
+        [text|{ add, int, ... }:
+             |add (int "1") (int "2")|]
 
-  Right f <- expression'to'term $ P.parse parse'expression
-    [text|{ add, int, ... }:
-         |add (int "1") (int "2")|]
+  result <- liftIO $ reduce'to'type'or'throw type'integer $
+              expression'to'term expr /@\ standard'library
 
-  let args = dictTerm'fromList $
-        [ ("add", function'of'data (+))
-        , ("int", function'of'str $
-            readMaybe @Integer >>>
-            maybe (Left "invalid int") Right)
-        ]
-
-  result <- reduce'to'data (f /@\ args)
-  result === (3 :: Integer)
+  result === 3

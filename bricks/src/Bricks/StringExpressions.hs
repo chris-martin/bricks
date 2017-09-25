@@ -57,9 +57,34 @@ import           Bricks.Internal.ShowExpression
 import           Bricks.Internal.Text           (Text)
 import qualified Bricks.Internal.Text           as Text
 
+
+--------------------------------------------------------------------------------
+--  Unquoted
+--------------------------------------------------------------------------------
+
+-- todo
+
+
+--------------------------------------------------------------------------------
+--  Static
+--------------------------------------------------------------------------------
+
 {- | A fixed string value. We use the description "static" to mean the string
 may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
 data Str'Static = Str'Static Text
+
+instance ShowExpression Str'Static
+  where
+    showExpression (Str'Static x) = Text.pack (show @Text x)
+
+instance Show (Str'Static)
+  where
+    showsPrec = showsPrec'showExpression
+
+
+--------------------------------------------------------------------------------
+--  Dynamic
+--------------------------------------------------------------------------------
 
 {- | A quoted string expression, which may be a simple string like @"hello"@ or
 a more complex string containing antiquotation like @"Hello, my name is
@@ -80,6 +105,35 @@ instance Monoid (Str'Dynamic expr)
   where
     mempty = Str'Dynamic mempty
     mappend = (<>)
+
+-- | One part of a 'Str'Dynamic'.
+data Str'1 expr
+  = Str'1'Literal Str'Static
+  | Str'1'Antiquote expr
+
+instance ShowExpression expr => ShowExpression (Str'Dynamic expr)
+  where
+    showExpression x =
+      Text.unwords ["str", showExpression'list (strDynamic'toList x)]
+
+instance ShowExpression expr => ShowExpression (Str'1 expr)
+  where
+    showExpression = \case
+      Str'1'Literal (Str'Static x) -> showExpression'quoted'text x
+      Str'1'Antiquote x -> Text.unwords ["antiquote", showExpression'paren x]
+
+instance ShowExpression expr => Show (Str'Dynamic expr)
+  where
+    showsPrec = showsPrec'showExpression
+
+instance ShowExpression expr => Show (Str'1 expr)
+  where
+    showsPrec = showsPrec'showExpression
+
+
+--------------------------------------------------------------------------------
+--  Conversions
+--------------------------------------------------------------------------------
 
 strDynamic'toList :: Str'Dynamic expr -> [Str'1 expr]
 strDynamic'toList =
@@ -105,35 +159,3 @@ str'staticToDynamic =
 str'unquotedToDynamic :: UnquotedString -> Str'Dynamic expr
 str'unquotedToDynamic =
   str'staticToDynamic . Str'Static . unquotedString'text
-
--- | One part of a 'Str'Dynamic'.
-data Str'1 expr
-  = Str'1'Literal Str'Static
-  | Str'1'Antiquote expr
-
-instance ShowExpression Str'Static
-  where
-    showExpression (Str'Static x) = Text.pack (show @Text x)
-
-instance ShowExpression expr => ShowExpression (Str'Dynamic expr)
-  where
-    showExpression x =
-      Text.unwords ["str", showExpression'list (strDynamic'toList x)]
-
-instance ShowExpression expr => ShowExpression (Str'1 expr)
-  where
-    showExpression = \case
-      Str'1'Literal (Str'Static x) -> showExpression'quoted'text x
-      Str'1'Antiquote x -> Text.unwords ["antiquote", showExpression'paren x]
-
-instance Show (Str'Static)
-  where
-    showsPrec = showsPrec'showExpression
-
-instance ShowExpression expr => Show (Str'Dynamic expr)
-  where
-    showsPrec = showsPrec'showExpression
-
-instance ShowExpression expr => Show (Str'1 expr)
-  where
-    showsPrec = showsPrec'showExpression

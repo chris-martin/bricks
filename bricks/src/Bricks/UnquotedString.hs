@@ -8,7 +8,7 @@ module Bricks.UnquotedString
 
   -- * Constructor
   , unquotedString'try
-  , str'unquoted'orThrow
+  , unquotedString'orThrow
 
   -- * Predicates
   , str'canRenderUnquoted
@@ -50,8 +50,8 @@ unquotedString'try x =
   if str'canRenderUnquoted x then Just (UnquotedString'Unsafe x) else Nothing
 
 -- | Throws an exception if the string cannot render unquoted.
-str'unquoted'orThrow :: Text -> UnquotedString
-str'unquoted'orThrow x =
+unquotedString'orThrow :: Text -> UnquotedString
+unquotedString'orThrow x =
   if str'canRenderUnquoted x then UnquotedString'Unsafe x else
   error $ "String " <> show x <> " cannot render unquoted"
 

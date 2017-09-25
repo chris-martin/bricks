@@ -4,15 +4,15 @@
 module Bricks.UnquotedString
   (
   -- * Type
-    Str'Unquoted (..)
+    UnquotedString (..)
 
   -- * Constructor
-  , str'tryUnquoted
-  , str'unquoted'orThrow
+  , unquotedString'try
+  , unquotedString'orThrow
 
   -- * Predicates
-  , str'canRenderUnquoted
-  , char'canRenderUnquoted
+  , text'canBeUnquoted
+  , char'canBeUnquoted
 
   ) where
 
@@ -30,54 +30,59 @@ import qualified Data.List as List
 import           Prelude   (error)
 
 {- | A string that can be rendered unquoted. Unquoted strings are restricted to
-a conservative set of characters; see 'str'canRenderUnquoted' for the full
+a conservative set of characters; see 'text'canBeUnquoted' for the full
 rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
-value. Prefer 'str'tryUnquoted' which does validate the text. -}
-newtype Str'Unquoted = Str'Unquoted'Unsafe { str'unquotedToStatic :: Text }
+value. Prefer 'unquotedString'try' which does validate the text.
 
-instance Show Str'Unquoted
+This type does not represent a particular part of Brick syntax, but it is a
+wrapper for 'Text' that enforces the limitations of strings at various places
+in the Bricks syntax. -}
+newtype UnquotedString = UnquotedString'Unsafe { unquotedString'text :: Text }
+
+instance Show UnquotedString
   where
-    showsPrec _ x = ("unquoted " <>) . shows (str'unquotedToStatic x)
+    showsPrec _ x = ("unquoted " <>) . shows (unquotedString'text x)
 
-str'tryUnquoted :: Text -> Maybe Str'Unquoted
-str'tryUnquoted x =
-  if str'canRenderUnquoted x then Just (Str'Unquoted'Unsafe x) else Nothing
+unquotedString'try :: Text -> Maybe UnquotedString
+unquotedString'try x =
+  if text'canBeUnquoted x then Just (UnquotedString'Unsafe x) else Nothing
 
 -- | Throws an exception if the string cannot render unquoted.
-str'unquoted'orThrow :: Text -> Str'Unquoted
-str'unquoted'orThrow x =
-  if str'canRenderUnquoted x then Str'Unquoted'Unsafe x else
+unquotedString'orThrow :: Text -> UnquotedString
+unquotedString'orThrow x =
+  if text'canBeUnquoted x then UnquotedString'Unsafe x else
   error $ "String " <> show x <> " cannot render unquoted"
 
 {- | Whether a string having this name can be rendered without quoting it.
 We allow a string to render unquoted if all these conditions are met:
 
 - The string is nonempty
-- All characters satify 'char'canRenderUnquoted'
+- All characters satify 'char'canBeUnquoted'
 - The string is not a keyword
 
->>> str'canRenderUnquoted "-ab_c"
+>>> text'canBeUnquoted "-ab_c"
 True
 
->>> str'canRenderUnquoted ""
+>>> text'canBeUnquoted ""
 False
 
->>> str'canRenderUnquoted "a\"b"
+>>> text'canBeUnquoted "a\"b"
 False
 
->>> str'canRenderUnquoted "let"
+>>> text'canBeUnquoted "let"
 False
 
 -}
-str'canRenderUnquoted :: Text -> Bool
-str'canRenderUnquoted x =
-  Text.all char'canRenderUnquoted x
+text'canBeUnquoted :: Text -> Bool
+text'canBeUnquoted x =
+  Text.all char'canBeUnquoted x
   && not (Text.null x)
   && List.all ((/= x) . keywordText) keywords
 
--- | Letters, @-@, and @_@.
-char'canRenderUnquoted :: Char -> Bool
-char'canRenderUnquoted c =
-  Char.isLetter c || c == '-' || c == '_'
+{- | Whether the character is allowed to be included in an 'UnquotedString'.
+Such characters are letters, @+@, @-@, @*@, @/@, and @_@. -}
+char'canBeUnquoted :: Char -> Bool
+char'canBeUnquoted c =
+  Char.isLetter c || List.elem c ("+-*/_" :: [Char])

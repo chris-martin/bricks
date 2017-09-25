@@ -50,9 +50,6 @@ module Bricks.Rendering
   , render'let
   , render'letBinding
 
-  -- * @with@
-  , render'with
-
   -- * @inherit@
   , render'inherit
 
@@ -62,6 +59,7 @@ module Bricks.Rendering
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
+import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal
@@ -87,32 +85,33 @@ str'escape =
 
 -- | Render an unquoted string in unquoted form.
 render'strUnquoted :: Render Str'Unquoted
-render'strUnquoted = str'unquotedToStatic
+render'strUnquoted = str'unquoted'text
 
 -- | Render a static string, in unquoted form if possible.
 render'strStatic'unquotedIfPossible :: Render Str'Static
-render'strStatic'unquotedIfPossible x =
-  if str'canRenderUnquoted x then x else render'strStatic'quoted x
+render'strStatic'unquotedIfPossible s@(Str'Static x) =
+  if text'canBeUnquoted x then x else render'strStatic'quoted s
 
 -- | Render a static string, in quoted form.
 render'strStatic'quoted :: Render Str'Static
-render'strStatic'quoted x =
+render'strStatic'quoted (Str'Static x) =
   "\"" <> str'escape x <> "\""
 
 -- | Render a dynamic string, in unquoted form if possible.
-render'strDynamic'unquotedIfPossible :: Render Str'Dynamic
+render'strDynamic'unquotedIfPossible :: Render (Str'Dynamic Expression)
 render'strDynamic'unquotedIfPossible d =
   case str'dynamicToStatic d of
     Just s  -> render'strStatic'unquotedIfPossible s
     Nothing -> render'strDynamic'quoted d
 
 -- | Render a dynamic string, in quoted form.
-render'strDynamic'quoted :: Render Str'Dynamic
+render'strDynamic'quoted :: Render (Str'Dynamic Expression)
 render'strDynamic'quoted xs =
   "\"" <> foldMap r (strDynamic'toSeq xs) <> "\""
   where
+    r :: Str'1 Expression -> Text
     r = \case
-      Str'1'Literal x   -> str'escape x
+      Str'1'Literal (Str'Static x) -> str'escape x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 -- | Render one line of an indented string ('InStr').
@@ -120,8 +119,9 @@ render'inStr'1 :: Render InStr'1
 render'inStr'1 (InStr'1 n xs) =
   Text.replicate (fromIntegral n) " " <> foldMap r (strDynamic'toSeq xs)
   where
+    r :: Str'1 Expression -> Text
     r = \case
-      Str'1'Literal x -> x
+      Str'1'Literal (Str'Static x) -> x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 -- | Render a lambda parameter: everything from the beginning of a lambda, up
@@ -130,7 +130,7 @@ render'inStr'1 (InStr'1 n xs) =
 render'param :: Render Param
 render'param =
   \case
-    Param'Name a         -> render'strUnquoted a
+    Param'Name a        -> render'strUnquoted a
     Param'DictPattern b -> render'dictPattern b
     Param'Both a b      -> render'strUnquoted a <> "@" <>
                            render'dictPattern b
@@ -151,7 +151,8 @@ render'dictPattern'1 :: Render DictPattern'1
 render'dictPattern'1 =
   \case
     DictPattern'1 a Nothing  -> render'strUnquoted a
-    DictPattern'1 a (Just b) -> render'strUnquoted a <> " ? " <> render'expression b
+    DictPattern'1 a (Just b) -> render'strUnquoted a <> " ? " <>
+                                render'expression b
 
 -- | Render a lambda expression (@x: y@).
 render'lambda :: Render Lambda
@@ -173,10 +174,9 @@ render'list (List xs) =
 
 -- | Render a dict literal (@{ ... }@).
 render'dict :: Render Dict
-render'dict =
-  \case
-    Dict False bs ->     "{ " <> r bs <> "}"
-    Dict True  bs -> "rec { " <> r bs <> "}"
+render'dict (Dict rec bs) =
+  (if rec then keywordText keyword'rec <> " " else "") <>
+  "{ " <> r bs <> "}"
   where
     r = Text.concat . fmap (\b -> render'dictBinding b <> "; ")
 
@@ -197,7 +197,8 @@ render'dot (Dot a b) =
 -- | Render a @let@-@in@ expression.
 render'let :: Render Let
 render'let (Let bs x) =
-  "let " <> r bs <> "in " <> render'expression x
+  keywordText keyword'let <> " " <> r bs <>
+  keywordText keyword'in <> " " <> render'expression x
   where
     r = Text.concat . fmap (\b -> render'letBinding b <> "; ")
 
@@ -212,18 +213,12 @@ render'letBinding =
 
 render'inherit :: Render Inherit
 render'inherit =
+  (keywordText keyword'inherit <>) .
   \case
-    Inherit Nothing xs  -> "inherit" <> r xs
-    Inherit (Just a) xs -> "inherit (" <> render'expression a <> ")" <> r xs
+    Inherit Nothing xs  -> r xs
+    Inherit (Just a) xs -> " (" <> render'expression a <> ")" <> r xs
   where
     r = foldMap (\x -> " " <> render'strStatic'unquotedIfPossible x)
-
--- | Render a @with@ expression.
-render'with :: Render With
-render'with (With a b) =
-  keywordText keyword'with <> " " <>
-  render'expression a <> "; " <>
-  render'expression b
 
 -- | Render an expression.
 render'expression :: Render Expression
@@ -237,7 +232,6 @@ render'expression =
     Expr'Lambda x -> render'lambda x
     Expr'Apply  x -> render'apply x
     Expr'Let    x -> render'let x
-    Expr'With   x -> render'with x
 
 -- | Render an expression in a list context.
 render'expression'listContext :: Render Expression
@@ -246,7 +240,6 @@ render'expression'listContext x =
     Expr'Lambda _ -> render'expression'inParens x
     Expr'Apply  _ -> render'expression'inParens x
     Expr'Let    _ -> render'expression'inParens x
-    Expr'With   _ -> render'expression'inParens x
     _             -> render'expression x
 
 -- | Render an expression in the context of the left-hand side of a 'Dot'.
@@ -259,7 +252,6 @@ render'expression'applyLeftContext x =
   case x of
     Expr'Lambda _ -> render'expression'inParens x
     Expr'Let    _ -> render'expression'inParens x
-    Expr'With   _ -> render'expression'inParens x
     _             -> render'expression x
 
 -- | Render an expression in the context of the right-hand side of an 'Apply'.
@@ -268,7 +260,6 @@ render'expression'applyRightContext x =
   case x of
     Expr'Apply  _ -> render'expression'inParens x
     Expr'Let    _ -> render'expression'inParens x
-    Expr'With   _ -> render'expression'inParens x
     _             -> render'expression x
 
 render'expression'inParens :: Render Expression

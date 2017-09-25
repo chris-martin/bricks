@@ -23,6 +23,7 @@ module Bricks.Expression.Construction where
 
 -- Bricks
 import Bricks.Expression
+import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal
@@ -60,7 +61,7 @@ apply a b =
 
 var :: Text -> Expression
 var =
-  Expr'Var . str'unquoted'orThrow
+  Expr'Var . Str'Unquoted . unquotedString'orThrow
 
 
 --------------------------------------------------------------------------------
@@ -108,7 +109,7 @@ instance Binding Expression DictBinding
 
 instance Binding Text LetBinding
   where
-    binding = LetBinding'Eq
+    binding = LetBinding'Eq . Str'Static
 
 
 --------------------------------------------------------------------------------
@@ -129,32 +130,32 @@ instance IsInherit LetBinding
 
 inherit :: IsInherit a => [Text] -> a
 inherit =
-  fromInherit . Inherit Nothing . Seq.fromList
+  fromInherit . Inherit Nothing . Seq.fromList . fmap Str'Static
 
 inherit'from :: IsInherit a => Expression -> [Text] -> a
 inherit'from x y =
-  fromInherit $ Inherit (Just x) (Seq.fromList y)
+  fromInherit $ Inherit (Just x) (Seq.fromList . fmap Str'Static $ y)
 
 
 --------------------------------------------------------------------------------
 --  Dynamic strings
 --------------------------------------------------------------------------------
 
-str :: [Str'1'] -> Expression
+str :: [Str'1'IsString] -> Expression
 str =
-  Expr'Str . Str'Dynamic . Seq.fromList . fmap unStr'1'
+  Expr'Str . Str'Dynamic . Seq.fromList . fmap unStr'1'IsString
 
-antiquote :: Expression -> Str'1'
+antiquote :: Expression -> Str'1'IsString
 antiquote =
-  Str'1' . Str'1'Antiquote
+  Str'1'IsString . Str'1'Antiquote
 
 -- | A newtype for 'Str'1' just so we can give it the 'IsString' instance
 -- which would be dubiously appropriate for the actual 'Str'1' type.
-newtype Str'1' = Str'1' { unStr'1' :: Str'1 }
+newtype Str'1'IsString = Str'1'IsString { unStr'1'IsString :: Str'1 Expression }
 
-instance IsString Str'1'
+instance IsString Str'1'IsString
   where
-    fromString = Str'1' . Str'1'Literal . Text.pack
+    fromString = Str'1'IsString . Str'1'Literal . Str'Static . Text.pack
 
 
 --------------------------------------------------------------------------------
@@ -167,11 +168,13 @@ class IsParam a
 
 instance IsParam Param'Builder
   where
-    param x = paramBuilder $ Param'Name $ str'unquoted'orThrow x
+    param = paramBuilder . Param'Name
+          . Str'Unquoted . unquotedString'orThrow
 
 instance IsParam DictPattern'1
   where
-    param x = DictPattern'1 (str'unquoted'orThrow x) Nothing
+    param = (\x -> DictPattern'1 x Nothing)
+          . Str'Unquoted . unquotedString'orThrow
 
 
 --------------------------------------------------------------------------------

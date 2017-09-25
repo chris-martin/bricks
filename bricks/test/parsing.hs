@@ -65,7 +65,7 @@ parseTest p input =
 prop_parse_str_unquoted :: Property
 prop_parse_str_unquoted = property $ do
 
-  let test = parseTest $ fmap str'unquotedToStatic $ parse'strUnquoted
+  let test = parseTest $ fmap str'unquoted'text $ parse'strUnquoted
 
   test "-ab_c" === [text|-ab_c|]
 
@@ -421,10 +421,6 @@ prop_parse_expression = property $ do
   -- A let binding list may be empty, although it is silly.
   test "let in f x" === [text|let in f x|]
 
-  test "with x; y"  === [text|with x; y|]
-
-  test "with{x=y;}; f x z" === [text|with { x = y; }; f x z|]
-
   -- Indented strings do not support any escape sequences.
   test [text|''
             |  There \ is \n no \$ escape.
@@ -490,9 +486,6 @@ prop_parse_expression_list = property $ do
                                          |lets|]
   test "i ins"                  === [text|i
                                          |ins|]
-  test "wi wit withs"           === [text|wi
-                                         |wit
-                                         |withs|]
   test "inheri inherits"        === [text|inheri
                                          |inherits|]
 

@@ -6,6 +6,7 @@ Notable differences from Nix:
 - No @builtins@
 - No infix operators (@+@, @-@, @//@)
 - No @if@-@then@-@else@
+- No @with@
 - No URI literals
 - No escape sequences in indented strings (@''@...@''@)
 - The inline comment keyword is @--@ rather than @#@
@@ -15,16 +16,24 @@ Notable differences from Nix:
 
 The following modules are re-exported from this module in their entireties:
 
-- "Bricks.Expression" - Defines most of the types, notably 'Expression'
-- "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
-  parsing indented strings (@''@...@''@)
-- "Bricks.Keyword" - Enumerates the language's keywords
-- "Bricks.Parsing" - Defines all of the Parsec parsers for parsing Bricks code
-  into 'Expression's
-- "Bricks.Rendering" - Defines all of the renderers for turning 'Expression's
-  into Bricks code
-- "Bricks.UnquotedString" - Defines the rules for what strings are allowed to
-  appear unquoted in Bricks code
+- Syntax
+  - "Bricks.Keyword" - Enumerates the language's keywords
+  - "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
+    parsing indented strings (@''@...@''@)
+  - "Bricks.UnquotedString" - Defines the rules for what strings are allowed to
+    appear unquoted in Bricks code
+  - "Bricks.Expression" - Defines most of the types related to the AST, notably
+    'Expression'
+  - "Bricks.Parsing" - Defines all of the Parsec parsers for parsing Bricks code
+    into 'Expression's
+  - "Bricks.Rendering" - Defines all of the renderers for turning 'Expression's
+    into Bricks code
+  - "Bricks.StringExpressions" - Defines the three types of strings in the AST:
+    unquoted, static, and dynamic
+- Evaluation
+  - "Bricks.Term" - ...
+  - "Bricks.ExpressionToTerm" - ...
+  - "Bricks.Evaluation" - ...
 
 Other modules:
 
@@ -60,7 +69,7 @@ module Bricks
   , parse'str'within'normalQ
   , parse'str'escape'normalQ
   -- ** Static strings
-  , Str'Static
+  , Str'Static (..)
   , render'strStatic'unquotedIfPossible
   , render'strStatic'quoted
   , parse'strStatic
@@ -79,16 +88,19 @@ module Bricks
   , parse'strDynamic'indentedQ
   -- ** Unquoted strings
   , Str'Unquoted (..)
-  , str'tryUnquoted
-  , str'unquoted'orThrow
-  , str'canRenderUnquoted
-  , char'canRenderUnquoted
+  , str'unquoted'text
+  , UnquotedString (..)
+  , unquotedString'try
+  , unquotedString'orThrow
+  , text'canBeUnquoted
+  , char'canBeUnquoted
   , render'strUnquoted
   , parse'strUnquoted
   -- ** String conversions
   , str'dynamicToStatic
   , str'staticToDynamic
-  , str'unquotedToDynamic
+  , str'unquoted'to'static
+  , str'unquoted'to'dynamic
   -- ** Indented strings
   , InStr (..)
   , inStr'toList
@@ -165,12 +177,6 @@ module Bricks
   , parse'letBinding'eq
   , parse'letBinding'inherit
   -------------------------------------------------
-  -- * @with@
-  , With (..)
-  , keyword'with
-  , render'with
-  , parse'with
-  -------------------------------------------------
   -- * @inherit@
   , Inherit (..)
   , keyword'inherit
@@ -195,6 +201,7 @@ module Bricks
   , Render
   , parse'antiquote
   -------------------------------------------------
+
   ) where
 
 import Bricks.Expression
@@ -202,4 +209,5 @@ import Bricks.IndentedString
 import Bricks.Keyword
 import Bricks.Parsing
 import Bricks.Rendering
+import Bricks.StringExpressions
 import Bricks.UnquotedString

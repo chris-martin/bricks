@@ -1,5 +1,5 @@
 name: bricks
-version: 0.0.0.2
+version: 0.0.0.3
 github: chris-martin/bricks
 
 synopsis: |
@@ -27,23 +27,33 @@ library:
 
     - Bricks
 
+    - Bricks.BuiltinFunctions
+    - Bricks.Evaluation
     - Bricks.Expression
     - Bricks.Expression.Construction
+    - Bricks.ExpressionToTerm
     - Bricks.IndentedString
     - Bricks.Keyword
     - Bricks.Parsing
     - Bricks.Rendering
+    - Bricks.StringExpressions
+    - Bricks.Term
+    - Bricks.Type
     - Bricks.UnquotedString
 
+    - Bricks.Internal.Monad
     - Bricks.Internal.Prelude
     - Bricks.Internal.Seq
+    - Bricks.Internal.ShowExpression
     - Bricks.Internal.Text
 
 dependencies:
   - base       >= 4.9   && < 4.10
   - containers >= 0.5.7 && < 0.6
+  - mtl
   - parsec     >= 3.1.6 && < 3.2
   - text       >= 1.2.2 && < 1.3
+  - transformers
 
 tests:
 
@@ -71,6 +81,17 @@ tests:
   parsing:
     source-dirs: test
     main: parsing.hs
+    ghc-options:
+      - -threaded
+    dependencies:
+      - bricks
+      - base             >= 4.9 && < 4.10
+      - hedgehog         >= 0.5 && < 0.6
+      - template-haskell >= 2.2 && < 2.12
+
+  evaluation:
+    source-dirs: test
+    main: evaluation.hs
     ghc-options:
       - -threaded
     dependencies:

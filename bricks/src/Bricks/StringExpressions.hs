@@ -73,6 +73,15 @@ import qualified Bricks.Internal.Text           as Text
 may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
 data Str'Static = Str'Static Text
 
+instance Semigroup Str'Static
+  where
+    Str'Static x <> Str'Static y = Str'Static (x <> y)
+
+instance Monoid Str'Static
+  where
+    mempty = Str'Static mempty
+    mappend = (<>)
+
 instance ShowExpression Str'Static
   where
     showExpression (Str'Static x) = Text.pack (show @Text x)

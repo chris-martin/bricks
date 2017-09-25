@@ -85,7 +85,7 @@ module Bricks
   , parse'strDynamic'normalQ
   , parse'strDynamic'indentedQ
   -- ** Unquoted strings
-  , Str'Unquoted (..)
+  , UnquotedString (..)
   , str'tryUnquoted
   , str'unquoted'orThrow
   , str'canRenderUnquoted

@@ -43,7 +43,7 @@ expression'to'term =
     Expr'Let x ->
       undefined
 
-var'to'term :: Str'Unquoted -> Term
+var'to'term :: UnquotedString -> Term
 var'to'term = Term'Var . str'unquotedToStatic
 
 apply'to'term :: Apply -> Term
@@ -86,7 +86,7 @@ lambda'to'term (Lambda head (expression'to'term -> body)) =
     Param'DictPattern dp -> lambda'to'term'dictPattern dp body
     Param'Both var dp    -> lambda'to'term'both var dp body
 
-lambda'to'term'simple :: Str'Unquoted -> Term -> Term
+lambda'to'term'simple :: UnquotedString -> Term -> Term
 lambda'to'term'simple var body =
   -- For a simple named parameter, the AST translates directly into the
   -- lambda calculus.
@@ -111,7 +111,7 @@ lambda'to'term'dictPattern dp body =
   in
     fn'comp /@@\ (fn'comp /@@\ (f, g), h)
 
-lambda'to'term'both :: Str'Unquoted -> DictPattern -> Term -> Term
+lambda'to'term'both :: UnquotedString -> DictPattern -> Term -> Term
 lambda'to'term'both var dp body =
   -- For a named parameter /and/ a dict pattern, we nest the dict pattern
   -- lambda inside a regular lambda.

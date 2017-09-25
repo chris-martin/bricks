@@ -83,7 +83,7 @@ str'escape =
   Text.replace "\\" "\\\\"
 
 -- | Render an unquoted string in unquoted form.
-render'strUnquoted :: Render Str'Unquoted
+render'strUnquoted :: Render UnquotedString
 render'strUnquoted = str'unquotedToStatic
 
 -- | Render a static string, in unquoted form if possible.

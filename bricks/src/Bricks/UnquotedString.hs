@@ -4,7 +4,7 @@
 module Bricks.UnquotedString
   (
   -- * Type
-    Str'Unquoted (..)
+    UnquotedString (..)
 
   -- * Constructor
   , str'tryUnquoted
@@ -35,20 +35,20 @@ rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
 value. Prefer 'str'tryUnquoted' which does validate the text. -}
-newtype Str'Unquoted = Str'Unquoted'Unsafe { str'unquotedToStatic :: Text }
+newtype UnquotedString = UnquotedString'Unsafe { str'unquotedToStatic :: Text }
 
-instance Show Str'Unquoted
+instance Show UnquotedString
   where
     showsPrec _ x = ("unquoted " <>) . shows (str'unquotedToStatic x)
 
-str'tryUnquoted :: Text -> Maybe Str'Unquoted
+str'tryUnquoted :: Text -> Maybe UnquotedString
 str'tryUnquoted x =
-  if str'canRenderUnquoted x then Just (Str'Unquoted'Unsafe x) else Nothing
+  if str'canRenderUnquoted x then Just (UnquotedString'Unsafe x) else Nothing
 
 -- | Throws an exception if the string cannot render unquoted.
-str'unquoted'orThrow :: Text -> Str'Unquoted
+str'unquoted'orThrow :: Text -> UnquotedString
 str'unquoted'orThrow x =
-  if str'canRenderUnquoted x then Str'Unquoted'Unsafe x else
+  if str'canRenderUnquoted x then UnquotedString'Unsafe x else
   error $ "String " <> show x <> " cannot render unquoted"
 
 {- | Whether a string having this name can be rendered without quoting it.

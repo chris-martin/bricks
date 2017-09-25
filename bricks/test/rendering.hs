@@ -75,7 +75,7 @@ prop_render_string_dynamic_quoted = property $ do
     === [text|"escape \${ this and \" this"|]
 
   test [ Str'1'Literal "Hello, my name is "
-       , Str'1'Antiquote (Expr'Var (Str'Unquoted'Unsafe "name"))
+       , Str'1'Antiquote (Expr'Var (UnquotedString'Unsafe "name"))
        , Str'1'Literal "!"
        ]
     === [text|"Hello, my name is ${name}!"|]
@@ -86,7 +86,7 @@ prop_render_indented_string_line = property $ do
   let test n xs = render'inStr'1 $ InStr'1 n (strDynamic'fromList xs)
 
   test 2 [ Str'1'Literal "abc"
-         , Str'1'Antiquote (Expr'Var $ Str'Unquoted'Unsafe "x")
+         , Str'1'Antiquote (Expr'Var $ UnquotedString'Unsafe "x")
          ]
     === [text|  abc${x}|]
 
@@ -99,8 +99,8 @@ prop_render_dict_pattern = property $ do
   test [] True  === [text|{ ... }|]
 
   let
-    item1 = DictPattern'1 (Str'Unquoted'Unsafe "x") Nothing
-    item2 = DictPattern'1 (Str'Unquoted'Unsafe "y") $
+    item1 = DictPattern'1 (UnquotedString'Unsafe "x") Nothing
+    item2 = DictPattern'1 (UnquotedString'Unsafe "y") $
       Just $ Expr'Str (strDynamic'singleton (Str'1'Literal "abc"))
 
   test [ item1, item2 ] False === [text|{ x, y ? "abc" }|]
@@ -112,12 +112,12 @@ prop_render_list = property $ do
   let test = render'list . List
 
   test []                                     === [text|[ ]|]
-  test [ Expr'Var (Str'Unquoted'Unsafe "a") ] === [text|[ a ]|]
-  test [ Expr'Var (Str'Unquoted'Unsafe "a")
-       , Expr'Var (Str'Unquoted'Unsafe "b") ] === [text|[ a b ]|]
+  test [ Expr'Var (UnquotedString'Unsafe "a") ] === [text|[ a ]|]
+  test [ Expr'Var (UnquotedString'Unsafe "a")
+       , Expr'Var (UnquotedString'Unsafe "b") ] === [text|[ a b ]|]
 
-  let call = Expr'Apply $ Apply (Expr'Var (Str'Unquoted'Unsafe "f"))
-                                (Expr'Var (Str'Unquoted'Unsafe "x"))
+  let call = Expr'Apply $ Apply (Expr'Var (UnquotedString'Unsafe "f"))
+                                (Expr'Var (UnquotedString'Unsafe "x"))
 
   test [ call ]                                     === [text|[ (f x) ]|]
-  test [ call, Expr'Var (Str'Unquoted'Unsafe "a") ] === [text|[ (f x) a ]|]
+  test [ call, Expr'Var (UnquotedString'Unsafe "a") ] === [text|[ (f x) a ]|]

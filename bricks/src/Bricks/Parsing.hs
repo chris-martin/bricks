@@ -166,7 +166,7 @@ parse error at (line 1, column 4):
 unexpected end of input
 
 -}
-parse'strUnquoted :: Parser Str'Unquoted
+parse'strUnquoted :: Parser UnquotedString
 parse'strUnquoted =
   -- Consume at least one character
   P.many1 (P.satisfy char'canRenderUnquoted) <&> Text.pack

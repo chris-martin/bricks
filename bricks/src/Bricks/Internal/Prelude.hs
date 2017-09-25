@@ -16,6 +16,7 @@ module Bricks.Internal.Prelude
   , module Data.Functor
   , module Data.Maybe
   , module Data.Monoid
+  , module Data.Ord
   , module Data.Semigroup
   , module Data.String
   , module Data.Traversable
@@ -39,6 +40,7 @@ import Data.Function       (const, flip, id, ($), (&), (.))
 import Data.Functor        (Functor, fmap, void, ($>), (<$), (<$>))
 import Data.Maybe          (Maybe (Just, Nothing), catMaybes, maybe)
 import Data.Monoid         (Monoid (mappend, mempty))
+import Data.Ord            (Ord (..))
 import Data.Semigroup      (Semigroup ((<>)))
 import Data.String         (String)
 import Data.Traversable    (traverse)

@@ -88,7 +88,7 @@ module Bricks
   , UnquotedString (..)
   , unquotedString'try
   , unquotedString'orThrow
-  , str'canRenderUnquoted
+  , text'canBeUnquoted
   , char'canRenderUnquoted
   , render'strUnquoted
   , parse'strUnquoted

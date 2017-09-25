@@ -171,7 +171,7 @@ parse'strUnquoted =
   -- Consume at least one character
   P.many1 (P.satisfy char'canRenderUnquoted) <&> Text.pack
   -- Fail if what we just parsed isn't a valid unquoted string
-  <&> str'tryUnquoted
+  <&> unquotedString'try
   >>= \case
     Nothing -> P.parserZero
     Just b  -> parse'spaces $> b

@@ -7,7 +7,7 @@ module Bricks.UnquotedString
     UnquotedString (..)
 
   -- * Constructor
-  , str'tryUnquoted
+  , unquotedString'try
   , str'unquoted'orThrow
 
   -- * Predicates
@@ -34,7 +34,7 @@ a conservative set of characters; see 'str'canRenderUnquoted' for the full
 rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
-value. Prefer 'str'tryUnquoted' which does validate the text.
+value. Prefer 'unquotedString'try' which does validate the text.
 
 This type does not represent a particular part of Brick syntax, but it is a
 wrapper for 'Text' that enforces the limitations of strings at various places
@@ -45,8 +45,8 @@ instance Show UnquotedString
   where
     showsPrec _ x = ("unquoted " <>) . shows (unquotedString'text x)
 
-str'tryUnquoted :: Text -> Maybe UnquotedString
-str'tryUnquoted x =
+unquotedString'try :: Text -> Maybe UnquotedString
+unquotedString'try x =
   if str'canRenderUnquoted x then Just (UnquotedString'Unsafe x) else Nothing
 
 -- | Throws an exception if the string cannot render unquoted.

@@ -67,11 +67,19 @@ ${name}!"@. See 'Expr'Str'.
 
 We use the description "dynamic" to mean the string may contain antiquotation,
 in contrast with 'Str'Static' which cannot. -}
-newtype Str'Dynamic expr =
+data Str'Dynamic expr =
   Str'Dynamic
     { strDynamic'toSeq :: Seq (Str'1 expr)
     }
-  deriving (Monoid, Semigroup)
+
+instance Semigroup (Str'Dynamic expr)
+  where
+    Str'Dynamic x <> Str'Dynamic y = Str'Dynamic (x <> y)
+
+instance Monoid (Str'Dynamic expr)
+  where
+    mempty = Str'Dynamic mempty
+    mappend = (<>)
 
 strDynamic'toList :: Str'Dynamic expr -> [Str'1 expr]
 strDynamic'toList =

@@ -13,7 +13,6 @@ module Bricks.Keyword
   , keyword'rec
   , keyword'let
   , keyword'in
-  , keyword'with
   , keyword'inherit
   , keyword'inlineComment
 
@@ -40,7 +39,6 @@ keywords =
   [ keyword'rec
   , keyword'let
   , keyword'in
-  , keyword'with
   , keyword'inherit
   , keyword'inlineComment
   ]
@@ -56,9 +54,6 @@ keyword'let = Keyword "let"
 
 keyword'in :: Keyword
 keyword'in = Keyword "in"
-
-keyword'with :: Keyword
-keyword'with = Keyword "with"
 
 keyword'inherit :: Keyword
 keyword'inherit = Keyword "inherit"

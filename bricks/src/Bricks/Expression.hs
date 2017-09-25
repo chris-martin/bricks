@@ -49,9 +49,6 @@ module Bricks.Expression
   , Let (..)
   , LetBinding (..)
 
-  -- * @with@
-  , With (..)
-
   -- * @inherit@
   , Inherit (..)
 
@@ -387,13 +384,6 @@ data LetBinding
       -- ^ A binding using the @inherit@ keyword, of the form @inherit a b;@
       -- or @inherit (x) a b;@
 
--- | A @with@ expression. See 'Expr'With'.
-data With =
-  With
-    { with'context :: Expression
-    , with'value :: Expression
-    }
-
 data Inherit =
   Inherit
     { inherit'source :: Maybe Expression
@@ -439,7 +429,6 @@ instance Show DictPattern'1     where showsPrec = showsPrec'
 instance Show Apply             where showsPrec = showsPrec'
 instance Show Let               where showsPrec = showsPrec'
 instance Show LetBinding        where showsPrec = showsPrec'
-instance Show With              where showsPrec = showsPrec'
 instance Show Inherit           where showsPrec = showsPrec'
 
 showsPrec' :: Show' a => Int -> a -> String -> String
@@ -531,11 +520,6 @@ instance Show' LetBinding
     show' = \case
       LetBinding'Eq a b -> Text.unwords ["binding", show'static a, show'paren b]
       LetBinding'Inherit x -> show' x
-
-instance Show' With
-  where
-    show' = \case
-      With a b -> Text.unwords ["with", show'paren a, show'paren b]
 
 instance Show' Inherit
   where

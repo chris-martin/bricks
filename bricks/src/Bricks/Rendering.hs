@@ -215,13 +215,6 @@ render'inherit =
   where
     r = foldMap (\x -> " " <> render'strStatic'unquotedIfPossible x)
 
--- | Render a @with@ expression.
-render'with :: Render With
-render'with (With a b) =
-  keywordText keyword'with <> " " <>
-  render'expression a <> "; " <>
-  render'expression b
-
 -- | Render an expression.
 render'expression :: Render Expression
 render'expression =

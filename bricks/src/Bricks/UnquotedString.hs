@@ -81,7 +81,8 @@ text'canBeUnquoted x =
   && not (Text.null x)
   && List.all ((/= x) . keywordText) keywords
 
--- | Letters, @-@, and @_@.
+{- | Whether the character is allowed to be included in an 'UnquotedString'.
+Such characters are letters, @+@, @-@, @*@, @/@, and @_@. -}
 char'canBeUnquoted :: Char -> Bool
 char'canBeUnquoted c =
-  Char.isLetter c || c == '-' || c == '_'
+  Char.isLetter c || List.elem c ("+-*/_" :: [Char])

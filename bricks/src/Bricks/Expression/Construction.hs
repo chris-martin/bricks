@@ -23,6 +23,7 @@ module Bricks.Expression.Construction where
 
 -- Bricks
 import Bricks.Expression
+import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal
@@ -140,21 +141,21 @@ inherit'from x y =
 --  Dynamic strings
 --------------------------------------------------------------------------------
 
-str :: [Str'1'] -> Expression
+str :: [Str'1'IsString] -> Expression
 str =
-  Expr'Str . Str'Dynamic . Seq.fromList . fmap unStr'1'
+  Expr'Str . Str'Dynamic . Seq.fromList . fmap unStr'1'IsString
 
-antiquote :: Expression -> Str'1'
+antiquote :: Expression -> Str'1'IsString
 antiquote =
-  Str'1' . Str'1'Antiquote
+  Str'1'IsString . Str'1'Antiquote
 
 -- | A newtype for 'Str'1' just so we can give it the 'IsString' instance
 -- which would be dubiously appropriate for the actual 'Str'1' type.
-newtype Str'1' = Str'1' { unStr'1' :: Str'1 }
+newtype Str'1'IsString = Str'1'IsString { unStr'1'IsString :: Str'1 Expression }
 
-instance IsString Str'1'
+instance IsString Str'1'IsString
   where
-    fromString = Str'1' . Str'1'Literal . Text.pack
+    fromString = Str'1'IsString . Str'1'Literal . Text.pack
 
 
 --------------------------------------------------------------------------------

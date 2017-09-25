@@ -9,19 +9,6 @@ module Bricks.Expression
   -- * Expressions
     Expression (..)
 
-  -- * Strings
-  , Str'Static
-  , Str'Dynamic (..)
-  , Str'1 (..)
-  , strDynamic'toList
-  , strDynamic'fromList
-  , strDynamic'singleton
-
-  -- * String conversions
-  , str'dynamicToStatic
-  , str'staticToDynamic
-  , str'unquotedToDynamic
-
   -- * Lists
   , List (..)
 
@@ -55,24 +42,20 @@ module Bricks.Expression
   ) where
 
 -- Bricks
+import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal
 import           Bricks.Internal.Prelude
-import           Bricks.Internal.Seq     (Seq)
-import qualified Bricks.Internal.Seq     as Seq
-import           Bricks.Internal.Text    (Text)
-import qualified Bricks.Internal.Text    as Text
-
--- Base
-import           Data.Foldable (Foldable)
-import qualified Data.Foldable as Foldable
-import           Prelude       (Int)
+import           Bricks.Internal.Seq            (Seq)
+import           Bricks.Internal.ShowExpression
+import           Bricks.Internal.Text           (Text)
+import qualified Bricks.Internal.Text           as Text
 
 data Expression
   = Expr'Var UnquotedString
       -- ^ A /variable/, such as @x@.
-  | Expr'Str Str'Dynamic
+  | Expr'Str (Str'Dynamic Expression)
       -- ^ A /string/ may be quoted either in the traditional form using a
       -- single double-quote (@"@...@"@):
       --
@@ -245,49 +228,6 @@ data Expression
       -- expression may refer to each other (much like a dict with the @rec@
       -- keyword). As with dicts, the order of the bindings does not matter.
 
-{- | A fixed string value. We use the description "static" to mean the string
-may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
-type Str'Static = Text
-
-{- | A quoted string expression, which may be a simple string like @"hello"@ or
-a more complex string containing antiquotation like @"Hello, my name is
-${name}!"@. See 'Expr'Str'.
-
-We use the description "dynamic" to mean the string may contain antiquotation,
-in contrast with 'Str'Static' which cannot. -}
-newtype Str'Dynamic = Str'Dynamic { strDynamic'toSeq :: Seq Str'1 }
-  deriving (Monoid, Semigroup)
-
-strDynamic'toList :: Str'Dynamic -> [Str'1]
-strDynamic'toList =
-  Seq.toList . strDynamic'toSeq
-
-strDynamic'fromList :: [Str'1] -> Str'Dynamic
-strDynamic'fromList =
-  Str'Dynamic . Seq.fromList
-
-strDynamic'singleton :: Str'1 -> Str'Dynamic
-strDynamic'singleton =
-  Str'Dynamic . Seq.singleton
-
-str'dynamicToStatic :: Str'Dynamic -> Maybe Str'Static
-str'dynamicToStatic = strDynamic'toList >>> \case
-  [Str'1'Literal x] -> Just x
-  _                 -> Nothing
-
-str'staticToDynamic :: Str'Static -> Str'Dynamic
-str'staticToDynamic =
-  strDynamic'singleton . Str'1'Literal
-
-str'unquotedToDynamic :: UnquotedString -> Str'Dynamic
-str'unquotedToDynamic =
-  str'staticToDynamic . unquotedString'text
-
--- | One part of a 'Str'Dynamic'.
-data Str'1
-  = Str'1'Literal Str'Static
-  | Str'1'Antiquote Expression
-
 -- | A function expression. See 'Expr'Lambda'.
 data Lambda =
   Lambda
@@ -414,144 +354,115 @@ implementations (which are unwieldily long) and the Bricks language itself
 (which is quite terse but unsuitable for demonstrating the parser, as
 outputting a Bricks rendering of parse result wouldn't illumunate anyone's
 understanding of the AST that the 'Show' instances are here to depict). -}
-instance Show Expression        where showsPrec = showsPrec'
+instance Show Expression        where showsPrec = showsPrec'showExpression
+instance Show List              where showsPrec = showsPrec'showExpression
+instance Show Dict              where showsPrec = showsPrec'showExpression
+instance Show DictBinding       where showsPrec = showsPrec'showExpression
+instance Show Dot               where showsPrec = showsPrec'showExpression
+instance Show Lambda            where showsPrec = showsPrec'showExpression
+instance Show Param             where showsPrec = showsPrec'showExpression
+instance Show DictPattern       where showsPrec = showsPrec'showExpression
+instance Show DictPattern'1     where showsPrec = showsPrec'showExpression
+instance Show Apply             where showsPrec = showsPrec'showExpression
+instance Show Let               where showsPrec = showsPrec'showExpression
+instance Show LetBinding        where showsPrec = showsPrec'showExpression
+instance Show Inherit           where showsPrec = showsPrec'showExpression
 
-instance Show Str'Dynamic       where showsPrec = showsPrec'
-instance Show Str'1             where showsPrec = showsPrec'
-instance Show List              where showsPrec = showsPrec'
-instance Show Dict              where showsPrec = showsPrec'
-instance Show DictBinding       where showsPrec = showsPrec'
-instance Show Dot               where showsPrec = showsPrec'
-instance Show Lambda            where showsPrec = showsPrec'
-instance Show Param             where showsPrec = showsPrec'
-instance Show DictPattern       where showsPrec = showsPrec'
-instance Show DictPattern'1     where showsPrec = showsPrec'
-instance Show Apply             where showsPrec = showsPrec'
-instance Show Let               where showsPrec = showsPrec'
-instance Show LetBinding        where showsPrec = showsPrec'
-instance Show Inherit           where showsPrec = showsPrec'
-
-showsPrec' :: Show' a => Int -> a -> String -> String
-showsPrec' _ x = (Text.unpack (show' x) <>)
-
-class Show' a
+instance ShowExpression Expression
   where
-    show' :: a -> Text
-
-instance Show' Expression
-  where
-    show' = \case
+    showExpression = \case
       Expr'Var x    -> show'var x
-      Expr'Str x    -> show' x
-      Expr'List x   -> show' x
-      Expr'Dict x   -> show' x
-      Expr'Dot x    -> show' x
-      Expr'Lambda x -> show' x
-      Expr'Apply x  -> show' x
-      Expr'Let x    -> show' x
+      Expr'Str x    -> showExpression x
+      Expr'List x   -> showExpression x
+      Expr'Dict x   -> showExpression x
+      Expr'Dot x    -> showExpression x
+      Expr'Lambda x -> showExpression x
+      Expr'Apply x  -> showExpression x
+      Expr'Let x    -> showExpression x
 
-instance Show' Str'Dynamic
+instance ShowExpression List
   where
-    show' x =
-      Text.unwords ["str", show'list (strDynamic'toList x)]
+    showExpression (List xs) = Text.unwords ["list", showExpression'list xs]
 
-instance Show' Str'1
+instance ShowExpression Dict
   where
-    show' = \case
-      Str'1'Literal x -> show'quoted' x
-      Str'1'Antiquote x -> Text.unwords ["antiquote", show'paren x]
-
-instance Show' List
-  where
-    show' (List xs) = Text.unwords ["list", show'list xs]
-
-instance Show' Dict
-  where
-    show' (Dict r bs) =
+    showExpression (Dict r bs) =
       Text.unwords
-        [if r then "rec'dict" else "dict", show'list bs]
+        [if r then "rec'dict" else "dict", showExpression'list bs]
 
-instance Show' DictBinding
+instance ShowExpression DictBinding
   where
-    show' = \case
-      DictBinding'Eq a b -> Text.unwords ["binding", show'paren a, show'paren b]
-      DictBinding'Inherit x -> show' x
+    showExpression = \case
+      DictBinding'Eq a b ->
+        Text.unwords ["binding", showExpression'paren a, showExpression'paren b]
+      DictBinding'Inherit x -> showExpression x
 
-instance Show' Dot
+instance ShowExpression Dot
   where
-    show' (Dot a b) = Text.unwords ["dot", show'paren a, show'paren b]
+    showExpression (Dot a b) =
+      Text.unwords ["dot", showExpression'paren a, showExpression'paren b]
 
-instance Show' Lambda
+instance ShowExpression Lambda
   where
-    show' (Lambda a b) = Text.unwords ["lambda", show'paren a, show'paren b]
+    showExpression (Lambda a b) =
+      Text.unwords ["lambda", showExpression'paren a, showExpression'paren b]
 
-instance Show' Param
+instance ShowExpression Param
   where
-    show' = \case
+    showExpression = \case
       Param'Name a -> show'param a
-      Param'DictPattern b -> show' b
-      Param'Both a b -> Text.intercalate " <> " [ show'param a, show' b ]
+      Param'DictPattern b -> showExpression b
+      Param'Both a b ->
+        Text.intercalate " <> " [ show'param a, showExpression b ]
 
-instance Show' DictPattern
+instance ShowExpression DictPattern
   where
-    show' = \case
+    showExpression = \case
       DictPattern xs e ->
         Text.intercalate " <> " $
-        [Text.unwords ["pattern", show'list xs]] <>
+        [Text.unwords ["pattern", showExpression'list xs]] <>
         (if e then ["ellipsis"] else [])
 
-instance Show' DictPattern'1
+instance ShowExpression DictPattern'1
   where
-    show' (DictPattern'1 a mb) =
+    showExpression (DictPattern'1 a mb) =
       Text.unwords $
         show'param a :
-        maybe [] (\b -> [Text.unwords ["& def", show'paren b]]) mb
+        maybe [] (\b -> [Text.unwords ["& def", showExpression'paren b]]) mb
 
-instance Show' Apply
+instance ShowExpression Apply
   where
-    show' (Apply a b) = Text.unwords ["apply", show'paren a, show'paren b]
+    showExpression (Apply a b) =
+      Text.unwords ["apply", showExpression'paren a, showExpression'paren b]
 
-instance Show' Let
+instance ShowExpression Let
   where
-    show' (Let xs y) = Text.unwords ["let'in", show'list xs, show'paren y]
+    showExpression (Let xs y) =
+      Text.unwords ["let'in", showExpression'list xs, showExpression'paren y]
 
-instance Show' LetBinding
+instance ShowExpression LetBinding
   where
-    show' = \case
-      LetBinding'Eq a b -> Text.unwords ["binding", show'static a, show'paren b]
-      LetBinding'Inherit x -> show' x
+    showExpression = \case
+      LetBinding'Eq a b ->
+        Text.unwords ["binding", show'static a, showExpression'paren b]
+      LetBinding'Inherit x -> showExpression x
 
-instance Show' Inherit
+instance ShowExpression Inherit
   where
-    show' (Inherit mf xs) =
+    showExpression (Inherit mf xs) =
       Text.unwords $
-        (maybe ("inherit":) (\a -> ("inherit'from" :) . (show'paren a :)) mf) $
-        [show'list' $ fmap show'quoted' xs]
-
-show'list :: (Foldable f, Show' a) => f a -> Text
-show'list =
-  show'list' . fmap show' . Foldable.toList
-
-show'list' :: Foldable f => f Text -> Text
-show'list' x =
-  "[" <> Text.intercalate ", " x <> "]"
-
-show'quoted' :: Text -> Text
-show'quoted' =
-  Text.pack . show @Text
-
-show'paren :: Show' a => a -> Text
-show'paren x =
-  "(" <> show' x <> ")"
+        (maybe ("inherit":) (\a -> ("inherit'from" :)
+        . (showExpression'paren a :)) mf) $
+        [showExpression'list'text $ fmap showExpression'quoted'text xs]
 
 show'static :: Str'Static -> Text
 show'static x =
-  Text.unwords ["str", show'quoted' x]
+  Text.unwords ["str", showExpression'quoted'text x]
 
 show'param :: UnquotedString -> Text
 show'param x =
-  Text.unwords ["param", show'quoted' (unquotedString'text x)]
+  Text.unwords ["param", showExpression'quoted'text (unquotedString'text x)]
 
 show'var :: UnquotedString -> Text
 show'var x =
-  Text.unwords ["var", show'quoted' (unquotedString'text x)]
+  Text.unwords ["var", showExpression'quoted'text (unquotedString'text x)]

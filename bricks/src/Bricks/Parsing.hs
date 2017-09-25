@@ -84,6 +84,7 @@ module Bricks.Parsing
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
+import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal
@@ -218,16 +219,16 @@ parse'strStatic'unquoted =
 string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
 an "indented" string delimited by two single-quotes @''@...@''@
 ('parse'strDynamic'indentedQ'). -}
-parse'strDynamic'quoted :: Parser Str'Dynamic
+parse'strDynamic'quoted :: Parser (Str'Dynamic Expression)
 parse'strDynamic'quoted =
   parse'strDynamic'normalQ <|> parse'strDynamic'indentedQ
 
 -- | Parser for a dynamic string enclosed in "normal" quotes (@"@...@"@).
-parse'strDynamic'normalQ :: Parser Str'Dynamic
+parse'strDynamic'normalQ :: Parser (Str'Dynamic Expression)
 parse'strDynamic'normalQ =
   P.char '"' *> go Seq.empty
   where
-    go :: Seq Str'1 -> Parser Str'Dynamic
+    go :: Seq (Str'1 Expression) -> Parser (Str'Dynamic Expression)
     go previousParts =
       asum
         [ end $> Str'Dynamic previousParts
@@ -283,7 +284,7 @@ to express @''@ or @${@ within an indented string is to antiquote them.
 str [antiquote (str ["''"]), " and ", antiquote (str ["${"])]
 
 -}
-parse'strDynamic'indentedQ :: Parser Str'Dynamic
+parse'strDynamic'indentedQ :: Parser (Str'Dynamic Expression)
 parse'strDynamic'indentedQ =
   parse'inStr <&> inStr'join . inStr'dedent . inStr'trim
 
@@ -311,7 +312,7 @@ parse'inStr'1 =
     b <- go Seq.empty
     pure $ InStr'1 a b
   where
-    go :: Seq Str'1 -> Parser Str'Dynamic
+    go :: Seq (Str'1 Expression) -> Parser (Str'Dynamic Expression)
     go previousParts =
       asum
         [ end              $> Str'Dynamic previousParts
@@ -330,7 +331,7 @@ parse'inStr'1 =
       , P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
       ]
 
-parse'antiquote :: Parser Str'Dynamic
+parse'antiquote :: Parser (Str'Dynamic Expression)
 parse'antiquote =
   (P.try (P.string "${") *> parse'spaces *> parse'expression <* P.char '}')
   <&> strDynamic'singleton . Str'1'Antiquote

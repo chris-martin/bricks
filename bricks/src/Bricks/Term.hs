@@ -41,13 +41,11 @@ class (Monad m, MonadIO m, MonadError Bottom m) => MonadEval m
 type Function = forall m. MonadEval m => Term -> m Term
 
 data Term
-  = Term'Data
-      Text    -- ^ The name of the data type
-      Dynamic -- ^ The value
+  = Term'Data Text Dynamic
+      -- ^ The name of the data type, and a value of that type.
   | Term'Function Function
-  | Term'Lambda
-      TermPattern -- ^ The head of the lambda expression
-      Term        -- ^ The body of the lambda expression
+  | Term'Lambda TermPattern Term
+      -- ^ The head and body of a lambda expression.
   | Term'LetRec (Map Text Term) Term
   | Term'List (Seq Term)
   | Term'Dict (Seq (Term, Term))

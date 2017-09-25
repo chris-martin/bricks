@@ -36,6 +36,7 @@ library:
     - Bricks.Keyword
     - Bricks.Parsing
     - Bricks.Rendering
+    - Bricks.StringExpressions
     - Bricks.Term
     - Bricks.Type
     - Bricks.UnquotedString
@@ -43,6 +44,7 @@ library:
     - Bricks.Internal.Monad
     - Bricks.Internal.Prelude
     - Bricks.Internal.Seq
+    - Bricks.Internal.ShowExpression
     - Bricks.Internal.Text
 
 dependencies:

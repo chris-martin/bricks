@@ -28,6 +28,8 @@ The following modules are re-exported from this module in their entireties:
     into 'Expression's
   - "Bricks.Rendering" - Defines all of the renderers for turning 'Expression's
     into Bricks code
+  - "Bricks.StringExpressions" - Defines the three types of strings in the AST:
+    unquoted, static, and dynamic
 - Evaluation
   - "Bricks.Term" - ...
   - "Bricks.ExpressionToTerm" - ...
@@ -204,4 +206,5 @@ import Bricks.IndentedString
 import Bricks.Keyword
 import Bricks.Parsing
 import Bricks.Rendering
+import Bricks.StringExpressions
 import Bricks.UnquotedString

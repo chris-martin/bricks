@@ -14,6 +14,7 @@ module Bricks.ExpressionToTerm where
 -- Bricks
 import Bricks.BuiltinFunctions
 import Bricks.Expression
+import Bricks.StringExpressions
 import Bricks.Term
 import Bricks.Type
 import Bricks.UnquotedString
@@ -22,7 +23,6 @@ import Bricks.UnquotedString
 import           Bricks.Internal.Prelude
 import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)
-import qualified Bricks.Internal.Text    as Text
 
 -- Containers
 import           Data.Map (Map)
@@ -50,7 +50,7 @@ apply'to'term :: Apply -> Term
 apply'to'term (Apply a b) =
   expression'to'term a /@\ expression'to'term b
 
-str'to'term :: Str'Dynamic -> Term
+str'to'term :: Str'Dynamic Expression -> Term
 str'to'term (Str'Dynamic (Seq.toList -> xs)) =
   case xs of
     [] -> term'data type'string ""
@@ -58,7 +58,7 @@ str'to'term (Str'Dynamic (Seq.toList -> xs)) =
   where
     f x y = fn'string'append /@@\ (x, y)
 
-str'1'to'term :: Str'1 -> Term
+str'1'to'term :: Str'1 Expression -> Term
 str'1'to'term = \case
   Str'1'Literal x -> term'data type'string x
   Str'1'Antiquote x -> expression'to'term x

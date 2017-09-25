@@ -59,6 +59,7 @@ module Bricks.Rendering
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
+import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal
@@ -97,14 +98,14 @@ render'strStatic'quoted x =
   "\"" <> str'escape x <> "\""
 
 -- | Render a dynamic string, in unquoted form if possible.
-render'strDynamic'unquotedIfPossible :: Render Str'Dynamic
+render'strDynamic'unquotedIfPossible :: Render (Str'Dynamic Expression)
 render'strDynamic'unquotedIfPossible d =
   case str'dynamicToStatic d of
     Just s  -> render'strStatic'unquotedIfPossible s
     Nothing -> render'strDynamic'quoted d
 
 -- | Render a dynamic string, in quoted form.
-render'strDynamic'quoted :: Render Str'Dynamic
+render'strDynamic'quoted :: Render (Str'Dynamic Expression)
 render'strDynamic'quoted xs =
   "\"" <> foldMap r (strDynamic'toSeq xs) <> "\""
   where

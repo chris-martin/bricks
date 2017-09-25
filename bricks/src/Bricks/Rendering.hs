@@ -170,10 +170,9 @@ render'list (List xs) =
 
 -- | Render a dict literal (@{ ... }@).
 render'dict :: Render Dict
-render'dict =
-  \case
-    Dict False bs ->     "{ " <> r bs <> "}"
-    Dict True  bs -> "rec { " <> r bs <> "}"
+render'dict (Dict rec bs) =
+  (if rec then keywordText keyword'rec <> " " else "") <>
+  "{ " <> r bs <> "}"
   where
     r = Text.concat . fmap (\b -> render'dictBinding b <> "; ")
 
@@ -194,7 +193,8 @@ render'dot (Dot a b) =
 -- | Render a @let@-@in@ expression.
 render'let :: Render Let
 render'let (Let bs x) =
-  "let " <> r bs <> "in " <> render'expression x
+  keywordText keyword'let <> " " <> r bs <>
+  keywordText keyword'in <> " " <> render'expression x
   where
     r = Text.concat . fmap (\b -> render'letBinding b <> "; ")
 
@@ -209,9 +209,10 @@ render'letBinding =
 
 render'inherit :: Render Inherit
 render'inherit =
+  (keywordText keyword'inherit <>) .
   \case
-    Inherit Nothing xs  -> "inherit" <> r xs
-    Inherit (Just a) xs -> "inherit (" <> render'expression a <> ")" <> r xs
+    Inherit Nothing xs  -> r xs
+    Inherit (Just a) xs -> " (" <> render'expression a <> ")" <> r xs
   where
     r = foldMap (\x -> " " <> render'strStatic'unquotedIfPossible x)
 

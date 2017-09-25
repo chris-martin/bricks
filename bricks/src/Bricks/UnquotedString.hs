@@ -34,7 +34,11 @@ a conservative set of characters; see 'str'canRenderUnquoted' for the full
 rules.
 
 The constructor is tagged "unsafe" because it lets you construct and invalid
-value. Prefer 'str'tryUnquoted' which does validate the text. -}
+value. Prefer 'str'tryUnquoted' which does validate the text.
+
+This type does not represent a particular part of Brick syntax, but it is a
+wrapper for 'Text' that enforces the limitations of strings at various places
+in the Bricks syntax. -}
 newtype UnquotedString = UnquotedString'Unsafe { str'unquotedToStatic :: Text }
 
 instance Show UnquotedString

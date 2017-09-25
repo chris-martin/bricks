@@ -44,7 +44,7 @@ expression'to'term =
       undefined
 
 var'to'term :: UnquotedString -> Term
-var'to'term = Term'Var . str'unquotedToStatic
+var'to'term = Term'Var . unquotedString'text
 
 apply'to'term :: Apply -> Term
 apply'to'term (Apply a b) =
@@ -90,7 +90,7 @@ lambda'to'term'simple :: UnquotedString -> Term -> Term
 lambda'to'term'simple var body =
   -- For a simple named parameter, the AST translates directly into the
   -- lambda calculus.
-  TermPattern'Simple (str'unquotedToStatic var) |-> body
+  TermPattern'Simple (unquotedString'text var) |-> body
 
 lambda'to'term'dictPattern :: DictPattern -> Term -> Term
 lambda'to'term'dictPattern dp body =
@@ -121,7 +121,7 @@ dictPattern'names :: DictPattern -> Set Text
 dictPattern'names (DictPattern xs _) =
   Set.fromList . fmap f . Seq.toList $ xs
   where
-    f = str'unquotedToStatic . dictPattern'1'name
+    f = unquotedString'text . dictPattern'1'name
 
 dictPattern'defaults :: DictPattern -> Map Text Term
 dictPattern'defaults (DictPattern xs _) =
@@ -129,5 +129,5 @@ dictPattern'defaults (DictPattern xs _) =
   where
     f :: DictPattern'1 -> Maybe (Text, Term)
     f x = dictPattern'1'default x <&> \d ->
-            ( str'unquotedToStatic . dictPattern'1'name $ x
+            ( unquotedString'text . dictPattern'1'name $ x
             , expression'to'term d )

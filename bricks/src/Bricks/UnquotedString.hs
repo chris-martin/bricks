@@ -39,11 +39,11 @@ value. Prefer 'str'tryUnquoted' which does validate the text.
 This type does not represent a particular part of Brick syntax, but it is a
 wrapper for 'Text' that enforces the limitations of strings at various places
 in the Bricks syntax. -}
-newtype UnquotedString = UnquotedString'Unsafe { str'unquotedToStatic :: Text }
+newtype UnquotedString = UnquotedString'Unsafe { unquotedString'text :: Text }
 
 instance Show UnquotedString
   where
-    showsPrec _ x = ("unquoted " <>) . shows (str'unquotedToStatic x)
+    showsPrec _ x = ("unquoted " <>) . shows (unquotedString'text x)
 
 str'tryUnquoted :: Text -> Maybe UnquotedString
 str'tryUnquoted x =

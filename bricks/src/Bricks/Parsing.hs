@@ -212,7 +212,7 @@ parse'strStatic'quoted =
 -- | Parser for an unquoted static string.
 parse'strStatic'unquoted :: Parser Str'Static
 parse'strStatic'unquoted =
-  parse'strUnquoted <&> str'unquotedToStatic
+  parse'strUnquoted <&> unquotedString'text
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
 string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
@@ -398,7 +398,7 @@ parse'dictPattern =
         more :: Parser DictPattern
         more = item >>= \newItem ->
           let
-            newName = str'unquotedToStatic (dictPattern'1'name newItem)
+            newName = unquotedString'text (dictPattern'1'name newItem)
             newItems = previousItems |> newItem
             newNames = Set.insert newName previousNames
 

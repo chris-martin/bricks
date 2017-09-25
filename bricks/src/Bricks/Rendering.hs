@@ -84,7 +84,7 @@ str'escape =
 
 -- | Render an unquoted string in unquoted form.
 render'strUnquoted :: Render UnquotedString
-render'strUnquoted = str'unquotedToStatic
+render'strUnquoted = unquotedString'text
 
 -- | Render a static string, in unquoted form if possible.
 render'strStatic'unquotedIfPossible :: Render Str'Static

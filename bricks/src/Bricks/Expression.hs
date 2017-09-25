@@ -281,7 +281,7 @@ str'staticToDynamic =
 
 str'unquotedToDynamic :: UnquotedString -> Str'Dynamic
 str'unquotedToDynamic =
-  str'staticToDynamic . str'unquotedToStatic
+  str'staticToDynamic . unquotedString'text
 
 -- | One part of a 'Str'Dynamic'.
 data Str'1
@@ -550,8 +550,8 @@ show'static x =
 
 show'param :: UnquotedString -> Text
 show'param x =
-  Text.unwords ["param", show'quoted' (str'unquotedToStatic x)]
+  Text.unwords ["param", show'quoted' (unquotedString'text x)]
 
 show'var :: UnquotedString -> Text
 show'var x =
-  Text.unwords ["var", show'quoted' (str'unquotedToStatic x)]
+  Text.unwords ["var", show'quoted' (unquotedString'text x)]

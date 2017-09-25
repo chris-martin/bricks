@@ -6,7 +6,11 @@
 
 {- |
 
-There are three types of strings in the AST: unquoted, static, and dynamic.
+There are three types of strings in the AST:
+
+  - 'Str'Unquoted'
+  - 'Str'Static'
+  - 'Str'Dynamic'
 
 = Why variables are strings
 
@@ -31,18 +35,27 @@ ASTs for these two expressions are (apart from the name change) identical.
 -}
 module Bricks.StringExpressions
   (
-  -- * Strings
-    Str'Static (..)
+
+  -- * Unquoted strings
+    Str'Unquoted (..)
+  , str'unquoted'text
+
+  -- * Static strings
+  , Str'Static (..)
+
+  -- * Dynamic strings
   , Str'Dynamic (..)
   , Str'1 (..)
   , strDynamic'toList
   , strDynamic'fromList
   , strDynamic'singleton
 
-  -- * String conversions
+  -- * Conversions between the different types of strings
   , str'dynamicToStatic
   , str'staticToDynamic
   , str'unquotedToDynamic
+  , str'unquoted'to'static
+  , str'unquoted'to'dynamic
 
   ) where
 
@@ -62,7 +75,18 @@ import qualified Bricks.Internal.Text           as Text
 --  Unquoted
 --------------------------------------------------------------------------------
 
--- todo
+data Str'Unquoted = Str'Unquoted UnquotedString
+
+str'unquoted'text :: Str'Unquoted -> Text
+str'unquoted'text (Str'Unquoted x) = unquotedString'text x
+
+instance ShowExpression Str'Unquoted
+  where
+    showExpression = Text.pack . show @Text . str'unquoted'text
+
+instance Show Str'Unquoted
+  where
+    showsPrec = showsPrec'showExpression
 
 
 --------------------------------------------------------------------------------
@@ -139,11 +163,6 @@ instance ShowExpression expr => Show (Str'1 expr)
   where
     showsPrec = showsPrec'showExpression
 
-
---------------------------------------------------------------------------------
---  Conversions
---------------------------------------------------------------------------------
-
 strDynamic'toList :: Str'Dynamic expr -> [Str'1 expr]
 strDynamic'toList =
   Seq.toList . strDynamic'toSeq
@@ -155,6 +174,11 @@ strDynamic'fromList =
 strDynamic'singleton :: Str'1 expr -> Str'Dynamic expr
 strDynamic'singleton =
   Str'Dynamic . Seq.singleton
+
+
+--------------------------------------------------------------------------------
+--  Conversions between the different types of strings
+--------------------------------------------------------------------------------
 
 str'dynamicToStatic :: Str'Dynamic expr -> Maybe Str'Static
 str'dynamicToStatic = strDynamic'toList >>> \case
@@ -168,3 +192,11 @@ str'staticToDynamic =
 str'unquotedToDynamic :: UnquotedString -> Str'Dynamic expr
 str'unquotedToDynamic =
   str'staticToDynamic . Str'Static . unquotedString'text
+
+str'unquoted'to'static :: Str'Unquoted -> Str'Static
+str'unquoted'to'static =
+  Str'Static . str'unquoted'text
+
+str'unquoted'to'dynamic :: Str'Unquoted -> Str'Dynamic expr
+str'unquoted'to'dynamic =
+  str'staticToDynamic . str'unquoted'to'static

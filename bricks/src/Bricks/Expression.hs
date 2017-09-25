@@ -43,7 +43,6 @@ module Bricks.Expression
 
 -- Bricks
 import Bricks.StringExpressions
-import Bricks.UnquotedString
 
 -- Bricks internal
 import           Bricks.Internal.Prelude
@@ -53,7 +52,7 @@ import           Bricks.Internal.Text           (Text)
 import qualified Bricks.Internal.Text           as Text
 
 data Expression
-  = Expr'Var UnquotedString
+  = Expr'Var Str'Unquoted
       -- ^ A /variable/, such as @x@.
   | Expr'Str (Str'Dynamic Expression)
       -- ^ A /string/ may be quoted either in the traditional form using a
@@ -249,12 +248,12 @@ data Apply =
 {- | A parameter to a 'Lambda'. All functions have a single parameter, but it's
 more complicated than that because it may also include dict destructuring. -}
 data Param
-  = Param'Name UnquotedString
+  = Param'Name Str'Unquoted
       -- ^ A simple single-parameter function
   | Param'DictPattern DictPattern
       -- ^ Dict destructuring, which gives you something resembling multiple
       -- named parameters with default values
-  | Param'Both UnquotedString DictPattern
+  | Param'Both Str'Unquoted DictPattern
       -- ^ Both a param name /and/ a dict pattern, separated by the @\@@
       -- keyword
 
@@ -272,7 +271,7 @@ data DictPattern =
 -- | One item within a 'DictPattern'.
 data DictPattern'1 =
   DictPattern'1
-    { dictPattern'1'name :: UnquotedString
+    { dictPattern'1'name :: Str'Unquoted
         -- ^ The name of the key to pull out of the dict
     , dictPattern'1'default :: Maybe Expression
         -- ^ The default value to be used if the key is not present in the dict
@@ -461,10 +460,10 @@ show'static :: Str'Static -> Text
 show'static (Str'Static x) =
   Text.unwords ["str", showExpression'quoted'text x]
 
-show'param :: UnquotedString -> Text
+show'param :: Str'Unquoted -> Text
 show'param x =
-  Text.unwords ["param", showExpression'quoted'text (unquotedString'text x)]
+  Text.unwords ["param", showExpression x]
 
-show'var :: UnquotedString -> Text
+show'var :: Str'Unquoted -> Text
 show'var x =
-  Text.unwords ["var", showExpression'quoted'text (unquotedString'text x)]
+  Text.unwords ["var", showExpression x]

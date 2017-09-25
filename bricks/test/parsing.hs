@@ -65,7 +65,7 @@ parseTest p input =
 prop_parse_str_unquoted :: Property
 prop_parse_str_unquoted = property $ do
 
-  let test = parseTest $ fmap unquotedString'text $ parse'strUnquoted
+  let test = parseTest $ fmap str'unquoted'text $ parse'strUnquoted
 
   test "-ab_c" === [text|-ab_c|]
 

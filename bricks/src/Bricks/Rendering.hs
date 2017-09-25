@@ -84,8 +84,8 @@ str'escape =
   Text.replace "\\" "\\\\"
 
 -- | Render an unquoted string in unquoted form.
-render'strUnquoted :: Render UnquotedString
-render'strUnquoted = unquotedString'text
+render'strUnquoted :: Render Str'Unquoted
+render'strUnquoted = str'unquoted'text
 
 -- | Render a static string, in unquoted form if possible.
 render'strStatic'unquotedIfPossible :: Render Str'Static
@@ -130,7 +130,7 @@ render'inStr'1 (InStr'1 n xs) =
 render'param :: Render Param
 render'param =
   \case
-    Param'Name a         -> render'strUnquoted a
+    Param'Name a        -> render'strUnquoted a
     Param'DictPattern b -> render'dictPattern b
     Param'Both a b      -> render'strUnquoted a <> "@" <>
                            render'dictPattern b

@@ -87,6 +87,8 @@ module Bricks
   , parse'strDynamic'normalQ
   , parse'strDynamic'indentedQ
   -- ** Unquoted strings
+  , Str'Unquoted (..)
+  , str'unquoted'text
   , UnquotedString (..)
   , unquotedString'try
   , unquotedString'orThrow
@@ -98,6 +100,8 @@ module Bricks
   , str'dynamicToStatic
   , str'staticToDynamic
   , str'unquotedToDynamic
+  , str'unquoted'to'static
+  , str'unquoted'to'dynamic
   -- ** Indented strings
   , InStr (..)
   , inStr'toList

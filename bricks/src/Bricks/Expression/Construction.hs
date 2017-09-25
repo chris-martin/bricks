@@ -61,7 +61,7 @@ apply a b =
 
 var :: Text -> Expression
 var =
-  Expr'Var . unquotedString'orThrow
+  Expr'Var . Str'Unquoted . unquotedString'orThrow
 
 
 --------------------------------------------------------------------------------
@@ -168,11 +168,13 @@ class IsParam a
 
 instance IsParam Param'Builder
   where
-    param x = paramBuilder $ Param'Name $ unquotedString'orThrow x
+    param = paramBuilder . Param'Name
+          . Str'Unquoted . unquotedString'orThrow
 
 instance IsParam DictPattern'1
   where
-    param x = DictPattern'1 (unquotedString'orThrow x) Nothing
+    param = (\x -> DictPattern'1 x Nothing)
+          . Str'Unquoted . unquotedString'orThrow
 
 
 --------------------------------------------------------------------------------

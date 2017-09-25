@@ -157,25 +157,28 @@ parse'keyword k =
 conservative set of characters, and they may not be any of the keywords.
 
 >>> parseTest parse'strUnquoted "abc"
-unquoted "abc"
+"abc"
 
 >>> parseTest parse'strUnquoted "x{y"
-unquoted "x"
+"x"
 
 >>> parseTest parse'strUnquoted "let"
 parse error at (line 1, column 4):
 unexpected end of input
 
 -}
-parse'strUnquoted :: Parser UnquotedString
-parse'strUnquoted =
+parse'strUnquoted :: Parser Str'Unquoted
+parse'strUnquoted = do
+
   -- Consume at least one character
-  P.many1 (P.satisfy char'canBeUnquoted) <&> Text.pack
+  text <- P.many1 (P.satisfy char'canBeUnquoted) <&> Text.pack
+
   -- Fail if what we just parsed isn't a valid unquoted string
-  <&> unquotedString'try
-  >>= \case
+  case unquotedString'try text of
     Nothing -> P.parserZero
-    Just b  -> parse'spaces $> b
+    Just b  -> do
+      _ <- parse'spaces
+      pure $ Str'Unquoted b
 
 {- | Parser for a static string which may be either quoted or unquoted.
 
@@ -217,7 +220,7 @@ parse'strStatic'quoted =
 -- | Parser for an unquoted static string.
 parse'strStatic'unquoted :: Parser Str'Static
 parse'strStatic'unquoted =
-  parse'strUnquoted <&> Str'Static . unquotedString'text
+  parse'strUnquoted <&> str'unquoted'to'static
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
 string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
@@ -403,7 +406,7 @@ parse'dictPattern =
         more :: Parser DictPattern
         more = item >>= \newItem ->
           let
-            newName = unquotedString'text (dictPattern'1'name newItem)
+            newName = str'unquoted'text (dictPattern'1'name newItem)
             newItems = previousItems |> newItem
             newNames = Set.insert newName previousNames
 
@@ -708,7 +711,7 @@ parse'expression'dictKey =
     quoted = parse'strDynamic'quoted <&> Expr'Str
     antiquoted = P.string "${" *> parse'spaces *> parse'expression
                    <* P.char '}' <* parse'spaces
-    unquoted = parse'strUnquoted <&> Expr'Str . str'unquotedToDynamic
+    unquoted = parse'strUnquoted <&> Expr'Str . str'unquoted'to'dynamic
 
 parse'count :: Parser a -> Parser Natural
 parse'count p =

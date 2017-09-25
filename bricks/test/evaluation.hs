@@ -40,6 +40,7 @@ import Text.Show (show)
 main :: IO ()
 main = runTests $$(Hedgehog.discover)
 
+{-
 prop_evaluation :: Property
 prop_evaluation = property $ do
 
@@ -51,3 +52,4 @@ prop_evaluation = property $ do
               expression'to'term expr /@\ standard'library
 
   result === 3
+-}

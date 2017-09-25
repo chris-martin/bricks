@@ -89,12 +89,12 @@ render'strUnquoted = unquotedString'text
 
 -- | Render a static string, in unquoted form if possible.
 render'strStatic'unquotedIfPossible :: Render Str'Static
-render'strStatic'unquotedIfPossible x =
-  if text'canBeUnquoted x then x else render'strStatic'quoted x
+render'strStatic'unquotedIfPossible s@(Str'Static x) =
+  if text'canBeUnquoted x then x else render'strStatic'quoted s
 
 -- | Render a static string, in quoted form.
 render'strStatic'quoted :: Render Str'Static
-render'strStatic'quoted x =
+render'strStatic'quoted (Str'Static x) =
   "\"" <> str'escape x <> "\""
 
 -- | Render a dynamic string, in unquoted form if possible.
@@ -109,8 +109,9 @@ render'strDynamic'quoted :: Render (Str'Dynamic Expression)
 render'strDynamic'quoted xs =
   "\"" <> foldMap r (strDynamic'toSeq xs) <> "\""
   where
+    r :: Str'1 Expression -> Text
     r = \case
-      Str'1'Literal x   -> str'escape x
+      Str'1'Literal (Str'Static x) -> str'escape x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 -- | Render one line of an indented string ('InStr').
@@ -118,8 +119,9 @@ render'inStr'1 :: Render InStr'1
 render'inStr'1 (InStr'1 n xs) =
   Text.replicate (fromIntegral n) " " <> foldMap r (strDynamic'toSeq xs)
   where
+    r :: Str'1 Expression -> Text
     r = \case
-      Str'1'Literal x -> x
+      Str'1'Literal (Str'Static x) -> x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 -- | Render a lambda parameter: everything from the beginning of a lambda, up
@@ -149,7 +151,8 @@ render'dictPattern'1 :: Render DictPattern'1
 render'dictPattern'1 =
   \case
     DictPattern'1 a Nothing  -> render'strUnquoted a
-    DictPattern'1 a (Just b) -> render'strUnquoted a <> " ? " <> render'expression b
+    DictPattern'1 a (Just b) -> render'strUnquoted a <> " ? " <>
+                                render'expression b
 
 -- | Render a lambda expression (@x: y@).
 render'lambda :: Render Lambda

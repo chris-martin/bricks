@@ -205,7 +205,11 @@ parse'strStatic =
 -- | Parser for a static string that is quoted.
 parse'strStatic'quoted :: Parser Str'Static
 parse'strStatic'quoted =
-  P.char '"' *> parse'str'within'normalQ <* (end <|> anti)
+  do
+    _ <- P.char '"'
+    text <- parse'str'within'normalQ
+    _ <- end <|> anti
+    pure $ Str'Static text
   where
     end = P.char '"' *> parse'spaces
     anti = P.string "${" *> fail "antiquotation is not allowed in this context"
@@ -213,7 +217,7 @@ parse'strStatic'quoted =
 -- | Parser for an unquoted static string.
 parse'strStatic'unquoted :: Parser Str'Static
 parse'strStatic'unquoted =
-  parse'strUnquoted <&> unquotedString'text
+  parse'strUnquoted <&> Str'Static . unquotedString'text
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
 string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
@@ -239,7 +243,7 @@ parse'strDynamic'normalQ =
     end = P.char '"' *> parse'spaces
 
     -- Read some literal characters
-    lit = parse'str'within'normalQ <&> Str'1'Literal
+    lit = parse'str'within'normalQ <&> Str'1'Literal . Str'Static
 
     -- Read an antiquote
     anti = fmap Str'1'Antiquote $
@@ -325,7 +329,7 @@ parse'inStr'1 =
       , void $ P.try (P.string "''")
       ]
 
-    chars = fmap (Str'1'Literal . Text.pack) $ P.many1 $ asum
+    chars = fmap (Str'1'Literal . Str'Static . Text.pack) $ P.many1 $ asum
       [ P.satisfy (\c -> c /= '$' && c /= '\'' && c /= '\n')
       , P.try $ P.char '$'  <* P.notFollowedBy (P.char '{')
       , P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')

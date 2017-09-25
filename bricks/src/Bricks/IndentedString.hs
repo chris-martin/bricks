@@ -67,13 +67,14 @@ inStr'join :: InStr -> Str'Dynamic Expression
 inStr'join xs =
   Str'Dynamic . Seq.concat $
     Seq.intersperse
-      (Seq.singleton (Str'1'Literal "\n"))
+      (Seq.singleton (Str'1'Literal (Str'Static "\n")))
       (f <$> inStr'toSeq xs)
   where
     f :: InStr'1 -> Seq (Str'1 Expression)
     f (InStr'1 0 parts) = strDynamic'toSeq parts
-    f (InStr'1 n parts) = Str'1'Literal (Text.replicate (fromIntegral n) " ")
-                          <| strDynamic'toSeq parts
+    f (InStr'1 n parts) =
+        Str'1'Literal (Str'Static (Text.replicate (fromIntegral n) " "))
+        <| strDynamic'toSeq parts
 
 {- | Determines whether an 'InStr'1' contains any non-space
 characters. The opposite of 'inStr'1'nonEmpty'.

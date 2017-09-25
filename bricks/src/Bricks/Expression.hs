@@ -453,10 +453,12 @@ instance ShowExpression Inherit
       Text.unwords $
         (maybe ("inherit":) (\a -> ("inherit'from" :)
         . (showExpression'paren a :)) mf) $
-        [showExpression'list'text $ fmap showExpression'quoted'text xs]
+        [showExpression'list'text $ fmap f xs]
+      where
+        f (Str'Static x) = showExpression'quoted'text x
 
 show'static :: Str'Static -> Text
-show'static x =
+show'static (Str'Static x) =
   Text.unwords ["str", showExpression'quoted'text x]
 
 show'param :: UnquotedString -> Text

@@ -69,7 +69,7 @@ module Bricks
   , parse'str'within'normalQ
   , parse'str'escape'normalQ
   -- ** Static strings
-  , Str'Static
+  , Str'Static (..)
   , render'strStatic'unquotedIfPossible
   , render'strStatic'quoted
   , parse'strStatic

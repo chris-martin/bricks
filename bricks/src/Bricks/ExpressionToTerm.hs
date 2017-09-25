@@ -60,7 +60,7 @@ str'to'term (Str'Dynamic (Seq.toList -> xs)) =
 
 str'1'to'term :: Str'1 Expression -> Term
 str'1'to'term = \case
-  Str'1'Literal x -> term'data type'string x
+  Str'1'Literal (Str'Static x) -> term'data type'string x
   Str'1'Antiquote x -> expression'to'term x
 
 list'to'term :: List -> Term

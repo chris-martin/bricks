@@ -109,7 +109,7 @@ instance Binding Expression DictBinding
 
 instance Binding Text LetBinding
   where
-    binding = LetBinding'Eq
+    binding = LetBinding'Eq . Str'Static
 
 
 --------------------------------------------------------------------------------
@@ -130,11 +130,11 @@ instance IsInherit LetBinding
 
 inherit :: IsInherit a => [Text] -> a
 inherit =
-  fromInherit . Inherit Nothing . Seq.fromList
+  fromInherit . Inherit Nothing . Seq.fromList . fmap Str'Static
 
 inherit'from :: IsInherit a => Expression -> [Text] -> a
 inherit'from x y =
-  fromInherit $ Inherit (Just x) (Seq.fromList y)
+  fromInherit $ Inherit (Just x) (Seq.fromList . fmap Str'Static $ y)
 
 
 --------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ newtype Str'1'IsString = Str'1'IsString { unStr'1'IsString :: Str'1 Expression }
 
 instance IsString Str'1'IsString
   where
-    fromString = Str'1'IsString . Str'1'Literal . Text.pack
+    fromString = Str'1'IsString . Str'1'Literal . Str'Static . Text.pack
 
 
 --------------------------------------------------------------------------------

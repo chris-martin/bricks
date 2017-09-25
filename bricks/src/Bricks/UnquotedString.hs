@@ -12,7 +12,7 @@ module Bricks.UnquotedString
 
   -- * Predicates
   , text'canBeUnquoted
-  , char'canRenderUnquoted
+  , char'canBeUnquoted
 
   ) where
 
@@ -59,7 +59,7 @@ unquotedString'orThrow x =
 We allow a string to render unquoted if all these conditions are met:
 
 - The string is nonempty
-- All characters satify 'char'canRenderUnquoted'
+- All characters satify 'char'canBeUnquoted'
 - The string is not a keyword
 
 >>> text'canBeUnquoted "-ab_c"
@@ -77,11 +77,11 @@ False
 -}
 text'canBeUnquoted :: Text -> Bool
 text'canBeUnquoted x =
-  Text.all char'canRenderUnquoted x
+  Text.all char'canBeUnquoted x
   && not (Text.null x)
   && List.all ((/= x) . keywordText) keywords
 
 -- | Letters, @-@, and @_@.
-char'canRenderUnquoted :: Char -> Bool
-char'canRenderUnquoted c =
+char'canBeUnquoted :: Char -> Bool
+char'canBeUnquoted c =
   Char.isLetter c || c == '-' || c == '_'

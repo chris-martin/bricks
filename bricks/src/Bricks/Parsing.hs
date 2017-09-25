@@ -147,7 +147,7 @@ parse'keyword k =
       -- of a valid identifier. For example, this prevents this parser from
       -- interpreting the beginning of an identifier named "letter" as the
       -- keyword "let".
-      P.notFollowedBy (P.satisfy char'canRenderUnquoted) *>
+      P.notFollowedBy (P.satisfy char'canBeUnquoted) *>
 
       -- As usual, consume trailing spaces.
       parse'spaces
@@ -169,7 +169,7 @@ unexpected end of input
 parse'strUnquoted :: Parser UnquotedString
 parse'strUnquoted =
   -- Consume at least one character
-  P.many1 (P.satisfy char'canRenderUnquoted) <&> Text.pack
+  P.many1 (P.satisfy char'canBeUnquoted) <&> Text.pack
   -- Fail if what we just parsed isn't a valid unquoted string
   <&> unquotedString'try
   >>= \case

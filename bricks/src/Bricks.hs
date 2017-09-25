@@ -89,7 +89,7 @@ module Bricks
   , unquotedString'try
   , unquotedString'orThrow
   , text'canBeUnquoted
-  , char'canRenderUnquoted
+  , char'canBeUnquoted
   , render'strUnquoted
   , parse'strUnquoted
   -- ** String conversions

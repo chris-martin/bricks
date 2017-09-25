@@ -99,7 +99,6 @@ module Bricks
   -- ** String conversions
   , str'dynamicToStatic
   , str'staticToDynamic
-  , str'unquotedToDynamic
   , str'unquoted'to'static
   , str'unquoted'to'dynamic
   -- ** Indented strings

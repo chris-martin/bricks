@@ -53,7 +53,6 @@ module Bricks.StringExpressions
   -- * Conversions between the different types of strings
   , str'dynamicToStatic
   , str'staticToDynamic
-  , str'unquotedToDynamic
   , str'unquoted'to'static
   , str'unquoted'to'dynamic
 
@@ -188,10 +187,6 @@ str'dynamicToStatic = strDynamic'toList >>> \case
 str'staticToDynamic :: Str'Static -> Str'Dynamic expr
 str'staticToDynamic =
   strDynamic'singleton . Str'1'Literal
-
-str'unquotedToDynamic :: UnquotedString -> Str'Dynamic expr
-str'unquotedToDynamic =
-  str'staticToDynamic . Str'Static . unquotedString'text
 
 str'unquoted'to'static :: Str'Unquoted -> Str'Static
 str'unquoted'to'static =

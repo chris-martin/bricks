@@ -20,6 +20,7 @@ module Bricks.Internal.Prelude
   , module Data.String
   , module Data.Traversable
   , module Data.Tuple
+  , module GHC.Stack
   , module Numeric.Natural
   , module Prelude
   , module Text.Show
@@ -42,6 +43,7 @@ import Data.Semigroup      (Semigroup ((<>)))
 import Data.String         (String)
 import Data.Traversable    (traverse)
 import Data.Tuple          (fst, snd)
+import GHC.Stack           (HasCallStack)
 import Numeric.Natural     (Natural)
 import Prelude             (undefined)
 import Text.Show           (Show (show, showList, showsPrec), shows)

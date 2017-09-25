@@ -49,6 +49,7 @@ termTypeName = \case
   Term'LetRec _ _ -> pure "recursive let"
   Term'List _     -> pure "list"
   Term'Dict _     -> pure "dict"
+  Term'Dict'ReducedKeys _ -> pure "dict with reduced keys"
   Term'Var _      -> pure "variable"
   Term'Apply _ _  -> pure "function application"
   Term'Pointer p  -> readTermPtr p >>= termTypeName

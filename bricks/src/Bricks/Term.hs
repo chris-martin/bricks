@@ -60,6 +60,10 @@ data Term
 (/@\) = Term'Apply
 infixl /@\
 
+(/@@\) :: Term -> (Term, Term) -> Term
+f /@@\ (x, y) = (f /@\ x) /@\ y
+infixl /@@\
+
 (|->) :: TermPattern -> Term -> Term
 (|->) = Term'Lambda
 infixl |->

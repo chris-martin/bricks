@@ -56,7 +56,7 @@ str'to'term (Str'Dynamic (Seq.toList -> xs)) =
     [] -> term'data type'string ""
     ys -> foldr1 f $ fmap str'1'to'term ys
   where
-    f x y = fn'string'append /@\ x /@\ y
+    f x y = fn'string'append /@@\ (x, y)
 
 str'1'to'term :: Str'1 -> Term
 str'1'to'term = \case
@@ -72,7 +72,7 @@ dict'to'term = undefined
 
 dot'to'term :: Dot -> Term
 dot'to'term (Dot a b) =
-  fn'dict'lookup /@\ expression'to'term a /@\ expression'to'term b
+  fn'dict'lookup /@@\ (expression'to'term a, expression'to'term b)
 
 
 --------------------------------------------------------------------------------
@@ -104,11 +104,12 @@ lambda'to'term'dictPattern dp body =
         else fn'dict'disallowExtraKeys names
 
     -- 2. Insert a dict-merging function to apply default arguments.
-    g = fn'dict'applyDefaults $ dictPattern'defaults dp
+    g = fn'dict'merge'preferLeft /@\
+          Term'Dict'ReducedKeys (dictPattern'defaults dp)
 
     f = TermPattern'Dict names |-> body
   in
-    fn'comp /@\ (fn'comp /@\ f /@\ g) /@\ h
+    fn'comp /@@\ (fn'comp /@@\ (f, g), h)
 
 lambda'to'term'both :: Str'Unquoted -> DictPattern -> Term -> Term
 lambda'to'term'both var dp body =

@@ -14,8 +14,8 @@ import Bricks.Term
 import Bricks.Type
 
 -- Bricks internal
-import           Bricks.Internal.Prelude
 import           Bricks.Internal.Monad
+import           Bricks.Internal.Prelude
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
 

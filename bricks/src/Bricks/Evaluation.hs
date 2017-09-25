@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE LambdaCase                 #-}
@@ -67,8 +68,8 @@ import qualified Data.Set as Set
 -- Base
 import Data.Dynamic  (fromDynamic, toDyn)
 import Data.IORef
-import Prelude (error)
 import Data.Typeable (Typeable)
+import Prelude       (error)
 import System.IO     (IO)
 
 newtype Eval a = Eval { unEval :: ExceptT Bottom IO a }
@@ -98,7 +99,7 @@ instance MonadEval Eval
           reduce'term f >>= \case
 
             Term'Function f' ->
-              f' value
+              f' value >>= reduce'term
 
             -- The function is a lambda, so it can be applied to an argument.
             Term'Lambda pattern body ->
@@ -205,7 +206,7 @@ reduce'to'type :: Typeable a => Type a -> Term -> IO (Either Bottom a)
 reduce'to'type typ =
   (reduce'term >=> cast'data typ) >>> unEval >>> runExceptT
 
-reduce'to'type'or'throw :: Typeable a => Type a -> Term -> IO a
+reduce'to'type'or'throw :: (HasCallStack, Typeable a) => Type a -> Term -> IO a
 reduce'to'type'or'throw typ =
   reduce'to'type typ >=>
   either (error . Text.unpack . displayBottom) pure

@@ -19,38 +19,50 @@ import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
 
 -- Containers
-import Data.Map (Map)
+import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Set      (Set)
-import qualified Data.Set      as Set
+import           Data.Set (Set)
+import qualified Data.Set as Set
 
 -- Base
-import           Data.Dynamic  (Dynamic, fromDynamic, toDyn)
-import           Data.IORef
-import           Data.Typeable (Typeable)
-import           Prelude       (Integer)
-import           System.IO     (IO)
-import           Text.Read     (readMaybe)
+import Data.Dynamic  (Dynamic, fromDynamic, toDyn)
+import Data.IORef
+import Data.Typeable (Typeable)
+import Prelude       (Integer)
+import System.IO     (IO)
+import Text.Read     (readMaybe)
 
 term'data :: forall a. Typeable a => Type a -> a -> Term
 term'data (Type n) = Term'Data n . toDyn @a
 
+fn'pure'parametric'arity1 :: (Term -> Term) -> Term
+fn'pure'parametric'arity1 f =
+  Term'Function $ \x -> pure $
+  f x
+
+fn'pure'parametric'arity2 :: (Term -> Term -> Term) -> Term
+fn'pure'parametric'arity2 f =
+  Term'Function $ \x -> pure $
+  fn'pure'parametric'arity1 $ f x
+
+fn'pure'parametric'arity3 :: (Term -> Term -> Term -> Term) -> Term
+fn'pure'parametric'arity3 f =
+  Term'Function $ \x -> pure $
+  fn'pure'parametric'arity2 $ f x
+
 fn'id :: Term
-fn'id = Term'Function $ pure
+fn'id = fn'pure'parametric'arity1 id
 
 fn'const :: Term
-fn'const =
-  Term'Function $ \x -> pure $
-  Term'Function $ \_ -> pure x
+fn'const = fn'pure'parametric'arity2 const
 
 {- | Function composition, in the traditional "backwards" order. Read
 @f `fn'comp` g@ as "/f/ after /g/." -}
 fn'comp :: Term
-fn'comp =
-  Term'Function $ \f -> pure $
-  Term'Function $ \g -> pure $
-  Term'Function $ \x -> pure $
-  f /@\ (g /@\ x)
+fn'comp = fn'pure'parametric'arity3 $ \f g x -> f /@\ (g /@\ x)
+
+fn'flip :: Term
+fn'flip = fn'pure'parametric'arity3 $ \f x y -> f /@@\ (y, x)
 
 fn'dict'lookup :: Term
 fn'dict'lookup = undefined
@@ -79,14 +91,14 @@ fn'dict'disallowExtraKeys :: Set Text -> Term
 fn'dict'disallowExtraKeys allowedKeys =
   Term'Function $ undefined
 
-fn'dict'applyDefaults :: Map Text Term -> Term
-fn'dict'applyDefaults = undefined
-
 fn'dict'merge'preferLeft :: Term
-fn'dict'merge'preferLeft = undefined
+fn'dict'merge'preferLeft =
+  Term'Function $ \x -> reduce'dict'keys x <&> \x' ->
+  Term'Function $ \y -> reduce'dict'keys y <&> \y' ->
+  Term'Dict'ReducedKeys $ Map.union x' y'
 
 fn'dict'merge'preferRight :: Term
-fn'dict'merge'preferRight = undefined
+fn'dict'merge'preferRight = fn'flip /@\ fn'dict'merge'preferLeft
 
 cast'data :: (MonadEval m, Typeable a) => Type a -> Term -> m a
 cast'data = req fst

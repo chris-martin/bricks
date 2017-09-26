@@ -98,7 +98,7 @@ module Bricks
   , parse'strUnquoted
   -- ** String conversions
   , str'dynamicToStatic
-  , str'staticToDynamic
+  , str'static'to'dynamic
   , str'unquoted'to'static
   , str'unquoted'to'dynamic
   -- ** Indented strings

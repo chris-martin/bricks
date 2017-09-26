@@ -52,7 +52,7 @@ module Bricks.StringExpressions
 
   -- * Conversions between the different types of strings
   , str'dynamicToStatic
-  , str'staticToDynamic
+  , str'static'to'dynamic
   , str'unquoted'to'static
   , str'unquoted'to'dynamic
 
@@ -184,8 +184,8 @@ str'dynamicToStatic = strDynamic'toList >>> \case
   [Str'1'Literal x] -> Just x
   _                 -> Nothing
 
-str'staticToDynamic :: Str'Static -> Str'Dynamic expr
-str'staticToDynamic =
+str'static'to'dynamic :: Str'Static -> Str'Dynamic expr
+str'static'to'dynamic =
   strDynamic'singleton . Str'1'Literal
 
 str'unquoted'to'static :: Str'Unquoted -> Str'Static
@@ -194,4 +194,4 @@ str'unquoted'to'static =
 
 str'unquoted'to'dynamic :: Str'Unquoted -> Str'Dynamic expr
 str'unquoted'to'dynamic =
-  str'staticToDynamic . str'unquoted'to'static
+  str'static'to'dynamic . str'unquoted'to'static

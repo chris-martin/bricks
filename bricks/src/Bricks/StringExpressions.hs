@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeApplications           #-}
 
 {- |
@@ -68,6 +69,12 @@ import qualified Bricks.Internal.Seq            as Seq
 import           Bricks.Internal.ShowExpression
 import           Bricks.Internal.Text           (Text)
 import qualified Bricks.Internal.Text           as Text
+
+{- $setup
+
+>>> import Bricks.Expression.Construction
+
+-}
 
 
 --------------------------------------------------------------------------------
@@ -179,8 +186,21 @@ strDynamic'singleton =
 --  Conversions between the different types of strings
 --------------------------------------------------------------------------------
 
+{- |
+
+>>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList []
+Just ""
+
+>>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ Str'1'Literal (Str'Static "hi") ]
+Just "hi"
+
+>>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ Str'1'Literal (Str'Static "hi "), Str'1'Antiquote (var "x") ]
+Nothing
+
+-}
 str'dynamic'to'static :: Str'Dynamic expr -> Maybe Str'Static
 str'dynamic'to'static = strDynamic'toList >>> \case
+  []                -> Just (Str'Static "")
   [Str'1'Literal x] -> Just x
   _                 -> Nothing
 

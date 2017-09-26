@@ -109,6 +109,8 @@ import Prelude       (succ)
 
 {- $setup
 
+==== Doctest setup
+
 >>> import Data.Foldable (length)
 >>> import Text.Parsec (parseTest)
 >>> import Prelude (putStrLn)
@@ -155,16 +157,31 @@ parse'keyword k =
 
 {- | Parser for an unquoted string. Unquoted strings are restricted to a
 conservative set of characters, and they may not be any of the keywords.
+See 'text'canBeUnquoted' for a complete description of the unquoted string
+rules.
+
+==== Examples
 
 >>> parseTest parse'strUnquoted "abc"
 "abc"
 
->>> parseTest parse'strUnquoted "x{y"
-"x"
+Here the parser consumes letters up to but not including @{@, because that
+character does not satisfy 'char'canBeUnquoted':
+
+>>> parseTest parse'strUnquoted "ab{c"
+"ab"
+
+\"let\" does not parse as an unquoted string because @let@ is a keyword:
 
 >>> parseTest parse'strUnquoted "let"
 parse error at (line 1, column 4):
 unexpected end of input
+
+This parser does /not/ parse quoted strings:
+
+>>> parseTest parse'strUnquoted "\"abc\""
+parse error at (line 1, column 1):
+unexpected "\""
 
 -}
 parse'strUnquoted :: Parser Str'Unquoted
@@ -182,6 +199,8 @@ parse'strUnquoted = do
 
 {- | Parser for a static string which may be either quoted or unquoted.
 
+==== Examples
+
 >>> parseTest parse'strStatic "\"hello\""
 "hello"
 
@@ -194,7 +213,7 @@ parse'strUnquoted = do
 >>> parseTest parse'strStatic "a b"
 "a"
 
-By "static," we mean that the string may /not/ contain antiquotation.
+By "static," we mean that the string may /not/ contain antiquotation:
 
 >>> parseTest parse'strStatic "\"a${x}b\" xyz"
 parse error at (line 1, column 5):
@@ -284,9 +303,13 @@ delimited by two single-quotes @''@...@''@.
 This form of string does not have any escape sequences. Therefore the only way
 to express @''@ or @${@ within an indented string is to antiquote them.
 
+==== Examples
+
 >>> x = "''${\"''\"} and ${\"\\${\"}''"
+
 >>> putStrLn x
 ''${"''"} and ${"\${"}''
+
 >>> parseTest parse'strDynamic'indentedQ x
 str [antiquote (str ["''"]), " and ", antiquote (str ["${"])]
 
@@ -443,6 +466,8 @@ parse'dictPattern'start =
 
 {- | Parser for a lambda expression (@x: y@).
 
+==== Examples
+
 >>> parseTest parse'lambda "x: [x x \"a\"]"
 lambda (param "x") (list [var "x", var "x", str ["a"]])
 
@@ -465,6 +490,8 @@ parse'lambda =
 
 {- | Parser for a list expression (@[ ... ]@).
 
+==== Examples
+
 >>> parseTest parse'list "[]"
 list []
 
@@ -480,6 +507,8 @@ parse'list =
     end   = P.char ']' <* parse'spaces
 
 {- | Parser for a dict expression, either recursive (@rec@ keyword) or not.
+
+==== Examples
 
 >>> parseTest parse'dict "{}"
 dict []
@@ -500,6 +529,8 @@ parse'dict =
 
 {- | Parser for a recursive (@rec@ keyword) dict.
 
+==== Examples
+
 >>> parseTest parse'dict "rec {  }"
 rec'dict []
 
@@ -512,6 +543,8 @@ parse'dict'rec =
   parse'keyword keyword'rec *> parse'dict'noRec
 
 {- | Parser for a non-recursive (no @rec@ keyword) dict.
+
+==== Examples
 
 >>> parseTest parse'dict "{  }"
 dict []
@@ -532,6 +565,8 @@ parse'dict'noRec =
 
 {- | Parser for a chain of dict lookups (like @.a.b.c@) on the right-hand side
 of a 'Dot' expression.
+
+==== Examples
 
 >>> parseTest parse'dot'rhs'chain ""
 []
@@ -608,6 +643,8 @@ parse'inherit =
 {- | The primary, top-level expression parser. This is what you use to parse a
 @.nix@ file.
 
+==== Examples
+
 >>> parseTest parse'expression ""
 parse error at (line 1, column 1):
 unexpected end of input
@@ -630,6 +667,8 @@ parse'expression =
 {- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
 chain of function arguments (@f x y z@).
 
+==== Examples
+
 >>> parseTest parse'expressionList ""
 []
 
@@ -647,6 +686,8 @@ parse'expressionList =
 {- | Parser for a single item within an expression list ('expressionListP').
 This expression is not a lambda, a function application, a @let@-@in@
 expression, or a @with@ expression.
+
+==== Examples
 
 >>> parseTest parse'expressionList'1 "ab.xy"
 dot (var "ab") (str ["xy"])
@@ -667,6 +708,8 @@ parse'expressionList'1 =
 
 {- | Like 'parse'expressionList'1', but with the further restriction that the
 expression may not be a 'Dot'.
+
+==== Examples
 
 >>> parseTest parse'expressionList'1'noDot "ab.xy"
 var "ab"

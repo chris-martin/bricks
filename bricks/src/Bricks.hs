@@ -14,9 +14,14 @@ Notable differences from Nix:
 - The concept of "set" is referred to as "dict" (this is not actually a language
   difference, we just use a different word to talk about the same concept)
 
+= Modules
+
+== Re-exported modules
+
 The following modules are re-exported from this module in their entireties:
 
-- Syntax
+=== Syntax
+
   - "Bricks.Keyword" - Enumerates the language's keywords
   - "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
     parsing indented strings (@''@...@''@)
@@ -30,15 +35,17 @@ The following modules are re-exported from this module in their entireties:
     into Bricks code
   - "Bricks.StringExpressions" - Defines the three types of strings in the AST:
     unquoted, static, and dynamic
-- Evaluation
+
+=== Evaluation
+
   - "Bricks.Term" - ...
   - "Bricks.ExpressionToTerm" - ...
   - "Bricks.Evaluation" - ...
 
-Other modules:
+== Other modules
 
-- "Bricks.Expression.Construction" - Functions for constructing 'Expression's
-  in a way that matches their 'Show' implementations.
+  - "Bricks.Expression.Construction" - Functions for constructing 'Expression's
+    in a way that matches their 'Show' implementations.
 
 -}
 module Bricks
@@ -87,11 +94,12 @@ module Bricks
   , parse'strDynamic'normalQ
   , parse'strDynamic'indentedQ
   -- ** Unquoted strings
-  , Str'Unquoted (..)
-  , str'unquoted'text
-  , UnquotedString (..)
+  , UnquotedString
   , unquotedString'try
   , unquotedString'orThrow
+  , unquotedString'text
+  , Str'Unquoted (..)
+  , str'unquoted'text
   , text'canBeUnquoted
   , char'canBeUnquoted
   , render'strUnquoted

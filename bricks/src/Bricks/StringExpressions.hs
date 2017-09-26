@@ -188,6 +188,8 @@ strDynamic'singleton =
 
 {- |
 
+==== Examples
+
 >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList []
 Just ""
 

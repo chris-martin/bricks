@@ -60,7 +60,8 @@ data Expression
       --
       -- > "one\ntwo"
       --
-      -- or in the "indented string" form using two single-quotes (@''@...@''@):
+      -- or in the \"indented string\" form using two single-quotes
+      -- (@''@...@''@):
       --
       -- > ''
       -- >   one
@@ -70,8 +71,8 @@ data Expression
       -- Both of these examples reduce to the same value, because leading
       -- whitespace is stripped from indented strings.
       --
-      -- Either may contain "antiquotation" (also known as "string
-      -- interpolation") to conveniently concatenate string-valued variables
+      -- Either may contain \"antiquotation\" (also known as \"string
+      -- interpolation\") to conveniently concatenate string-valued variables
       -- into the string.
       --
       -- > "Hello, my name is ${name}!"
@@ -153,7 +154,7 @@ data Expression
       -- ^ A /dot/ expression (named after the @.@ character it contains)
       -- looks up the value in a dict.
       --
-      -- The examples in this section all reduce to "Z".
+      -- The examples in this section all reduce to \"Z\".
       --
       -- > { a = "Z"; }.a
       --

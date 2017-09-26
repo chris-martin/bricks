@@ -97,7 +97,7 @@ module Bricks
   , render'strUnquoted
   , parse'strUnquoted
   -- ** String conversions
-  , str'dynamicToStatic
+  , str'dynamic'to'static
   , str'static'to'dynamic
   , str'unquoted'to'static
   , str'unquoted'to'dynamic

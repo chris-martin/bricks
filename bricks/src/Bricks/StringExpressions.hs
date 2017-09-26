@@ -51,7 +51,7 @@ module Bricks.StringExpressions
   , strDynamic'singleton
 
   -- * Conversions between the different types of strings
-  , str'dynamicToStatic
+  , str'dynamic'to'static
   , str'static'to'dynamic
   , str'unquoted'to'static
   , str'unquoted'to'dynamic
@@ -179,8 +179,8 @@ strDynamic'singleton =
 --  Conversions between the different types of strings
 --------------------------------------------------------------------------------
 
-str'dynamicToStatic :: Str'Dynamic expr -> Maybe Str'Static
-str'dynamicToStatic = strDynamic'toList >>> \case
+str'dynamic'to'static :: Str'Dynamic expr -> Maybe Str'Static
+str'dynamic'to'static = strDynamic'toList >>> \case
   [Str'1'Literal x] -> Just x
   _                 -> Nothing
 

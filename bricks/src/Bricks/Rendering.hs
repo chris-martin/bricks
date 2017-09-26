@@ -100,7 +100,7 @@ render'strStatic'quoted (Str'Static x) =
 -- | Render a dynamic string, in unquoted form if possible.
 render'strDynamic'unquotedIfPossible :: Render (Str'Dynamic Expression)
 render'strDynamic'unquotedIfPossible d =
-  case str'dynamicToStatic d of
+  case str'dynamic'to'static d of
     Just s  -> render'strStatic'unquotedIfPossible s
     Nothing -> render'strDynamic'quoted d
 

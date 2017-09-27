@@ -54,14 +54,36 @@ data Term
   | Term'Apply Term Term
   | Term'Pointer TermPtr
 
+{- | Alias for 'Term'Apply'. The name is an allusion to the AST depictions in
+/The Implementation of Functional Programming Languages/, where "/f/ applied to
+/x/" is drawn as:
+
+>   @
+>  ╱ ╲
+> f   x
+
+For a function of two parameters, see the corresponding '/@@\' operator.
+
+-}
 (/@\) :: Term -> Term -> Term
 (/@\) = Term'Apply
 infixl /@\
 
+{- | Like '/@\', but for a function applied to two arguments. Depicted as an
+abstract syntax tree, @f /\@\@\\ (x, y)@ looks like this:
+
+>     @
+>    ╱ ╲
+>   @   y
+>  ╱ ╲
+> f   x
+
+-}
 (/@@\) :: Term -> (Term, Term) -> Term
 f /@@\ (x, y) = (f /@\ x) /@\ y
 infixl /@@\
 
+-- | Alias for 'Term'Lambda'.
 (|->) :: TermPattern -> Term -> Term
 (|->) = Term'Lambda
 infixl |->

@@ -36,6 +36,9 @@ list of some important connections to the book:
   - A Bricks function defined using a dict pattern turns into a
     "pattern-matching lambda abstraction"; this term is introduced on page 61.
 
+  - Page 185 introduces the style of drawing ASTs to which the '/@\' operator
+    alludes.
+
   - /Pointer substitution/ is described on page 208.
 
   - The implementation of 'term'substitute' closely follows the

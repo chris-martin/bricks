@@ -220,7 +220,22 @@ render'inherit =
   where
     r = foldMap (\x -> " " <> render'strStatic'unquotedIfPossible x)
 
--- | Render an expression.
+{- | Render an expression.
+
+==== Examples
+
+>>> :{
+>>> render'expression
+>>>   (lambda
+>>>     (param "a" <> pattern
+>>>       [ param "f"
+>>>       , param "b" & def (apply (var "g") (var "x"))
+>>>       ] <> ellipsis)
+>>>     (apply (var "f") (var "b")))
+>>> :}
+"a@{ f, b ? g x, ... }: f b"
+
+-}
 render'expression :: Render Expression
 render'expression =
   \case

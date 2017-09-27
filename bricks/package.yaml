@@ -35,6 +35,7 @@ library:
     - Bricks.IndentedString
     - Bricks.Keyword
     - Bricks.Parsing
+    - Bricks.Prelude
     - Bricks.Rendering
     - Bricks.StringExpressions
     - Bricks.Term

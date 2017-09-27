@@ -37,6 +37,7 @@ library:
     - Bricks.Parsing
     - Bricks.Prelude
     - Bricks.Rendering
+    - Bricks.Source
     - Bricks.StringExpressions
     - Bricks.Term
     - Bricks.Type

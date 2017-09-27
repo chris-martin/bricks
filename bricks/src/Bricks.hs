@@ -467,8 +467,10 @@ Nix does not support /nested/ block comments:
 
 Bricks does:
 
-> bricks-repl> {- {- -} -} "a"
-> "a"
+@
+bricks-repl> {\- {\- -\} -\} "a"
+"a"
+@
 
 == Bricks does not support escape sequences in indented strings
 

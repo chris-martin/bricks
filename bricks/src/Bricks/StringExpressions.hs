@@ -30,8 +30,8 @@ Consider the following (quite contrived) examples:
 > { inherit "a b"; }
 
 In the first, @a@ seems quite like a variable; in the second, @"a b"@ feels much
-like a string (because we had to quote it, as it contains a space). But the
-ASTs for these two expressions are (apart from the name change) identical.
+like a string (because we had to quote it, as it contains a space). But the ASTs
+for these two expressions are (apart from the name change) identical.
 
 -}
 module Bricks.StringExpressions
@@ -101,6 +101,7 @@ instance Show Str'Unquoted
 
 {- | A fixed string value. We use the description "static" to mean the string
 may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
+
 data Str'Static = Str'Static Text
 
 instance Semigroup Str'Static
@@ -131,6 +132,7 @@ ${name}!"@. See 'Expr'Str'.
 
 We use the description "dynamic" to mean the string may contain antiquotation,
 in contrast with 'Str'Static' which cannot. -}
+
 data Str'Dynamic expr =
   Str'Dynamic
     { strDynamic'toSeq :: Seq (Str'1 expr)
@@ -145,7 +147,8 @@ instance Monoid (Str'Dynamic expr)
     mempty = Str'Dynamic mempty
     mappend = (<>)
 
--- | One part of a 'Str'Dynamic'.
+{- | One part of a 'Str'Dynamic'. -}
+
 data Str'1 expr
   = Str'1'Literal Str'Static
   | Str'1'Antiquote expr
@@ -186,20 +189,17 @@ strDynamic'singleton =
 --  Conversions between the different types of strings
 --------------------------------------------------------------------------------
 
-{- |
+-- | ==== Examples
+--
+-- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList []
+-- Just ""
+--
+-- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ Str'1'Literal (Str'Static "hi") ]
+-- Just "hi"
+--
+-- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ Str'1'Literal (Str'Static "hi "), Str'1'Antiquote (var "x") ]
+-- Nothing
 
-==== Examples
-
->>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList []
-Just ""
-
->>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ Str'1'Literal (Str'Static "hi") ]
-Just "hi"
-
->>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ Str'1'Literal (Str'Static "hi "), Str'1'Antiquote (var "x") ]
-Nothing
-
--}
 str'dynamic'to'static :: Str'Dynamic expr -> Maybe Str'Static
 str'dynamic'to'static = strDynamic'toList >>> \case
   []                -> Just (Str'Static "")

@@ -2,10 +2,12 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-{- | Parsec 'Parser's for the Bricks language.
+{- |
 
-Most parsers consume trailing whitespace, except ones that operate within
-quoted string environments where whitespace is significant.
+Parsec 'Parser's for the Bricks language.
+
+Most parsers consume trailing whitespace, except ones that operate within quoted
+string environments where whitespace is significant.
 
 -}
 module Bricks.Parsing
@@ -13,6 +15,7 @@ module Bricks.Parsing
   -- * Expressions
     parse'expression
   , parse'expression'paren
+  , parse'expression'antiquote
   , parse'expression'dictKey
 
   -- * Expression lists
@@ -75,9 +78,6 @@ module Bricks.Parsing
   -- * Keywords
   , parse'keyword
 
-  -- * Antiquotation
-  , parse'antiquote
-
   ) where
 
 -- Bricks
@@ -107,15 +107,13 @@ import qualified Data.Set as Set
 import Control.Monad (fail)
 import Prelude       (succ)
 
-{- $setup
-
-==== Doctest setup
-
->>> import Data.Foldable (length)
->>> import Text.Parsec (parseTest)
->>> import Prelude (putStrLn)
-
--}
+-- $setup
+--
+-- ==== Doctest setup
+--
+-- >>> import Data.Foldable (length)
+-- >>> import Text.Parsec (parseTest)
+-- >>> import Prelude (putStrLn)
 
 parse'spaces :: Parser ()
 parse'spaces =
@@ -137,7 +135,8 @@ parse'comment'block =
     middle = parse'comment'block <|> void P.anyChar
     end    = P.try (P.string "-}")
 
--- | Backtracking parser for a particular keyword.
+{- | Backtracking parser for a particular keyword. -}
+
 parse'keyword :: Keyword -> Parser ()
 parse'keyword k =
   P.try (void p)
@@ -156,34 +155,32 @@ parse'keyword k =
       parse'spaces
 
 {- | Parser for an unquoted string. Unquoted strings are restricted to a
-conservative set of characters, and they may not be any of the keywords.
-See 'text'canBeUnquoted' for a complete description of the unquoted string
-rules.
+conservative set of characters, and they may not be any of the keywords. See
+'text'canBeUnquoted' for a complete description of the unquoted string rules. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'strUnquoted "abc"
+-- "abc"
+--
+-- Here the parser consumes letters up to but not including @{@, because that
+-- character does not satisfy 'char'canBeUnquoted':
+--
+-- >>> parseTest parse'strUnquoted "ab{c"
+-- "ab"
+--
+-- \"let\" does not parse as an unquoted string because @let@ is a keyword:
+--
+-- >>> parseTest parse'strUnquoted "let"
+-- parse error at (line 1, column 4):
+-- unexpected end of input
+--
+-- This parser does /not/ parse quoted strings:
+--
+-- >>> parseTest parse'strUnquoted "\"abc\""
+-- parse error at (line 1, column 1):
+-- unexpected "\""
 
->>> parseTest parse'strUnquoted "abc"
-"abc"
-
-Here the parser consumes letters up to but not including @{@, because that
-character does not satisfy 'char'canBeUnquoted':
-
->>> parseTest parse'strUnquoted "ab{c"
-"ab"
-
-\"let\" does not parse as an unquoted string because @let@ is a keyword:
-
->>> parseTest parse'strUnquoted "let"
-parse error at (line 1, column 4):
-unexpected end of input
-
-This parser does /not/ parse quoted strings:
-
->>> parseTest parse'strUnquoted "\"abc\""
-parse error at (line 1, column 1):
-unexpected "\""
-
--}
 parse'strUnquoted :: Parser Str'Unquoted
 parse'strUnquoted = do
 
@@ -197,34 +194,34 @@ parse'strUnquoted = do
       _ <- parse'spaces
       pure $ Str'Unquoted b
 
-{- | Parser for a static string which may be either quoted or unquoted.
+{- | Parser for a static string which may be either quoted or unquoted. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'strStatic "\"hello\""
+-- "hello"
+--
+-- >>> parseTest parse'strStatic "hello"
+-- "hello"
+--
+-- >>> parseTest parse'strStatic "\"a b\""
+-- "a b"
+--
+-- >>> parseTest parse'strStatic "a b"
+-- "a"
+--
+-- By "static," we mean that the string may /not/ contain antiquotation:
+--
+-- >>> parseTest parse'strStatic "\"a${x}b\" xyz"
+-- parse error at (line 1, column 5):
+-- antiquotation is not allowed in this context
 
->>> parseTest parse'strStatic "\"hello\""
-"hello"
-
->>> parseTest parse'strStatic "hello"
-"hello"
-
->>> parseTest parse'strStatic "\"a b\""
-"a b"
-
->>> parseTest parse'strStatic "a b"
-"a"
-
-By "static," we mean that the string may /not/ contain antiquotation:
-
->>> parseTest parse'strStatic "\"a${x}b\" xyz"
-parse error at (line 1, column 5):
-antiquotation is not allowed in this context
-
--}
 parse'strStatic :: Parser Str'Static
 parse'strStatic =
   (parse'strStatic'quoted <|> parse'strStatic'unquoted) <?> "static string"
 
--- | Parser for a static string that is quoted.
+{- | Parser for a static string that is quoted. -}
+
 parse'strStatic'quoted :: Parser Str'Static
 parse'strStatic'quoted =
   do
@@ -236,7 +233,8 @@ parse'strStatic'quoted =
     end = P.char '"' *> parse'spaces
     anti = P.string "${" *> fail "antiquotation is not allowed in this context"
 
--- | Parser for an unquoted static string.
+{- | Parser for an unquoted static string. -}
+
 parse'strStatic'unquoted :: Parser Str'Static
 parse'strStatic'unquoted =
   parse'strUnquoted <&> str'unquoted'to'static
@@ -245,11 +243,13 @@ parse'strStatic'unquoted =
 string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
 an "indented" string delimited by two single-quotes @''@...@''@
 ('parse'strDynamic'indentedQ'). -}
+
 parse'strDynamic'quoted :: Parser (Str'Dynamic Expression)
 parse'strDynamic'quoted =
   parse'strDynamic'normalQ <|> parse'strDynamic'indentedQ
 
--- | Parser for a dynamic string enclosed in "normal" quotes (@"@...@"@).
+{- | Parser for a dynamic string enclosed in "normal" quotes (@"@...@"@). -}
+
 parse'strDynamic'normalQ :: Parser (Str'Dynamic Expression)
 parse'strDynamic'normalQ =
   P.char '"' *> go Seq.empty
@@ -274,6 +274,7 @@ parse'strDynamic'normalQ =
 {- | Parser for at least one normal character, within a normally-quoted string
 context, up to but not including the end of the string or the start of an
 antiquotation. -}
+
 parse'str'within'normalQ :: Parser Text
 parse'str'within'normalQ =
   P.many1 (char <|> parse'str'escape'normalQ) <&> Text.concat
@@ -297,29 +298,29 @@ parse'str'escape'normalQ =
       , P.string "${" $> "${"
       ]
 
-{- | Parser for a dynamic string enclosed in "indented string" format,
-delimited by two single-quotes @''@...@''@.
+{- | Parser for a dynamic string enclosed in "indented string" format, delimited
+by two single-quotes @''@...@''@.
 
 This form of string does not have any escape sequences. Therefore the only way
-to express @''@ or @${@ within an indented string is to antiquote them.
+to express @''@ or @${@ within an indented string is to antiquote them. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> x = "''${\"''\"} and ${\"\\${\"}''"
+--
+-- >>> putStrLn x
+-- ''${"''"} and ${"\${"}''
+--
+-- >>> parseTest parse'strDynamic'indentedQ x
+-- str [antiquote (str ["''"]), " and ", antiquote (str ["${"])]
 
->>> x = "''${\"''\"} and ${\"\\${\"}''"
-
->>> putStrLn x
-''${"''"} and ${"\${"}''
-
->>> parseTest parse'strDynamic'indentedQ x
-str [antiquote (str ["''"]), " and ", antiquote (str ["${"])]
-
--}
 parse'strDynamic'indentedQ :: Parser (Str'Dynamic Expression)
 parse'strDynamic'indentedQ =
   parse'inStr <&> inStr'join . inStr'dedent . inStr'trim
 
-{- | Parser for an indented string. This parser produces a representation of
-the lines from the source as-is, before the whitespace is cleaned up. -}
+{- | Parser for an indented string. This parser produces a representation of the
+lines from the source as-is, before the whitespace is cleaned up. -}
+
 parse'inStr :: Parser InStr
 parse'inStr =
   P.string "''" *> go Seq.empty
@@ -334,7 +335,8 @@ parse'inStr =
           , P.char '\n'   *> go newLines
           ]
 
--- | Parser for a single line of an 'InStr'.
+{- | Parser for a single line of an 'InStr'. -}
+
 parse'inStr'1 :: Parser InStr'1
 parse'inStr'1 =
   do
@@ -345,9 +347,15 @@ parse'inStr'1 =
     go :: Seq (Str'1 Expression) -> Parser (Str'Dynamic Expression)
     go previousParts =
       asum
-        [ end              $> Str'Dynamic previousParts
-        , chars           >>= \x                -> go (previousParts |> x)
-        , parse'antiquote >>= \(Str'Dynamic xs) -> go (previousParts <> xs)
+        [ do
+            _ <- end
+            pure $ Str'Dynamic previousParts
+        , do
+            x <- chars
+            go (previousParts |> x)
+        , do
+            x <- parse'expression'antiquote
+            go (previousParts |> Str'1'Antiquote x)
         ]
 
     end = P.lookAhead $ asum
@@ -361,21 +369,18 @@ parse'inStr'1 =
       , P.try $ P.char '\'' <* P.notFollowedBy (P.char '\'')
       ]
 
-parse'antiquote :: Parser (Str'Dynamic Expression)
-parse'antiquote =
-  (P.try (P.string "${") *> parse'spaces *> parse'expression <* P.char '}')
-  <&> strDynamic'singleton . Str'1'Antiquote
-
 {- | Parser for a function parameter (the beginning of a 'Lambda'), including
 the colon. This forms part of 'parse'expression', so it backtracks in places
 where it has overlap with other types of expressions. -}
+
 parse'param :: Parser Param
 parse'param =
   parse'param'var <|> parse'param'noVar
 
 {- | Parser for a parameter that starts with a variable. This could be a simple
-param that consists only of /only/ the variable, or the variable may be
-followed by a dict pattern. -}
+param that consists only of /only/ the variable, or the variable may be followed
+by a dict pattern. -}
+
 parse'param'var :: Parser Param
 parse'param'var = do
   -- This part backtracks because until we get to the : or @, we don't
@@ -391,9 +396,10 @@ parse'param'var = do
     -- Otherwise it's just the variable and we're done.
     else pure $ Param'Name a
 
-{- | Parser for a param that has no variable, only a a dict pattern. This
-parser backtracks because the beginning of a dict pattern looks like the
-beginning of a dict expression. -}
+{- | Parser for a param that has no variable, only a a dict pattern. This parser
+backtracks because the beginning of a dict pattern looks like the beginning of a
+dict expression. -}
+
 parse'param'noVar :: Parser Param
 parse'param'noVar = Param'DictPattern <$> do
   -- First we look ahead to determine whether it looks like a lambda.
@@ -405,6 +411,7 @@ parse'param'noVar = Param'DictPattern <$> do
 
 {- | Parser for a dict pattern (the type of lambda parameter that does dict
 destructuring. This parser does not backtrack. -}
+
 parse'dictPattern :: Parser DictPattern
 parse'dictPattern =
   P.char '{' *> parse'spaces *> go Seq.empty Set.empty
@@ -456,6 +463,7 @@ parse'dictPattern =
 
 {- | This is used in a lookahead by 'parse'param' to determine whether we're
 about to start parsing a 'DictPattern'. -}
+
 parse'dictPattern'start :: Parser ()
 parse'dictPattern'start =
   P.char '{' *> parse'spaces *> asum
@@ -464,41 +472,39 @@ parse'dictPattern'start =
     , void $ parse'strUnquoted *> (P.char ',' <|> P.char '?' <|> P.char '}')
     ]
 
-{- | Parser for a lambda expression (@x: y@).
+{- | Parser for a lambda expression (@x: y@). -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'lambda "x: [x x \"a\"]"
+-- lambda (param "x") (list [var "x", var "x", str ["a"]])
+--
+-- >>> parseTest parse'lambda "{a,b}:a"
+-- lambda (pattern [param "a", param "b"]) (var "a")
+--
+-- >>> parseTest parse'lambda "{ ... }: \"x\""
+-- lambda (pattern [] <> ellipsis) (str ["x"])
+--
+-- >>> parseTest parse'lambda "a@{ f, b ? g x, ... }: f b"
+-- lambda (param "a" <> pattern [param "f", param "b" & def (apply (var "g") (var "x"))] <> ellipsis) (apply (var "f") (var "b"))
+--
+-- >>> parseTest parse'lambda "a: b: \"x\""
+-- lambda (param "a") (lambda (param "b") (str ["x"]))
 
->>> parseTest parse'lambda "x: [x x \"a\"]"
-lambda (param "x") (list [var "x", var "x", str ["a"]])
-
->>> parseTest parse'lambda "{a,b}:a"
-lambda (pattern [param "a", param "b"]) (var "a")
-
->>> parseTest parse'lambda "{ ... }: \"x\""
-lambda (pattern [] <> ellipsis) (str ["x"])
-
->>> parseTest parse'lambda "a@{ f, b ? g x, ... }: f b"
-lambda (param "a" <> pattern [param "f", param "b" & def (apply (var "g") (var "x"))] <> ellipsis) (apply (var "f") (var "b"))
-
->>> parseTest parse'lambda "a: b: \"x\""
-lambda (param "a") (lambda (param "b") (str ["x"]))
-
--}
 parse'lambda :: Parser Lambda
 parse'lambda =
   Lambda <$> parse'param <*> parse'expression
 
-{- | Parser for a list expression (@[ ... ]@).
+{- | Parser for a list expression (@[ ... ]@). -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'list "[]"
+-- list []
+--
+-- >>> parseTest parse'list "[x \"one\" (a: b) (c d)]"
+-- list [var "x", str ["one"], lambda (param "a") (var "b"), apply (var "c") (var "d")]
 
->>> parseTest parse'list "[]"
-list []
-
->>> parseTest parse'list "[x \"one\" (a: b) (c d)]"
-list [var "x", str ["one"], lambda (param "a") (var "b"), apply (var "c") (var "d")]
-
--}
 parse'list :: Parser List
 parse'list =
   (start *> parse'expressionList <* end) <&> List . Seq.fromList
@@ -506,20 +512,19 @@ parse'list =
     start = P.char '[' *> parse'spaces
     end   = P.char ']' <* parse'spaces
 
-{- | Parser for a dict expression, either recursive (@rec@ keyword) or not.
+{- | Parser for a dict expression, either recursive (@rec@ keyword) or not. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'dict "{}"
+-- dict []
+--
+-- >>> parseTest parse'dict "rec {  }"
+-- rec'dict []
+--
+-- >>> parseTest parse'dict "{ a = b; inherit (x) y z \"s t\"; }"
+-- dict [binding (str ["a"]) (var "b"), inherit'from (var "x") ["y", "z", "s t"]]
 
->>> parseTest parse'dict "{}"
-dict []
-
->>> parseTest parse'dict "rec {  }"
-rec'dict []
-
->>> parseTest parse'dict "{ a = b; inherit (x) y z \"s t\"; }"
-dict [binding (str ["a"]) (var "b"), inherit'from (var "x") ["y", "z", "s t"]]
-
--}
 parse'dict :: Parser Dict
 parse'dict =
   asum
@@ -527,32 +532,30 @@ parse'dict =
     , parse'dict'rec   <&> Dict True
     ]
 
-{- | Parser for a recursive (@rec@ keyword) dict.
+{- | Parser for a recursive (@rec@ keyword) dict. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'dict "rec {  }"
+-- rec'dict []
+--
+-- >>> parseTest parse'dict "rec { a = \"1\"; b = \"${a}2\"; }"
+-- rec'dict [binding (str ["a"]) (str ["1"]), binding (str ["b"]) (str [antiquote (var "a"), "2"])]
 
->>> parseTest parse'dict "rec {  }"
-rec'dict []
-
->>> parseTest parse'dict "rec { a = \"1\"; b = \"${a}2\"; }"
-rec'dict [binding (str ["a"]) (str ["1"]), binding (str ["b"]) (str [antiquote (var "a"), "2"])]
-
--}
 parse'dict'rec :: Parser (Seq DictBinding)
 parse'dict'rec =
   parse'keyword keyword'rec *> parse'dict'noRec
 
-{- | Parser for a non-recursive (no @rec@ keyword) dict.
+{- | Parser for a non-recursive (no @rec@ keyword) dict. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'dict "{  }"
+-- dict []
+--
+-- >>> parseTest parse'dict "{ a = \"1\"; b = \"${a}2\"; }"
+-- dict [binding (str ["a"]) (str ["1"]), binding (str ["b"]) (str [antiquote (var "a"), "2"])]
 
->>> parseTest parse'dict "{  }"
-dict []
-
->>> parseTest parse'dict "{ a = \"1\"; b = \"${a}2\"; }"
-dict [binding (str ["a"]) (str ["1"]), binding (str ["b"]) (str [antiquote (var "a"), "2"])]
-
--}
 parse'dict'noRec :: Parser (Seq DictBinding)
 parse'dict'noRec =
   P.char '{' *> parse'spaces *> go Seq.empty
@@ -564,20 +567,19 @@ parse'dict'noRec =
       ]
 
 {- | Parser for a chain of dict lookups (like @.a.b.c@) on the right-hand side
-of a 'Dot' expression.
+of a 'Dot' expression. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'dot'rhs'chain ""
+-- []
+--
+-- >>> parseTest parse'dot'rhs'chain ".abc"
+-- [str ["abc"]]
+--
+-- >>> parseTest parse'dot'rhs'chain ".a.${b}.\"c\".\"d${e}\""
+-- [str ["a"],var "b",str ["c"],str ["d", antiquote (var "e")]]
 
->>> parseTest parse'dot'rhs'chain ""
-[]
-
->>> parseTest parse'dot'rhs'chain ".abc"
-[str ["abc"]]
-
->>> parseTest parse'dot'rhs'chain ".a.${b}.\"c\".\"d${e}\""
-[str ["a"],var "b",str ["c"],str ["d", antiquote (var "e")]]
-
--}
 parse'dot'rhs'chain :: Parser [Expression]
 parse'dot'rhs'chain =
   P.many dot
@@ -641,16 +643,15 @@ parse'inherit =
         ]
 
 {- | The primary, top-level expression parser. This is what you use to parse a
-@.nix@ file.
+@.nix@ file. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'expression ""
+-- parse error at (line 1, column 1):
+-- unexpected end of input
+-- expecting expression
 
->>> parseTest parse'expression ""
-parse error at (line 1, column 1):
-unexpected end of input
-expecting expression
-
--}
 parse'expression :: Parser Expression
 parse'expression =
   p <?> "expression"
@@ -665,40 +666,38 @@ parse'expression =
       f : args -> pure $ expression'applyArgs f args
 
 {- | Parser for a list of expressions in a list literal (@[ x y z ]@) or in a
-chain of function arguments (@f x y z@).
+chain of function arguments (@f x y z@). -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'expressionList ""
+-- []
+--
+-- >>> parseTest (length <$> parse'expressionList) "x \"one two\" (a: b) (c d)"
+-- 4
+--
+-- >>> parseTest (length <$> parse'expressionList) "(x \"one two\" (a: b) (c d))"
+-- 1
 
->>> parseTest parse'expressionList ""
-[]
-
->>> parseTest (length <$> parse'expressionList) "x \"one two\" (a: b) (c d)"
-4
-
->>> parseTest (length <$> parse'expressionList) "(x \"one two\" (a: b) (c d))"
-1
-
--}
 parse'expressionList :: Parser [Expression]
 parse'expressionList =
   P.many parse'expressionList'1 <?> "expression list"
 
 {- | Parser for a single item within an expression list ('expressionListP').
 This expression is not a lambda, a function application, a @let@-@in@
-expression, or a @with@ expression.
+expression, or a @with@ expression. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'expressionList'1 "ab.xy"
+-- dot (var "ab") (str ["xy"])
+--
+-- >>> parseTest parse'expressionList'1 "(x: f x x) y z"
+-- lambda (param "x") (apply (apply (var "f") (var "x")) (var "x"))
+--
+-- >>> parseTest parse'expressionList'1 "{ a = b; }.a y"
+-- dot (dict [binding (str ["a"]) (var "b")]) (str ["a"])
 
->>> parseTest parse'expressionList'1 "ab.xy"
-dot (var "ab") (str ["xy"])
-
->>> parseTest parse'expressionList'1 "(x: f x x) y z"
-lambda (param "x") (apply (apply (var "f") (var "x")) (var "x"))
-
->>> parseTest parse'expressionList'1 "{ a = b; }.a y"
-dot (dict [binding (str ["a"]) (var "b")]) (str ["a"])
-
--}
 parse'expressionList'1 :: Parser Expression
 parse'expressionList'1 =
   expression'applyDots
@@ -707,20 +706,19 @@ parse'expressionList'1 =
     <?> "expression list item"
 
 {- | Like 'parse'expressionList'1', but with the further restriction that the
-expression may not be a 'Dot'.
+expression may not be a 'Dot'. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> parseTest parse'expressionList'1'noDot "ab.xy"
+-- var "ab"
+--
+-- >>> parseTest parse'expressionList'1'noDot "(x: f x x) y z"
+-- lambda (param "x") (apply (apply (var "f") (var "x")) (var "x"))
+--
+-- >>> parseTest parse'expressionList'1'noDot "{ a = b; }.a y"
+-- dict [binding (str ["a"]) (var "b")]
 
->>> parseTest parse'expressionList'1'noDot "ab.xy"
-var "ab"
-
->>> parseTest parse'expressionList'1'noDot "(x: f x x) y z"
-lambda (param "x") (apply (apply (var "f") (var "x")) (var "x"))
-
->>> parseTest parse'expressionList'1'noDot "{ a = b; }.a y"
-dict [binding (str ["a"]) (var "b")]
-
--}
 parse'expressionList'1'noDot :: Parser Expression
 parse'expressionList'1'noDot =
   asum
@@ -734,19 +732,23 @@ parse'expressionList'1'noDot =
 
 {- | Parser for a parenthesized expression, from opening parenthesis to closing
 parenthesis. -}
+
 parse'expression'paren :: Parser Expression
 parse'expression'paren =
   P.char '(' *> parse'spaces *> parse'expression <* P.char ')' <* parse'spaces
+
+parse'expression'antiquote :: Parser Expression
+parse'expression'antiquote =
+  P.try (P.string "${") *> parse'spaces *> parse'expression <* P.char '}'
 
 {- | Parser for an expression in a context that is expecting a dict key.
 
 One of:
 
-- an unquoted string
-- a quoted dynamic string
-- an arbitrary expression wrapped in antiquotes (@${@...@}@)
+  - an unquoted string
+  - a quoted dynamic string
+  - an arbitrary expression wrapped in antiquotes (@${@...@}@) -}
 
--}
 parse'expression'dictKey :: Parser Expression
 parse'expression'dictKey =
   quoted <|> antiquoted <|> unquoted

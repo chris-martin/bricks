@@ -228,7 +228,8 @@ data Expression
       -- expression may refer to each other (much like a dict with the @rec@
       -- keyword). As with dicts, the order of the bindings does not matter.
 
--- | A function expression. See 'Expr'Lambda'.
+{- | A function expression. See 'Expr'Lambda'. -}
+
 data Lambda =
   Lambda
     { lambda'head :: Param
@@ -237,7 +238,8 @@ data Lambda =
         -- ^ Body of the function; what it evaluates to
     }
 
--- | A function application expression. See 'Expr'Apply'.
+{- | A function application expression. See 'Expr'Apply'. -}
+
 data Apply =
   Apply
     { apply'func :: Expression
@@ -248,6 +250,7 @@ data Apply =
 
 {- | A parameter to a 'Lambda'. All functions have a single parameter, but it's
 more complicated than that because it may also include dict destructuring. -}
+
 data Param
   = Param'Name Str'Unquoted
       -- ^ A simple single-parameter function
@@ -258,7 +261,8 @@ data Param
       -- ^ Both a param name /and/ a dict pattern, separated by the @\@@
       -- keyword
 
--- | A type of function parameter ('Param') that does dict destructuring.
+{- | A type of function parameter ('Param') that does dict destructuring. -}
+
 data DictPattern =
   DictPattern
     { dictPattern'items :: Seq DictPattern'1
@@ -269,7 +273,7 @@ data DictPattern =
         -- items, corresponding to the @...@ keyword
     }
 
--- | One item within a 'DictPattern'.
+{- | One item within a 'DictPattern'. -}
 data DictPattern'1 =
   DictPattern'1
     { dictPattern'1'name :: Str'Unquoted
@@ -278,13 +282,15 @@ data DictPattern'1 =
         -- ^ The default value to be used if the key is not present in the dict
     }
 
-{- | A list literal expression, starting with @[@ and ending with @]@.
-See 'Expr'List'. -}
+{- | A list literal expression, starting with @[@ and ending with @]@. See
+'Expr'List'. -}
+
 newtype List = List (Seq Expression)
   deriving (Monoid, Semigroup)
 
 {- | A dict literal expression, starting with @{@ or @rec {@ and ending with
 @}@. See 'Expr'Dict'. -}
+
 data Dict =
   Dict
     { dict'rec :: Bool
@@ -293,20 +299,23 @@ data Dict =
         -- ^ The bindings (everything between @{@ and @}@)
     }
 
--- | A binding of the form @x = y;@ within a 'DictLiteral' or 'LetExpr'.
+{- | A binding of the form @x = y;@ within a 'DictLiteral' or 'LetExpr'. -}
+
 data DictBinding
   = DictBinding'Eq Expression Expression
   | DictBinding'Inherit Inherit
 
 {- | An expression of the form @person.name@ that looks up a key from a dict.
 See 'Expr'Dot'. -}
+
 data Dot =
   Dot
     { dot'dict :: Expression
     , dot'key  :: Expression
     }
 
--- | A @let@-@in@ expression. See 'Expr'Let'.
+{- | A @let@-@in@ expression. See 'Expr'Let'. -}
+
 data Let =
   Let
     { let'bindings :: Seq LetBinding
@@ -317,6 +326,7 @@ data Let =
 
 {- | A semicolon-terminated binding within the binding list of a 'Let'
 expression. -}
+
 data LetBinding
   = LetBinding'Eq Str'Static Expression
       -- ^ A binding with an equals sign, of the form @x = y;@
@@ -349,13 +359,15 @@ expression'applyDots =
 --  Show
 --------------------------------------------------------------------------------
 
-{- | This instance is designed for doctests and REPL experimentation. The
-format is designed to strike a balance in verbosity between the derived 'Show'
+{- | This instance is designed for doctests and REPL experimentation. The format
+is designed to strike a balance in verbosity between the derived 'Show'
 implementations (which are unwieldily long) and the Bricks language itself
-(which is quite terse but unsuitable for demonstrating the parser, as
-outputting a Bricks rendering of parse result wouldn't illumunate anyone's
-understanding of the AST that the 'Show' instances are here to depict). -}
+(which is quite terse but unsuitable for demonstrating the parser, as outputting
+a Bricks rendering of parse result wouldn't illumunate anyone's understanding of
+the AST that the 'Show' instances are here to depict). -}
+
 instance Show Expression        where showsPrec = showsPrec'showExpression
+
 instance Show List              where showsPrec = showsPrec'showExpression
 instance Show Dict              where showsPrec = showsPrec'showExpression
 instance Show DictBinding       where showsPrec = showsPrec'showExpression

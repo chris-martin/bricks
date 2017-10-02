@@ -37,6 +37,7 @@ removes leading whitespace from the string ('inStr'dedent'), which makes it
 convenient to use these literals for multi-line strings within an indented
 expression without the whitespace from indentation ending up as part of the
 string. -}
+
 newtype InStr = InStr { inStr'toSeq :: Seq InStr'1 }
   deriving (Monoid, Semigroup)
 
@@ -48,7 +49,8 @@ inStr'toList :: InStr -> [InStr'1]
 inStr'toList =
   Seq.toList . inStr'toSeq
 
--- | One line of an 'InStr'.
+{- | One line of an 'InStr'. -}
+
 data InStr'1 =
   InStr'1
     { inStr'1'level :: Natural
@@ -63,6 +65,7 @@ instance Show InStr'1
     show (InStr'1 n s) = "indent-" <> show n <> " " <> show s
 
 {- | Join 'InStr's with newlines interspersed. -}
+
 inStr'join :: InStr -> Str'Dynamic Expression
 inStr'join xs =
   Str'Dynamic . Seq.concat $
@@ -76,22 +79,25 @@ inStr'join xs =
         Str'1'Literal (Str'Static (Text.replicate (fromIntegral n) " "))
         <| strDynamic'toSeq parts
 
-{- | Determines whether an 'InStr'1' contains any non-space
-characters. The opposite of 'inStr'1'nonEmpty'.
+{- | Determines whether an 'InStr'1' contains any non-space characters. The
+opposite of 'inStr'1'nonEmpty'.
 
 This is used to determine whether this line should be considered when
 calculating the number of space characters to strip in 'inStr'dedent'. -}
+
 inStr'1'nonEmpty :: InStr'1 -> Bool
 inStr'1'nonEmpty =
   not . inStr'1'empty
 
--- | The opposite of 'inStr'1'nonEmpty'.
+{- | The opposite of 'inStr'1'nonEmpty'. -}
+
 inStr'1'empty :: InStr'1 -> Bool
 inStr'1'empty (InStr'1{ inStr'1'str = Str'Dynamic x }) =
   Seq.null x
 
 {- | Determine how many characters of whitespace to strip from an indented
 string. -}
+
 inStr'level :: InStr -> Natural
 inStr'level =
   maybe 0 id
@@ -100,13 +106,16 @@ inStr'level =
   . Seq.filter inStr'1'nonEmpty
   . inStr'toSeq
 
--- | Modify an 'InStr' by applying a function to its number of leading spaces.
+{- | Modify an 'InStr' by applying a function to its number of leading spaces.
+-}
+
 inStr'1'modifyLevel :: (Natural -> Natural) -> (InStr'1 -> InStr'1)
 inStr'1'modifyLevel f x@InStr'1{inStr'1'level = a} =
   x{ inStr'1'level = f a }
 
 {- | Determine the minimum indentation of any nonempty line, and remove that
 many space characters from the front of every line. -}
+
 inStr'dedent :: InStr -> InStr
 inStr'dedent xs =
   let
@@ -115,7 +124,8 @@ inStr'dedent xs =
   in
     InStr $ inStr'1'modifyLevel f <$> inStr'toSeq xs
 
--- | Remove any empty lines from the beginning or end of an indented string.
+{- | Remove any empty lines from the beginning or end of an indented string. -}
+
 inStr'trim :: InStr -> InStr
 inStr'trim =
   InStr . trimWhile inStr'1'empty . inStr'toSeq

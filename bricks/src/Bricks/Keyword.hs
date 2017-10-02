@@ -34,6 +34,7 @@ newtype Keyword =
 
 {- | All of the keywords. This list is used when parsing and rendering because
 an unquoted string cannot have a name that is exactly the same as a keyword. -}
+
 keywords :: [Keyword]
 keywords =
   [ keyword'rec

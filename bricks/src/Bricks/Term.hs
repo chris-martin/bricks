@@ -62,9 +62,8 @@ data Term
 >  ╱ ╲
 > f   x
 
-For a function of two parameters, see the corresponding '/@@\' operator.
+For a function of two parameters, see the corresponding '/@@\' operator. -}
 
--}
 (/@\) :: Term -> Term -> Term
 (/@\) = Term'Apply
 infixl /@\
@@ -79,11 +78,13 @@ abstract syntax tree, @f /\@\@\\ (x, y)@ looks like this:
 > f   x
 
 -}
+
 (/@@\) :: Term -> (Term, Term) -> Term
 f /@@\ (x, y) = (f /@\ x) /@\ y
 infixl /@@\
 
--- | Alias for 'Term'Lambda'.
+{- | Alias for 'Term'Lambda'. -}
+
 (|->) :: TermPattern -> Term -> Term
 (|->) = Term'Lambda
 infixl |->

@@ -12,26 +12,27 @@
 {- |
 
 This module lets you evaluate Bricks expressions. First 'expression'to'term's
-converts the abstract syntax tree ('Expression') into an enriched version of
-the lambda calculus ('Term'). Then we perform /graph reduction/, repeatedly
-applying simplifications until we arrive at an irreducible term.
+converts the abstract syntax tree ('Expression') into an enriched version of the
+lambda calculus ('Term'). Then we perform /graph reduction/, repeatedly applying
+simplifications until we arrive at an irreducible term.
 
-When we substitute an argument into a lambda body to perform beta-conversion,
-we do so by substituting a 'Pointer' of the argument rather than the term
-itself. This gives rise to /sharing/, thus turning the tree into a general
-graph, and helps avoid reducing the same expression more than once.
+When we substitute an argument into a lambda body to perform beta-conversion, we
+do so by substituting a 'Pointer' of the argument rather than the term itself.
+This gives rise to /sharing/, thus turning the tree into a general graph, and
+helps avoid reducing the same expression more than once.
 
 = /The Implementation of Functional Programming Languages/
 
-The design of Bricks evaluation is in large part based on Simon Peyton Jones's 1987 book
+The design of Bricks evaluation is in large part based on Simon Peyton Jones's
+1987 book
 <https://www.microsoft.com/en-us/research/publication/the-implementation-of-functional-programming-languages/ The Implementation of Functional Programming Languages>.
 In attempt to keep the Bricks API documentation mostly self-contained, we avoid
-making frequent references to this work throughout. Instead, here we give a
-list of some important connections to the book:
+making frequent references to this work throughout. Instead, here we give a list
+of some important connections to the book:
 
-  - The rationale for immediately converting the AST into another data
-    structure rather than performing any transformations directly on the
-    AST comes from page 38.
+  - The rationale for immediately converting the AST into another data structure
+    rather than performing any transformations directly on the AST comes from
+    page 38.
 
   - A Bricks function defined using a dict pattern turns into a
     "pattern-matching lambda abstraction"; this term is introduced on page 61.
@@ -41,11 +42,11 @@ list of some important connections to the book:
 
   - /Pointer substitution/ is described on page 208.
 
-  - The implementation of 'term'substitute' closely follows the
-    description of /Instantiate/, page 210.
+  - The implementation of 'term'substitute' closely follows the description of
+    /Instantiate/, page 210.
 
-  - Page 20 introduces the name capture problem. Pages 199 and 210 discuss
-    how we avoid it by only reducing the top-level redex, which has no free
+  - Page 20 introduces the name capture problem. Pages 199 and 210 discuss how
+    we avoid it by only reducing the top-level redex, which has no free
     variables.
 
 -}
@@ -137,6 +138,7 @@ does'termPattern'bind n = \case
 
 {- | @instantiate var value body@ produces a copy of the term @body@,
 substituting @value@ for free occurrences of @var@. -}
+
 instantiate'one
   :: forall m. MonadEval m
   => Text  -- ^ @var@   - Variable name

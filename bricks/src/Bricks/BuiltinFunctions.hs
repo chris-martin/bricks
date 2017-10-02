@@ -56,8 +56,10 @@ fn'id = fn'pure'parametric'arity1 id
 fn'const :: Term
 fn'const = fn'pure'parametric'arity2 const
 
-{- | Function composition, in the traditional "backwards" order. Read
-@f `fn'comp` g@ as "/f/ after /g/." -}
+{- | Function composition, in the traditional "backwards" order.
+
+Read @f `fn'comp` g@ as "/f/ after /g/." -}
+
 fn'comp :: Term
 fn'comp = fn'pure'parametric'arity3 $ \f g x -> f /@\ (g /@\ x)
 

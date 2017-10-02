@@ -49,7 +49,8 @@ class ShowSourceInfo a
 --  SourcePosition
 --------------------------------------------------------------------------------
 
--- | An endpoint of a 'SourceRange'.
+{- | An endpoint of a 'SourceRange'. -}
+
 data SourcePosition =
   SourcePosition
     { sourcePosition'line :: Natural
@@ -68,10 +69,11 @@ instance ShowSourceInfo SourcePosition
 --  SourceRange
 --------------------------------------------------------------------------------
 
--- | Start and end points for a span of text. When we parse text into an
--- 'Expression', we annotate it with source ranges so error messages that
--- refer to specific expressions can tell the user where in their Bricks code
--- those expressions are defined.
+{- | Start and end points for a span of text. When we parse text into an
+'Expression', we annotate it with source ranges so error messages that refer to
+specific expressions can tell the user where in their Bricks code those
+expressions are defined. -}
+
 data SourceRange =
   SourceRange
     { sourceRange'start :: SourcePosition

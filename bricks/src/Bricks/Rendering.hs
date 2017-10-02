@@ -73,7 +73,9 @@ import Prelude (fromIntegral)
 
 type Render a = a -> Text
 
--- | Insert escape sequences for rendering normal double-quoted (@"@) strings.
+{- | Insert escape sequences for rendering normal double-quoted (@"@) strings.
+-}
+
 str'escape :: Text -> Text
 str'escape =
   Text.replace "\"" "\\\"" .
@@ -83,28 +85,32 @@ str'escape =
   Text.replace "\t" "\\t" .
   Text.replace "\\" "\\\\"
 
--- | Render an unquoted string in unquoted form.
+{- | Render an unquoted string in unquoted form. -}
+
 render'strUnquoted :: Render Str'Unquoted
 render'strUnquoted = str'unquoted'text
 
--- | Render a static string, in unquoted form if possible.
+{- | Render a static string, in unquoted form if possible. -}
+
 render'strStatic'unquotedIfPossible :: Render Str'Static
 render'strStatic'unquotedIfPossible s@(Str'Static x) =
   if text'canBeUnquoted x then x else render'strStatic'quoted s
 
--- | Render a static string, in quoted form.
+{- | Render a static string, in quoted form. -}
+
 render'strStatic'quoted :: Render Str'Static
 render'strStatic'quoted (Str'Static x) =
   "\"" <> str'escape x <> "\""
 
--- | Render a dynamic string, in unquoted form if possible.
+{- | Render a dynamic string, in unquoted form if possible. -}
+
 render'strDynamic'unquotedIfPossible :: Render (Str'Dynamic Expression)
 render'strDynamic'unquotedIfPossible d =
   case str'dynamic'to'static d of
     Just s  -> render'strStatic'unquotedIfPossible s
     Nothing -> render'strDynamic'quoted d
 
--- | Render a dynamic string, in quoted form.
+{- | Render a dynamic string, in quoted form. -}
 render'strDynamic'quoted :: Render (Str'Dynamic Expression)
 render'strDynamic'quoted xs =
   "\"" <> foldMap r (strDynamic'toSeq xs) <> "\""
@@ -114,7 +120,7 @@ render'strDynamic'quoted xs =
       Str'1'Literal (Str'Static x) -> str'escape x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
--- | Render one line of an indented string ('InStr').
+{- | Render one line of an indented string ('InStr'). -}
 render'inStr'1 :: Render InStr'1
 render'inStr'1 (InStr'1 n xs) =
   Text.replicate (fromIntegral n) " " <> foldMap r (strDynamic'toSeq xs)
@@ -124,9 +130,10 @@ render'inStr'1 (InStr'1 n xs) =
       Str'1'Literal (Str'Static x) -> x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
--- | Render a lambda parameter: everything from the beginning of a lambda, up
--- to but not including the @:@ that separates the head from the body of the
--- lambda.
+{- | Render a lambda parameter: everything from the beginning of a lambda, up to
+but not including the @:@ that separates the head from the body of the lambda.
+-}
+
 render'param :: Render Param
 render'param =
   \case
@@ -135,7 +142,8 @@ render'param =
     Param'Both a b      -> render'strUnquoted a <> "@" <>
                            render'dictPattern b
 
--- | Render a dict pattern (@{ a, b ? c, ... }@).
+{- | Render a dict pattern (@{ a, b ? c, ... }@). -}
+
 render'dictPattern :: Render DictPattern
 render'dictPattern (DictPattern bs e) =
   if Seq.null xs
@@ -146,7 +154,8 @@ render'dictPattern (DictPattern bs e) =
       Seq.map render'dictPattern'1 bs <>
       if e then Seq.singleton "..." else Seq.empty
 
--- | Render a single item in a 'DictPattern'.
+{- | Render a single item in a 'DictPattern'. -}
+
 render'dictPattern'1 :: Render DictPattern'1
 render'dictPattern'1 =
   \case
@@ -154,25 +163,29 @@ render'dictPattern'1 =
     DictPattern'1 a (Just b) -> render'strUnquoted a <> " ? " <>
                                 render'expression b
 
--- | Render a lambda expression (@x: y@).
+{- | Render a lambda expression (@x: y@). -}
+
 render'lambda :: Render Lambda
 render'lambda (Lambda a b) =
   render'param a <> ": " <> render'expression b
 
--- | Render a function application expression (@f x@).
+{- | Render a function application expression (@f x@). -}
+
 render'apply :: Render Apply
 render'apply (Apply a b) =
   render'expression'applyLeftContext a <> " " <>
   render'expression'applyRightContext b
 
--- | Render a list literal (@[ ... ]@).
+{- | Render a list literal (@[ ... ]@). -}
+
 render'list :: Render List
 render'list (List xs) =
   "[ " <> r xs <> "]"
   where
     r = Text.concat . fmap (\x -> render'expression'listContext x <> " ")
 
--- | Render a dict literal (@{ ... }@).
+{- | Render a dict literal (@{ ... }@). -}
+
 render'dict :: Render Dict
 render'dict (Dict rec bs) =
   (if rec then keywordText keyword'rec <> " " else "") <>
@@ -180,7 +193,8 @@ render'dict (Dict rec bs) =
   where
     r = Text.concat . fmap (\b -> render'dictBinding b <> "; ")
 
--- | Render a binding within a 'Dict', without the trailing semicolon.
+{- | Render a binding within a 'Dict', without the trailing semicolon. -}
+
 render'dictBinding :: Render DictBinding
 render'dictBinding =
   \case
@@ -189,12 +203,14 @@ render'dictBinding =
     DictBinding'Inherit x ->
       render'inherit x
 
--- | Render a dot expression (@a.b@).
+{- | Render a dot expression (@a.b@). -}
+
 render'dot :: Render Dot
 render'dot (Dot a b) =
   render'expression'dotLeftContext a <> "." <> render'expression'dictKey b
 
--- | Render a @let@-@in@ expression.
+{- | Render a @let@-@in@ expression. -}
+
 render'let :: Render Let
 render'let (Let bs x) =
   keywordText keyword'let <> " " <> r bs <>
@@ -202,7 +218,8 @@ render'let (Let bs x) =
   where
     r = Text.concat . fmap (\b -> render'letBinding b <> "; ")
 
--- | Render a binding within a 'Let', without the trailing semicolon.
+{- | Render a binding within a 'Let', without the trailing semicolon. -}
+
 render'letBinding :: Render LetBinding
 render'letBinding =
   \case
@@ -220,22 +237,21 @@ render'inherit =
   where
     r = foldMap (\x -> " " <> render'strStatic'unquotedIfPossible x)
 
-{- | Render an expression.
+{- | Render an expression. -}
 
-==== Examples
+-- | ==== Examples
+--
+-- >>> :{
+-- >>> render'expression
+-- >>>   (lambda
+-- >>>     (param "a" <> pattern
+-- >>>       [ param "f"
+-- >>>       , param "b" & def (apply (var "g") (var "x"))
+-- >>>       ] <> ellipsis)
+-- >>>     (apply (var "f") (var "b")))
+-- >>> :}
+-- "a@{ f, b ? g x, ... }: f b"
 
->>> :{
->>> render'expression
->>>   (lambda
->>>     (param "a" <> pattern
->>>       [ param "f"
->>>       , param "b" & def (apply (var "g") (var "x"))
->>>       ] <> ellipsis)
->>>     (apply (var "f") (var "b")))
->>> :}
-"a@{ f, b ? g x, ... }: f b"
-
--}
 render'expression :: Render Expression
 render'expression =
   \case
@@ -248,7 +264,8 @@ render'expression =
     Expr'Apply  x -> render'apply x
     Expr'Let    x -> render'let x
 
--- | Render an expression in a list context.
+{- | Render an expression in a list context. -}
+
 render'expression'listContext :: Render Expression
 render'expression'listContext x =
   case x of
@@ -257,11 +274,13 @@ render'expression'listContext x =
     Expr'Let    _ -> render'expression'inParens x
     _             -> render'expression x
 
--- | Render an expression in the context of the left-hand side of a 'Dot'.
+{- | Render an expression in the context of the left-hand side of a 'Dot'. -}
+
 render'expression'dotLeftContext :: Render Expression
 render'expression'dotLeftContext = render'expression'listContext
 
--- | Render an expression in the context of the left-hand side of an 'Apply'.
+{- | Render an expression in the context of the left-hand side of an 'Apply'. -}
+
 render'expression'applyLeftContext :: Render Expression
 render'expression'applyLeftContext x =
   case x of
@@ -269,7 +288,9 @@ render'expression'applyLeftContext x =
     Expr'Let    _ -> render'expression'inParens x
     _             -> render'expression x
 
--- | Render an expression in the context of the right-hand side of an 'Apply'.
+{- | Render an expression in the context of the right-hand side of an 'Apply'.
+-}
+
 render'expression'applyRightContext :: Render Expression
 render'expression'applyRightContext x =
   case x of

@@ -2,21 +2,22 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 
-{- | Functions for constructing 'Expression's that match the 'Show'
-implementations.
+{- |
 
-This module is only designed for testing and REPL use. It isn't re-exported
-into the main Bricks API because it's a bit messy:
+Functions for constructing 'Expression's that match the 'Show' implementations.
 
-- It introduces some superfluous typeclasses for the sake of brevity.
-- There are a lot of terse function names here that would clash with other
-  things easily.
-- Some functions are partial, such as those that require strings that can be
-  rendered unquoted.
-- It uses string overloading in a way that the regular API probably shouldn't.
-- The functions are oriented toward constructing 'Expression's, skipping over
-  the intermediary types they're composed of, which is convenient but may make
-  them insufficient for some use cases.
+This module is only designed for testing and REPL use. It isn't re-exported into
+the main Bricks API because it's a bit messy:
+
+  - It introduces some superfluous typeclasses for the sake of brevity.
+  - There are a lot of terse function names here that would clash with other
+    things easily.
+  - Some functions are partial, such as those that require strings that can be
+    rendered unquoted.
+  - It uses string overloading in a way that the regular API probably shouldn't.
+  - The functions are oriented toward constructing 'Expression's, skipping over
+    the intermediary types they're composed of, which is convenient but may make
+    them insufficient for some use cases.
 
 -}
 module Bricks.Expression.Construction where
@@ -149,8 +150,9 @@ antiquote :: Expression -> Str'1'IsString
 antiquote =
   Str'1'IsString . Str'1'Antiquote
 
--- | A newtype for 'Str'1' just so we can give it the 'IsString' instance
--- which would be dubiously appropriate for the actual 'Str'1' type.
+{- | A newtype for 'Str'1' just so we can give it the 'IsString' instance which
+would be dubiously appropriate for the actual 'Str'1' type. -}
+
 newtype Str'1'IsString = Str'1'IsString { unStr'1'IsString :: Str'1 Expression }
 
 instance IsString Str'1'IsString
@@ -206,6 +208,7 @@ ellipsis =
 
 {- | Combine two params, merging dict patterns with 'mergeDictPatterns' and
 preferring the right-hand-side when names conflict. -}
+
 mergeParams :: Param -> Param -> Param
 mergeParams = (+)
   where
@@ -229,6 +232,7 @@ mergeParams = (+)
 
 {- | Combine two dict patterns, taking the concatenation of the item list, and
 the Boolean /or/ of the ellipsis flag. -}
+
 mergeDictPatterns :: DictPattern -> DictPattern -> DictPattern
 mergeDictPatterns = (+)
   where

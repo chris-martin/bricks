@@ -46,6 +46,7 @@ module Bricks
   -- ** Parsing expressions
   , parse'expression
   , parse'expression'paren
+  , parse'expression'antiquote
   , parse'expression'dictKey
   -- ** Parsing lists of expressions
   , parse'expressionList
@@ -206,7 +207,6 @@ module Bricks
 
   -- * Miscellanea
   , Render
-  , parse'antiquote
 
   -------------------------------------------------
 

@@ -84,7 +84,6 @@ module Bricks.Parsing
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
-import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal

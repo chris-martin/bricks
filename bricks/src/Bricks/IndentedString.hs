@@ -22,7 +22,6 @@ module Bricks.IndentedString
 
 -- Bricks
 import Bricks.Expression
-import Bricks.StringExpressions
 
 -- Bricks internal
 import           Bricks.Internal.Prelude

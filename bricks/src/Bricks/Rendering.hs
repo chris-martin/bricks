@@ -59,7 +59,6 @@ module Bricks.Rendering
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
-import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal
@@ -71,7 +70,17 @@ import qualified Bricks.Internal.Text    as Text
 -- Base
 import Prelude (fromIntegral)
 
+--------------------------------------------------------------------------------
+
+-- $setup
+--
+-- >>> import Bricks.Expression.Construction
+
+--------------------------------------------------------------------------------
+
 type Render a = a -> Text
+
+--------------------------------------------------------------------------------
 
 {- | Insert escape sequences for rendering normal double-quoted (@"@) strings.
 -}

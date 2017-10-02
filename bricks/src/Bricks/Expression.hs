@@ -9,6 +9,29 @@ module Bricks.Expression
   -- * Expressions
     Expression (..)
 
+  -- * Strings
+  -- $strings
+
+  -- ** Unquoted strings
+  , Str'Unquoted (..)
+  , str'unquoted'text
+
+  -- ** Static strings
+  , Str'Static (..)
+
+  -- ** Dynamic strings
+  , Str'Dynamic (..)
+  , Str'1 (..)
+  , strDynamic'toList
+  , strDynamic'fromList
+  , strDynamic'singleton
+
+  -- ** Conversions between types of strings
+  , str'dynamic'to'static
+  , str'static'to'dynamic
+  , str'unquoted'to'static
+  , str'unquoted'to'dynamic
+
   -- * Lists
   , List (..)
 
@@ -42,7 +65,7 @@ module Bricks.Expression
   ) where
 
 -- Bricks
-import Bricks.StringExpressions
+import Bricks.UnquotedString
 
 -- Bricks internal
 import           Bricks.Internal.Prelude
@@ -50,6 +73,7 @@ import           Bricks.Internal.Seq            (Seq)
 import           Bricks.Internal.ShowExpression
 import           Bricks.Internal.Text           (Text)
 import qualified Bricks.Internal.Text           as Text
+import qualified Bricks.Internal.Seq            as Seq
 
 data Expression
   = Expr'Var Str'Unquoted
@@ -228,6 +252,190 @@ data Expression
       -- expression may refer to each other (much like a dict with the @rec@
       -- keyword). As with dicts, the order of the bindings does not matter.
 
+
+--------------------------------------------------------------------------------
+--  Strings overview
+--------------------------------------------------------------------------------
+
+{- $strings
+
+There are three types of strings in the AST:
+
+  - 'Str'Unquoted'
+  - 'Str'Static'
+  - 'Str'Dynamic'
+
+= Why variables are strings
+
+Perhaps counterintuitively, we include variables under the umbrella of "string".
+This is because the language itself somewhat conflates the two ideas, and indeed
+a casual Bricks user may not even always be aware of which is which.
+
+Consider the following (quite contrived) examples:
+
+> let x = { a = 1; }; in
+> let inherit (x) a;  in
+> { inherit a; }
+
+> let x = { "a b" = 1; }; in
+> let inherit (x) "a b";  in
+> { inherit "a b"; }
+
+In the first, @a@ seems quite like a variable; in the second, @"a b"@ feels much
+like a string (because we had to quote it, as it contains a space). But the ASTs
+for these two expressions are (apart from the name change) identical. -}
+
+
+--------------------------------------------------------------------------------
+--  Unquoted strings
+--------------------------------------------------------------------------------
+
+data Str'Unquoted = Str'Unquoted UnquotedString
+
+str'unquoted'text :: Str'Unquoted -> Text
+str'unquoted'text (Str'Unquoted x) = unquotedString'text x
+
+instance ShowExpression Str'Unquoted
+  where
+    showExpression = Text.pack . show @Text . str'unquoted'text
+
+instance Show Str'Unquoted
+  where
+    showsPrec = showsPrec'showExpression
+
+
+--------------------------------------------------------------------------------
+--  Static strings
+--------------------------------------------------------------------------------
+
+{- | A fixed string value. We use the description "static" to mean the string
+may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
+
+data Str'Static = Str'Static Text
+
+instance Semigroup Str'Static
+  where
+    Str'Static x <> Str'Static y = Str'Static (x <> y)
+
+instance Monoid Str'Static
+  where
+    mempty = Str'Static mempty
+    mappend = (<>)
+
+instance ShowExpression Str'Static
+  where
+    showExpression (Str'Static x) = Text.pack (show @Text x)
+
+instance Show (Str'Static)
+  where
+    showsPrec = showsPrec'showExpression
+
+
+--------------------------------------------------------------------------------
+--  Dynamic strings
+--------------------------------------------------------------------------------
+
+{- | A quoted string expression, which may be a simple string like @"hello"@ or
+a more complex string containing antiquotation like @"Hello, my name is
+${name}!"@. See 'Expr'Str'.
+
+We use the description "dynamic" to mean the string may contain antiquotation,
+in contrast with 'Str'Static' which cannot. -}
+
+data Str'Dynamic expr =
+  Str'Dynamic
+    { strDynamic'toSeq :: Seq (Str'1 expr)
+    }
+
+instance Semigroup (Str'Dynamic expr)
+  where
+    Str'Dynamic x <> Str'Dynamic y = Str'Dynamic (x <> y)
+
+instance Monoid (Str'Dynamic expr)
+  where
+    mempty = Str'Dynamic mempty
+    mappend = (<>)
+
+{- | One part of a 'Str'Dynamic'. -}
+
+data Str'1 expr
+  = Str'1'Literal Str'Static
+  | Str'1'Antiquote expr
+
+instance ShowExpression expr => ShowExpression (Str'Dynamic expr)
+  where
+    showExpression x =
+      Text.unwords ["str", showExpression'list (strDynamic'toList x)]
+
+instance ShowExpression expr => ShowExpression (Str'1 expr)
+  where
+    showExpression = \case
+      Str'1'Literal (Str'Static x) -> showExpression'quoted'text x
+      Str'1'Antiquote x -> Text.unwords ["antiquote", showExpression'paren x]
+
+instance ShowExpression expr => Show (Str'Dynamic expr)
+  where
+    showsPrec = showsPrec'showExpression
+
+instance ShowExpression expr => Show (Str'1 expr)
+  where
+    showsPrec = showsPrec'showExpression
+
+strDynamic'toList :: Str'Dynamic expr -> [Str'1 expr]
+strDynamic'toList =
+  Seq.toList . strDynamic'toSeq
+
+strDynamic'fromList :: [Str'1 expr] -> Str'Dynamic expr
+strDynamic'fromList =
+  Str'Dynamic . Seq.fromList
+
+strDynamic'singleton :: Str'1 expr -> Str'Dynamic expr
+strDynamic'singleton =
+  Str'Dynamic . Seq.singleton
+
+
+--------------------------------------------------------------------------------
+--  Conversions between types of strings
+--------------------------------------------------------------------------------
+
+-- | ==== Examples
+--
+-- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList []
+-- Just ""
+--
+-- >>> a = Str'1'Literal (Str'Static "hi")
+--
+-- >>> b = Str'1'Antiquote $ Expr'Var $ Str'Unquoted $ unquotedString'orThrow "x"
+--
+-- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ a ]
+-- Just "hi"
+--
+-- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ a, b ]
+-- Nothing
+
+str'dynamic'to'static :: Str'Dynamic expr -> Maybe Str'Static
+str'dynamic'to'static = strDynamic'toList >>> \case
+  []                -> Just (Str'Static "")
+  [Str'1'Literal x] -> Just x
+  _                 -> Nothing
+
+str'static'to'dynamic :: Str'Static -> Str'Dynamic expr
+str'static'to'dynamic =
+  strDynamic'singleton . Str'1'Literal
+
+str'unquoted'to'static :: Str'Unquoted -> Str'Static
+str'unquoted'to'static =
+  Str'Static . str'unquoted'text
+
+str'unquoted'to'dynamic :: Str'Unquoted -> Str'Dynamic expr
+str'unquoted'to'dynamic =
+  str'static'to'dynamic . str'unquoted'to'static
+
+
+--------------------------------------------------------------------------------
+--  Lambda
+--------------------------------------------------------------------------------
+
 {- | A function expression. See 'Expr'Lambda'. -}
 
 data Lambda =
@@ -238,6 +446,11 @@ data Lambda =
         -- ^ Body of the function; what it evaluates to
     }
 
+
+--------------------------------------------------------------------------------
+--  Apply
+--------------------------------------------------------------------------------
+
 {- | A function application expression. See 'Expr'Apply'. -}
 
 data Apply =
@@ -247,6 +460,18 @@ data Apply =
     , apply'arg :: Expression
         -- ^ The argument to the function
     }
+
+expression'applyArgs
+  :: Expression   -- ^ Function
+  -> [Expression] -- ^ Args
+  -> Expression   -- ^ Function application
+expression'applyArgs =
+  foldl (\acc b -> Expr'Apply (Apply acc b))
+
+
+--------------------------------------------------------------------------------
+--  Param
+--------------------------------------------------------------------------------
 
 {- | A parameter to a 'Lambda'. All functions have a single parameter, but it's
 more complicated than that because it may also include dict destructuring. -}
@@ -260,6 +485,11 @@ data Param
   | Param'Both Str'Unquoted DictPattern
       -- ^ Both a param name /and/ a dict pattern, separated by the @\@@
       -- keyword
+
+
+--------------------------------------------------------------------------------
+--  Dict pattern
+--------------------------------------------------------------------------------
 
 {- | A type of function parameter ('Param') that does dict destructuring. -}
 
@@ -282,11 +512,21 @@ data DictPattern'1 =
         -- ^ The default value to be used if the key is not present in the dict
     }
 
+
+--------------------------------------------------------------------------------
+--  List
+--------------------------------------------------------------------------------
+
 {- | A list literal expression, starting with @[@ and ending with @]@. See
 'Expr'List'. -}
 
 newtype List = List (Seq Expression)
   deriving (Monoid, Semigroup)
+
+
+--------------------------------------------------------------------------------
+--  Dict
+--------------------------------------------------------------------------------
 
 {- | A dict literal expression, starting with @{@ or @rec {@ and ending with
 @}@. See 'Expr'Dict'. -}
@@ -305,6 +545,11 @@ data DictBinding
   = DictBinding'Eq Expression Expression
   | DictBinding'Inherit Inherit
 
+
+--------------------------------------------------------------------------------
+--  Dot
+--------------------------------------------------------------------------------
+
 {- | An expression of the form @person.name@ that looks up a key from a dict.
 See 'Expr'Dot'. -}
 
@@ -313,6 +558,18 @@ data Dot =
     { dot'dict :: Expression
     , dot'key  :: Expression
     }
+
+expression'applyDots
+  :: Expression   -- ^ Dict
+  -> [Expression] -- ^ Lookups
+  -> Expression   -- ^ Dot expression
+expression'applyDots =
+  foldl (\acc b -> Expr'Dot (Dot acc b))
+
+
+--------------------------------------------------------------------------------
+--  Let
+--------------------------------------------------------------------------------
 
 {- | A @let@-@in@ expression. See 'Expr'Let'. -}
 
@@ -334,25 +591,16 @@ data LetBinding
       -- ^ A binding using the @inherit@ keyword, of the form @inherit a b;@
       -- or @inherit (x) a b;@
 
+
+--------------------------------------------------------------------------------
+--  Inherit
+--------------------------------------------------------------------------------
+
 data Inherit =
   Inherit
     { inherit'source :: Maybe Expression
     , inherit'names :: Seq Str'Static
     }
-
-expression'applyArgs
-  :: Expression   -- ^ Function
-  -> [Expression] -- ^ Args
-  -> Expression   -- ^ Function application
-expression'applyArgs =
-  foldl (\acc b -> Expr'Apply (Apply acc b))
-
-expression'applyDots
-  :: Expression   -- ^ Dict
-  -> [Expression] -- ^ Lookups
-  -> Expression   -- ^ Dot expression
-expression'applyDots =
-  foldl (\acc b -> Expr'Dot (Dot acc b))
 
 
 --------------------------------------------------------------------------------

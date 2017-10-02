@@ -24,7 +24,6 @@ module Bricks.Expression.Construction where
 
 -- Bricks
 import Bricks.Expression
-import Bricks.StringExpressions
 import Bricks.UnquotedString
 
 -- Bricks internal

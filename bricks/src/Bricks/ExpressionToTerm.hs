@@ -14,10 +14,8 @@ module Bricks.ExpressionToTerm where
 -- Bricks
 import Bricks.BuiltinFunctions
 import Bricks.Expression
-import Bricks.StringExpressions
 import Bricks.Term
 import Bricks.Type
-import Bricks.UnquotedString
 
 -- Bricks internal
 import           Bricks.Internal.Prelude

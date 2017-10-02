@@ -152,7 +152,7 @@ antiquote =
 {- | A newtype for 'Str'1' just so we can give it the 'IsString' instance which
 would be dubiously appropriate for the actual 'Str'1' type. -}
 
-newtype Str'1'IsString = Str'1'IsString { unStr'1'IsString :: Str'1 Expression }
+newtype Str'1'IsString = Str'1'IsString { unStr'1'IsString :: Str'1 }
 
 instance IsString Str'1'IsString
   where

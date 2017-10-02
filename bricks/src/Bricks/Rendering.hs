@@ -113,18 +113,18 @@ render'strStatic'quoted (Str'Static x) =
 
 {- | Render a dynamic string, in unquoted form if possible. -}
 
-render'strDynamic'unquotedIfPossible :: Render (Str'Dynamic Expression)
+render'strDynamic'unquotedIfPossible :: Render Str'Dynamic
 render'strDynamic'unquotedIfPossible d =
   case str'dynamic'to'static d of
     Just s  -> render'strStatic'unquotedIfPossible s
     Nothing -> render'strDynamic'quoted d
 
 {- | Render a dynamic string, in quoted form. -}
-render'strDynamic'quoted :: Render (Str'Dynamic Expression)
+render'strDynamic'quoted :: Render Str'Dynamic
 render'strDynamic'quoted xs =
   "\"" <> foldMap r (strDynamic'toSeq xs) <> "\""
   where
-    r :: Str'1 Expression -> Text
+    r :: Str'1 -> Text
     r = \case
       Str'1'Literal (Str'Static x) -> str'escape x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
@@ -134,7 +134,7 @@ render'inStr'1 :: Render InStr'1
 render'inStr'1 (InStr'1 n xs) =
   Text.replicate (fromIntegral n) " " <> foldMap r (strDynamic'toSeq xs)
   where
-    r :: Str'1 Expression -> Text
+    r :: Str'1 -> Text
     r = \case
       Str'1'Literal (Str'Static x) -> x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"

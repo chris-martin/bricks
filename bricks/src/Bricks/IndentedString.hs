@@ -55,7 +55,7 @@ data InStr'1 =
     { inStr'1'level :: Natural
         -- ^ The number of leading space characters. We store this separately
         -- for easier implementation of 'inStr'dedent'.
-    , inStr'1'str :: Str'Dynamic Expression
+    , inStr'1'str :: Str'Dynamic
         -- ^ The rest of the line after any leading spaces.
     }
 
@@ -65,14 +65,14 @@ instance Show InStr'1
 
 {- | Join 'InStr's with newlines interspersed. -}
 
-inStr'join :: InStr -> Str'Dynamic Expression
+inStr'join :: InStr -> Str'Dynamic
 inStr'join xs =
   Str'Dynamic . Seq.concat $
     Seq.intersperse
       (Seq.singleton (Str'1'Literal (Str'Static "\n")))
       (f <$> inStr'toSeq xs)
   where
-    f :: InStr'1 -> Seq (Str'1 Expression)
+    f :: InStr'1 -> Seq Str'1
     f (InStr'1 0 parts) = strDynamic'toSeq parts
     f (InStr'1 n parts) =
         Str'1'Literal (Str'Static (Text.replicate (fromIntegral n) " "))

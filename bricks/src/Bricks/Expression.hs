@@ -78,7 +78,7 @@ import qualified Bricks.Internal.Seq            as Seq
 data Expression
   = Expr'Var Str'Unquoted
       -- ^ A /variable/, such as @x@.
-  | Expr'Str (Str'Dynamic Expression)
+  | Expr'Str Str'Dynamic
       -- ^ A /string/ may be quoted either in the traditional form using a
       -- single double-quote (@"@...@"@):
       --
@@ -342,54 +342,54 @@ ${name}!"@. See 'Expr'Str'.
 We use the description "dynamic" to mean the string may contain antiquotation,
 in contrast with 'Str'Static' which cannot. -}
 
-data Str'Dynamic expr =
+data Str'Dynamic =
   Str'Dynamic
-    { strDynamic'toSeq :: Seq (Str'1 expr)
+    { strDynamic'toSeq :: Seq Str'1
     }
 
-instance Semigroup (Str'Dynamic expr)
+instance Semigroup Str'Dynamic
   where
     Str'Dynamic x <> Str'Dynamic y = Str'Dynamic (x <> y)
 
-instance Monoid (Str'Dynamic expr)
+instance Monoid Str'Dynamic
   where
     mempty = Str'Dynamic mempty
     mappend = (<>)
 
 {- | One part of a 'Str'Dynamic'. -}
 
-data Str'1 expr
+data Str'1
   = Str'1'Literal Str'Static
-  | Str'1'Antiquote expr
+  | Str'1'Antiquote Expression
 
-instance ShowExpression expr => ShowExpression (Str'Dynamic expr)
+instance ShowExpression Str'Dynamic
   where
     showExpression x =
       Text.unwords ["str", showExpression'list (strDynamic'toList x)]
 
-instance ShowExpression expr => ShowExpression (Str'1 expr)
+instance ShowExpression Str'1
   where
     showExpression = \case
       Str'1'Literal (Str'Static x) -> showExpression'quoted'text x
       Str'1'Antiquote x -> Text.unwords ["antiquote", showExpression'paren x]
 
-instance ShowExpression expr => Show (Str'Dynamic expr)
+instance Show Str'Dynamic
   where
     showsPrec = showsPrec'showExpression
 
-instance ShowExpression expr => Show (Str'1 expr)
+instance Show Str'1
   where
     showsPrec = showsPrec'showExpression
 
-strDynamic'toList :: Str'Dynamic expr -> [Str'1 expr]
+strDynamic'toList :: Str'Dynamic -> [Str'1]
 strDynamic'toList =
   Seq.toList . strDynamic'toSeq
 
-strDynamic'fromList :: [Str'1 expr] -> Str'Dynamic expr
+strDynamic'fromList :: [Str'1] -> Str'Dynamic
 strDynamic'fromList =
   Str'Dynamic . Seq.fromList
 
-strDynamic'singleton :: Str'1 expr -> Str'Dynamic expr
+strDynamic'singleton :: Str'1 -> Str'Dynamic
 strDynamic'singleton =
   Str'Dynamic . Seq.singleton
 
@@ -413,13 +413,13 @@ strDynamic'singleton =
 -- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ a, b ]
 -- Nothing
 
-str'dynamic'to'static :: Str'Dynamic expr -> Maybe Str'Static
+str'dynamic'to'static :: Str'Dynamic -> Maybe Str'Static
 str'dynamic'to'static = strDynamic'toList >>> \case
   []                -> Just (Str'Static "")
   [Str'1'Literal x] -> Just x
   _                 -> Nothing
 
-str'static'to'dynamic :: Str'Static -> Str'Dynamic expr
+str'static'to'dynamic :: Str'Static -> Str'Dynamic
 str'static'to'dynamic =
   strDynamic'singleton . Str'1'Literal
 
@@ -427,7 +427,7 @@ str'unquoted'to'static :: Str'Unquoted -> Str'Static
 str'unquoted'to'static =
   Str'Static . str'unquoted'text
 
-str'unquoted'to'dynamic :: Str'Unquoted -> Str'Dynamic expr
+str'unquoted'to'dynamic :: Str'Unquoted -> Str'Dynamic
 str'unquoted'to'dynamic =
   str'static'to'dynamic . str'unquoted'to'static
 

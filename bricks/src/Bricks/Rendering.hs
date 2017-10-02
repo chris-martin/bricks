@@ -120,6 +120,7 @@ render'strDynamic'unquotedIfPossible d =
     Nothing -> render'strDynamic'quoted d
 
 {- | Render a dynamic string, in quoted form. -}
+
 render'strDynamic'quoted :: Render Str'Dynamic
 render'strDynamic'quoted xs =
   "\"" <> foldMap r (strDynamic'toSeq xs) <> "\""
@@ -130,6 +131,7 @@ render'strDynamic'quoted xs =
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 {- | Render one line of an indented string ('InStr'). -}
+
 render'inStr'1 :: Render InStr'1
 render'inStr'1 (InStr'1 n xs) =
   Text.replicate (fromIntegral n) " " <> foldMap r (strDynamic'toSeq xs)

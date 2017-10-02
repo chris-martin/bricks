@@ -42,6 +42,7 @@ library:
     - Bricks.Type
     - Bricks.UnquotedString
 
+    - Bricks.Internal.List
     - Bricks.Internal.Monad
     - Bricks.Internal.Prelude
     - Bricks.Internal.Seq
@@ -51,6 +52,7 @@ library:
 dependencies:
   - base       >= 4.9   && < 4.10
   - containers >= 0.5.7 && < 0.6
+  - either-list-functions == 0.0.0.1
   - mtl
   - parsec     >= 3.1.6 && < 3.2
   - text       >= 1.2.2 && < 1.3

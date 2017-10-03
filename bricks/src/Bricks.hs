@@ -97,19 +97,15 @@ module Bricks
   , str'unquoted'to'dynamic
   -- ** Indented strings
   , InStr (..)
+  , InStr'1 (..)
+  , inStr'1'toStrParts
   , inStr'toList
-  , inStr'join
+  , inStr'to'strDynamic
   , inStr'level
   , inStr'dedent
   , inStr'trim
-  , render'inStr'1
   , parse'inStr
   , parse'inStr'1
-  -- ** Single line of an indented string
-  , InStr'1 (..)
-  , inStr'1'nonEmpty
-  , inStr'1'empty
-  , inStr'1'modifyLevel
 
   -------------------------------------------------
 

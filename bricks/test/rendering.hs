@@ -80,16 +80,6 @@ prop_render_string_dynamic_quoted = property $ do
        ]
     === [text|"Hello, my name is ${name}!"|]
 
-prop_render_indented_string_line :: Property
-prop_render_indented_string_line = property $ do
-
-  let test n xs = render'inStr'1 $ InStr'1 n (strDynamic'fromList xs)
-
-  test 2 [ Str'1'Literal (Str'Static "abc")
-         , Str'1'Antiquote (var "x")
-         ]
-    === [text|  abc${x}|]
-
 prop_render_dict_pattern :: Property
 prop_render_dict_pattern = property $ do
 

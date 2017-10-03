@@ -1,12 +1,13 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Bricks.IndentedString
   (
   -- * Indented string
     InStr (..)
-  , inStr'join
+  , inStr'to'strDynamic
   , inStr'level
   , inStr'dedent
   , inStr'trim
@@ -14,20 +15,20 @@ module Bricks.IndentedString
 
   -- * Single line of an indented string
   , InStr'1 (..)
-  , inStr'1'nonEmpty
-  , inStr'1'empty
-  , inStr'1'modifyLevel
+  , inStr'1'toStrParts
 
   ) where
 
 -- Bricks
 import Bricks.Expression
+import Bricks.Source
 
 -- Bricks internal
 import           Bricks.Internal.Prelude
-import           Bricks.Internal.Seq     (Seq, (<|))
-import qualified Bricks.Internal.Seq     as Seq
-import qualified Bricks.Internal.Text    as Text
+import           Bricks.Internal.Seq            (Seq)
+import qualified Bricks.Internal.Seq            as Seq
+import qualified Bricks.Internal.Text           as Text
+import qualified Bricks.Internal.List as List
 
 {- | An "indented string literal," delimited by two single-quotes @''@.
 
@@ -37,8 +38,11 @@ convenient to use these literals for multi-line strings within an indented
 expression without the whitespace from indentation ending up as part of the
 string. -}
 
-newtype InStr = InStr { inStr'toSeq :: Seq InStr'1 }
-  deriving (Monoid, Semigroup)
+data InStr =
+  InStr
+    { inStr'toSeq :: Seq InStr'1
+    -- todo , inStr'source :: Maybe SourceRange
+    }
 
 instance Show InStr
   where
@@ -55,44 +59,42 @@ data InStr'1 =
     { inStr'1'level :: Natural
         -- ^ The number of leading space characters. We store this separately
         -- for easier implementation of 'inStr'dedent'.
-    , inStr'1'str :: Str'Dynamic
-        -- ^ The rest of the line after any leading spaces.
+    -- todo , inStr'1'indentSource :: src
+        -- ^ The source position of the leading space characters
+    , inStr'1'str :: Seq Str'1
+        -- ^ The meat of the line, after any leading spaces and before the line
+        --   break.
+    , inStr'1'lineBreak :: Maybe Str'Static
+        -- ^ The line break at the end, if any; all lines but the last one
+        --   should have a line break
     }
 
 instance Show InStr'1
   where
-    show (InStr'1 n s) = "indent-" <> show n <> " " <> show s
+    show (InStr'1 n s lbr) =
+      "InStr'1 " <> show @Natural n <> " " <>
+      show @([Str'1]) (Seq.toList s) <> " " <>
+      show @(Maybe Str'Static) lbr
 
-{- | Join 'InStr's with newlines interspersed. -}
+inStr'1'toStrParts :: InStr'1 -> Seq Str'1
+inStr'1'toStrParts x =
+  indent <> inStr'1'str x <> end
 
-inStr'join :: InStr -> Str'Dynamic
-inStr'join xs =
-  Str'Dynamic . Seq.concat $
-    Seq.intersperse
-      (Seq.singleton (Str'1'Literal (Str'Static "\n")))
-      (f <$> inStr'toSeq xs)
   where
-    f :: InStr'1 -> Seq Str'1
-    f (InStr'1 0 parts) = strDynamic'toSeq parts
-    f (InStr'1 n parts) =
-        Str'1'Literal (Str'Static (Text.replicate (fromIntegral n) " "))
-        <| strDynamic'toSeq parts
+    indent :: Seq Str'1
+    indent =
+      case inStr'1'level x of
+        0 -> Seq.empty
+        level ->
+          Seq.singleton . Str'1'Literal $
+          Str'Static
+            (Text.replicate (fromIntegral level) " ")
+            -- todo (inStr'1'indentSource x)
 
-{- | Determines whether an 'InStr'1' contains any non-space characters. The
-opposite of 'inStr'1'nonEmpty'.
-
-This is used to determine whether this line should be considered when
-calculating the number of space characters to strip in 'inStr'dedent'. -}
-
-inStr'1'nonEmpty :: InStr'1 -> Bool
-inStr'1'nonEmpty =
-  not . inStr'1'empty
-
-{- | The opposite of 'inStr'1'nonEmpty'. -}
-
-inStr'1'empty :: InStr'1 -> Bool
-inStr'1'empty (InStr'1{ inStr'1'str = Str'Dynamic x }) =
-  Seq.null x
+    end :: Seq Str'1
+    end =
+      maybe Seq.empty (Seq.singleton . Str'1'Literal) $
+      inStr'1'lineBreak x
 
 {- | Determine how many characters of whitespace to strip from an indented
 string. -}
@@ -100,33 +102,47 @@ string. -}
 inStr'level :: InStr -> Natural
 inStr'level =
   maybe 0 id
-  . Seq.minimum
-  . Seq.map inStr'1'level
-  . Seq.filter inStr'1'nonEmpty
-  . inStr'toSeq
-
-{- | Modify an 'InStr' by applying a function to its number of leading spaces.
--}
-
-inStr'1'modifyLevel :: (Natural -> Natural) -> (InStr'1 -> InStr'1)
-inStr'1'modifyLevel f x@InStr'1{inStr'1'level = a} =
-  x{ inStr'1'level = f a }
+  . List.minimum
+  . catMaybes
+  . List.map (\x ->
+      if Seq.null (inStr'1'str x)
+      then Nothing
+      else Just (inStr'1'level x)
+    )
+  . inStr'toList
 
 {- | Determine the minimum indentation of any nonempty line, and remove that
 many space characters from the front of every line. -}
 
 inStr'dedent :: InStr -> InStr
-inStr'dedent xs =
+inStr'dedent x =
   let
-    b = inStr'level xs
-    f a = if a >= b then a - b else 0
+    b = inStr'level x
   in
-    InStr $ inStr'1'modifyLevel f <$> inStr'toSeq xs
+    x { inStr'toSeq = inStr'toSeq x <&>
+        (\l ->
+          l { inStr'1'level = let a = inStr'1'level l
+                              in  if a >= b then a - b else 0
+            })
+      }
 
-{- | Remove any empty lines from the beginning or end of an indented string. -}
+inStr'to'strDynamic :: InStr -> Str'Dynamic
+inStr'to'strDynamic =
+  inStr'trim >>>
+  inStr'dedent >>>
+  (\inStr ->
+    Str'Dynamic
+      (Seq.concatMap inStr'1'toStrParts (inStr'toSeq inStr))
+      -- todo (inStr'source inStr)
+  ) >>>
+  str'dynamic'normalize
+
+{- | Remove any empty lines from the beginning or end of an indented string,
+and remove the newline from the final nonempty line. -}
 
 inStr'trim :: InStr -> InStr
-inStr'trim =
-  InStr . trimWhile inStr'1'empty . inStr'toSeq
-  where
-    trimWhile f = Seq.dropWhileL f . Seq.dropWhileR f
+inStr'trim x =
+  x { inStr'toSeq = inStr'toSeq x
+        & Seq.trimWhile (Seq.null . inStr'1'str)
+        & Seq.adjustLast (\y -> y { inStr'1'lineBreak = Nothing })
+    }

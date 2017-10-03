@@ -315,7 +315,7 @@ to express @''@ or @${@ within an indented string is to antiquote them. -}
 
 parse'strDynamic'indentedQ :: Parser Str'Dynamic
 parse'strDynamic'indentedQ =
-  parse'inStr <&> inStr'join . inStr'dedent . inStr'trim
+  parse'inStr <&> inStr'to'strDynamic
 
 {- | Parser for an indented string. This parser produces a representation of the
 lines from the source as-is, before the whitespace is cleaned up. -}
@@ -329,10 +329,13 @@ parse'inStr =
       do
         line <- parse'inStr'1
         let newLines = previousLines |> line
-        asum
-          [ P.string "''" *> parse'spaces $> InStr newLines
-          , P.char '\n'   *> go newLines
-          ]
+        if isJust (inStr'1'lineBreak line)
+          then go newLines
+          else
+            do
+              _ <- P.string "''"
+              _ <- parse'spaces
+              pure $ InStr newLines
 
 {- | Parser for a single line of an 'InStr'. -}
 
@@ -340,15 +343,19 @@ parse'inStr'1 :: Parser InStr'1
 parse'inStr'1 =
   do
     a <- parse'count (P.char ' ')
-    b <- go Seq.empty
-    pure $ InStr'1 a b
+    (b, c) <- go Seq.empty
+    pure $ InStr'1 a b c
   where
-    go :: Seq Str'1 -> Parser Str'Dynamic
+    go :: Seq Str'1 -> Parser (Seq Str'1, Maybe Str'Static)
     go previousParts =
       asum
         [ do
-            _ <- end
-            pure $ Str'Dynamic previousParts
+            c <- P.char '\n'
+            let s = Str'Static $ Text.singleton c
+            pure (previousParts, Just s)
+        , do
+            _ <- P.lookAhead $ P.try $ P.string "''"
+            pure (previousParts, Nothing)
         , do
             x <- chars
             go (previousParts |> x)
@@ -357,11 +364,7 @@ parse'inStr'1 =
             go (previousParts |> Str'1'Antiquote x)
         ]
 
-    end = P.lookAhead $ asum
-      [ void $ P.char '\n'
-      , void $ P.try (P.string "''")
-      ]
-
+    chars :: Parser Str'1
     chars = fmap (Str'1'Literal . Str'Static . Text.pack) $ P.many1 $ asum
       [ P.satisfy (\c -> c /= '$' && c /= '\'' && c /= '\n')
       , P.try $ P.char '$'  <* P.notFollowedBy (P.char '{')

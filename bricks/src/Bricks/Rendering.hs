@@ -23,7 +23,6 @@ module Bricks.Rendering
   , render'strStatic'quoted
   , render'strDynamic'unquotedIfPossible
   , render'strDynamic'quoted
-  , render'inStr'1
 
   -- * Lists
   , render'list
@@ -57,7 +56,6 @@ module Bricks.Rendering
 
 -- Bricks
 import Bricks.Expression
-import Bricks.IndentedString
 import Bricks.Keyword
 import Bricks.UnquotedString
 
@@ -66,9 +64,6 @@ import           Bricks.Internal.Prelude
 import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
-
--- Base
-import Prelude (fromIntegral)
 
 --------------------------------------------------------------------------------
 
@@ -128,17 +123,6 @@ render'strDynamic'quoted xs =
     r :: Str'1 -> Text
     r = \case
       Str'1'Literal (Str'Static x) -> str'escape x
-      Str'1'Antiquote x -> "${" <> render'expression x <> "}"
-
-{- | Render one line of an indented string ('InStr'). -}
-
-render'inStr'1 :: Render InStr'1
-render'inStr'1 (InStr'1 n xs) =
-  Text.replicate (fromIntegral n) " " <> foldMap r (strDynamic'toSeq xs)
-  where
-    r :: Str'1 -> Text
-    r = \case
-      Str'1'Literal (Str'Static x) -> x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 {- | Render a lambda parameter: everything from the beginning of a lambda, up to

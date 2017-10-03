@@ -10,6 +10,8 @@ import Bricks
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
+import qualified Bricks.Internal.List    as List
+import qualified Bricks.Internal.Seq    as Seq
 
 -- Bricks test
 import Bricks.Test.Hedgehog
@@ -152,38 +154,42 @@ prop_parse_inStr :: Property
 prop_parse_inStr = property $ do
 
   let test = parseTest
-           $ fmap (Text.pack . show . fmap render'inStr'1 . inStr'toList)
+           $ fmap (
+                Text.pack . show
+                . List.concatMap (Seq.toList . inStr'1'toStrParts)
+                . inStr'toList
+             )
            $ P.spaces *> parse'inStr
 
   test [text|  ''
             |    one
             |    two
-            |  ''x|] === [text|["","    one","    two","  "]
+            |  ''x|] === [text|["\n","    ","one","\n","    ","two","\n","  "]
                               |Remaining input: "x"|]
 
   test [text|  ''
             |    one
             |
             |    two
-            |  ''x|] === [text|["","    one","","    two","  "]
+            |  ''x|] === [text|["\n","    ","one","\n","\n","    ","two","\n","  "]
                               |Remaining input: "x"|]
 
-  test "'''' x"   === [text|[""]
+  test "'''' x"   === [text|[]
                            |Remaining input: "x"|]
 
   test "''abc''"  === [text|["abc"]|]
 
-  test "''\n''"   === [text|["",""]|]
+  test "''\n''"   === [text|["\n"]|]
 
-  test "''  \n''" === [text|["  ",""]|]
+  test "''  \n''" === [text|["  ","\n"]|]
 
-  test "''   abc\ndef''" === [text|["   abc","def"]|]
+  test "''   abc\ndef''" === [text|["   ","abc","\n","def"]|]
 
 prop_parse_inStr_line :: Property
 prop_parse_inStr_line = property $ do
 
   let test = parseTest
-           $ fmap (Text.pack . show . render'inStr'1)
+           $ fmap (Text.pack . show . Seq.toList . inStr'1'toStrParts)
            $ parse'inStr'1
 
   test "abc" === [text|Parse error at (line 1, column 4):
@@ -191,16 +197,14 @@ prop_parse_inStr_line = property $ do
                       | - expecting "$", "'", "\n", "''" or "${"
                       |Parser failed and consumed input|]
 
-  test "\n"   === [text|""
-                       |Remaining input: "\n"|]
+  test "\n"   === [text|["\n"]|]
 
-  test "  \n" === [text|"  "
-                       |Remaining input: "\n"|]
+  test "  \n" === [text|["  ","\n"]|]
 
-  test "   abc\ndef" === [text|"   abc"
-                              |Remaining input: "\ndef"|]
+  test "   abc\ndef" === [text|["   ","abc","\n"]
+                              |Remaining input: "def"|]
 
-  test "   abc''x"   === [text|"   abc"
+  test "   abc''x"   === [text|["   ","abc"]
                               |Remaining input: "''x"|]
 
 prop_parse_dict_pattern_start :: Property

@@ -1,4 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude, LambdaCase #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Bricks.Internal.List
 
@@ -13,10 +14,10 @@ module Bricks.Internal.List
 import Data.List.EitherFunctions
 
 -- base
-import Data.Ord (Ord (..))
-import Data.Maybe (Maybe (..))
-import Data.List hiding (minimum, maximum)
-import qualified Data.List as List
+import           Data.List  hiding (maximum, minimum)
+import qualified Data.List  as List
+import           Data.Maybe (Maybe (..))
+import           Data.Ord   (Ord (..))
 
 {- |
 

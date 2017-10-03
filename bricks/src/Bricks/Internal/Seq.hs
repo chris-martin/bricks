@@ -28,18 +28,18 @@ module Bricks.Internal.Seq
   ) where
 
 -- Containers
-import Data.Sequence (Seq, dropWhileL, dropWhileR, empty, filter, fromList,
-                      null, singleton, (<|), (|>), adjust, length)
+import Data.Sequence (Seq, adjust, dropWhileL, dropWhileR, empty, filter,
+                      fromList, length, null, singleton, (<|), (|>))
 
 -- Base
-import Data.Bool (Bool (..))
+import           Data.Bool     (Bool (..))
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Functor  (fmap)
 import qualified Data.List     as List
 import           Data.Maybe    (Maybe (..))
 import           Data.Ord      (Ord)
-import Prelude (Num (..))
+import           Prelude       (Num (..))
 
 -- | Like 'List.intersperse', but for 'Seq'.
 intersperse :: a -> Seq a -> Seq a

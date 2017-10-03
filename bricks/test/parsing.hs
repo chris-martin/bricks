@@ -7,11 +7,11 @@
 import Bricks
 
 -- Bricks internal
+import qualified Bricks.Internal.List    as List
 import           Bricks.Internal.Prelude
+import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
-import qualified Bricks.Internal.List    as List
-import qualified Bricks.Internal.Seq    as Seq
 
 -- Bricks test
 import Bricks.Test.Hedgehog

@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Bricks.IndentedString
   (
@@ -24,11 +24,11 @@ import Bricks.Expression
 import Bricks.Source
 
 -- Bricks internal
+import qualified Bricks.Internal.List    as List
 import           Bricks.Internal.Prelude
-import           Bricks.Internal.Seq            (Seq)
-import qualified Bricks.Internal.Seq            as Seq
-import qualified Bricks.Internal.Text           as Text
-import qualified Bricks.Internal.List as List
+import           Bricks.Internal.Seq     (Seq)
+import qualified Bricks.Internal.Seq     as Seq
+import qualified Bricks.Internal.Text    as Text
 
 {- | An "indented string literal," delimited by two single-quotes @''@.
 

@@ -70,13 +70,13 @@ module Bricks.Expression
 import Bricks.UnquotedString
 
 -- Bricks internal
+import           Bricks.Internal.List           as List
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Seq            (Seq)
+import qualified Bricks.Internal.Seq            as Seq
 import           Bricks.Internal.ShowExpression
 import           Bricks.Internal.Text           (Text)
-import           Bricks.Internal.List as List
 import qualified Bricks.Internal.Text           as Text
-import qualified Bricks.Internal.Seq            as Seq
 
 data Expression
   = Expr'Var Str'Unquoted

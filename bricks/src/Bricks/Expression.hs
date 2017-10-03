@@ -18,6 +18,7 @@ module Bricks.Expression
 
   -- ** Static strings
   , Str'Static (..)
+  , str'static'append
 
   -- ** Dynamic strings
   , Str'Dynamic (..)
@@ -25,6 +26,7 @@ module Bricks.Expression
   , strDynamic'toList
   , strDynamic'fromList
   , strDynamic'singleton
+  , str'dynamic'normalize
 
   -- ** Conversions between types of strings
   , str'dynamic'to'static
@@ -72,6 +74,7 @@ import           Bricks.Internal.Prelude
 import           Bricks.Internal.Seq            (Seq)
 import           Bricks.Internal.ShowExpression
 import           Bricks.Internal.Text           (Text)
+import           Bricks.Internal.List as List
 import qualified Bricks.Internal.Text           as Text
 import qualified Bricks.Internal.Seq            as Seq
 
@@ -313,9 +316,13 @@ may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
 
 data Str'Static = Str'Static Text
 
+str'static'append :: Str'Static -> Str'Static -> Str'Static
+str'static'append (Str'Static t1) (Str'Static t2) =
+  Str'Static (Text.append t1 t2)
+
 instance Semigroup Str'Static
   where
-    Str'Static x <> Str'Static y = Str'Static (x <> y)
+    (<>) = str'static'append
 
 instance Monoid Str'Static
   where
@@ -392,6 +399,37 @@ strDynamic'fromList =
 strDynamic'singleton :: Str'1 -> Str'Dynamic
 strDynamic'singleton =
   Str'Dynamic . Seq.singleton
+
+{- | Simplify a dynamic string by combining consecutive pieces of static text.
+-}
+
+-- | ==== Examples
+--
+-- >>> str = Str'1'Literal . Str'Static
+-- >>> var = Str'1'Antiquote . Expr'Var . Str'Unquoted . unquotedString'orThrow
+--
+-- >>> :{
+-- >>> str'dynamic'normalize $ Str'Dynamic $ Seq.fromList
+-- >>>   [str "a", str "b", var "x", var "y", str "c", str "d"]
+-- >>> :}
+-- str ["ab", antiquote (var "x"), antiquote (var "y"), "cd"]
+
+str'dynamic'normalize :: Str'Dynamic -> Str'Dynamic
+str'dynamic'normalize s =
+  s{ strDynamic'toSeq = f (strDynamic'toSeq s) }
+  where
+    f = Seq.fromList
+      . List.concat
+      . List.map (\case
+          Right xs -> [Str'1'Literal (List.foldr1 str'static'append xs)]
+          Left xs -> xs
+        )
+      . List.groupEither
+      . List.map (\case
+          Str'1'Literal x -> Right x
+          x -> Left x
+        )
+      . Seq.toList
 
 
 --------------------------------------------------------------------------------

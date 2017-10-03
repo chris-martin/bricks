@@ -61,6 +61,7 @@ module Bricks
   , parse'str'escape'normalQ
   -- ** Static strings
   , Str'Static (..)
+  , str'static'append
   , render'strStatic'unquotedIfPossible
   , render'strStatic'quoted
   , parse'strStatic
@@ -72,6 +73,7 @@ module Bricks
   , strDynamic'toList
   , strDynamic'fromList
   , strDynamic'singleton
+  , str'dynamic'normalize
   , render'strDynamic'unquotedIfPossible
   , render'strDynamic'quoted
   , parse'strDynamic'quoted

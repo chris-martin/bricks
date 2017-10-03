@@ -228,7 +228,7 @@ Modules related to syntax:
 
   - "Bricks.Keyword" - Enumerates the language's keywords
   - "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
-    parsing indented strings (@''@...@''@)
+    parsing indented strings (@''@ ... @''@)
   - "Bricks.UnquotedString" - Defines the rules for what strings are allowed to
     appear unquoted in Bricks code
   - "Bricks.Expression" - Defines most of the types related to the AST, notably
@@ -351,9 +351,9 @@ list:
 > bricks-repl> { x = "a"; y = "b"; }.${[ "x" "y" ]}
 > [ "a" "b" ]
 
-Furthermore, when the expression on the right-hand side is a list literal
-(an expression of the form @[@...@]@), the antiquotation (wrapping the
-expression in @${@...@}@) may be omitted:
+Furthermore, when the expression on the right-hand side is a list literal (an
+expression of the form @[@ ... @]@), the antiquotation (wrapping the expression
+in @${@ ... @}@) may be omitted:
 
 > bricks-repl> { x = "a"; y = "b"; }.[ "x" "y" ]
 > [ "a" "b" ]
@@ -443,7 +443,7 @@ variables), Bricks has no such limitation.
 
 The Bricks inline comment keyword is @--@; in Nix it is @#@.
 
-The Bricks block comment form is @{\-@...@-\}@; in Nix it is @/*@...@*/@.
+The Bricks block comment form is @{\-@ ... @-\}@; in Nix it is @/*@ ... @*/@.
 
 This decision was made merely due to the Bricks authors' aesthetic preference
 and affinity for Haskell.
@@ -469,7 +469,7 @@ bricks-repl> {\- {\- -\} -\} "a"
 
 == Bricks does not support escape sequences in indented strings
 
-Within the indented string form (@''@...@''@), Nix supports the following
+Within the indented string form (@''@ ... @''@), Nix supports the following
 unorthodox escape sequences:
 
   - @''${@ → @${@

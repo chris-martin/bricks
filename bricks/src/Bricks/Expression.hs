@@ -80,180 +80,25 @@ import qualified Bricks.Internal.Text           as Text
 
 data Expression
   = Expr'Var Str'Unquoted
-      -- ^ A /variable/, such as @x@.
+      -- ^ A variable, such as @x@.
   | Expr'Str Str'Dynamic
-      -- ^ A /string/ may be quoted either in the traditional form using a
-      -- single double-quote (@"@...@"@):
-      --
-      -- > "one\ntwo"
-      --
-      -- or in the \"indented string\" form using two single-quotes
-      -- (@''@...@''@):
-      --
-      -- > ''
-      -- >   one
-      -- >   two
-      -- > ''
-      --
-      -- Both of these examples reduce to the same value, because leading
-      -- whitespace is stripped from indented strings.
-      --
-      -- Either may contain \"antiquotation\" (also known as \"string
-      -- interpolation\") to conveniently concatenate string-valued variables
-      -- into the string.
-      --
-      -- > "Hello, my name is ${name}!"
-      --
-      -- Normal strings may contain the following escape sequences:
-      --
-      --  - @\\\\@ → @\\@
-      --  - @\\"@  → @"@
-      --  - @\\${@ → @${@
-      --  - @\\n@  → newline
-      --  - @\\r@  → carriage return
-      --  - @\\t@  → tab
-      --
-      -- The indented string form does not interpret any escape sequences.
+      -- ^ A string, quoted either in the traditional form using a single
+      --   double-quote (@"@ ... @"@) or in the \"indented string\" form using
+      --   two single-quotes (@''@ ... @''@).
   | Expr'List List
-      -- ^ A /list/ is an ordered collection of expressions.
-      --
-      -- The empty list:
-      --
-      -- > [ ]
-      --
-      -- A list containing three variables:
-      --
-      -- > [ a b c ]
-      --
-      -- Lambdas, function applications, @let@-@in@ expressions, and @with@
-      -- expressions must be parenthesized when in a list.
-      --
-      -- > [
-      -- >   (x: f x y)
-      -- >   (g y)
-      -- >   (let a = y; in f a a)
-      -- >   (with d; f x a)
-      -- > ]
+      -- ^ A list is an ordered collection of expressions.
   | Expr'Dict Dict
-      -- ^ A /dict/ is an unordered extensional mapping from strings.
-      --
-      -- The empty dict (with no bindings):
-      --
-      -- > { }
-      --
-      -- A dict with two bindings:
-      --
-      -- > {
-      -- >   a = "one";
-      -- >   b = "one two";
-      -- > }
-      --
-      -- By default, dict bindings cannot refer to each other. For that, you
-      -- need the @rec@ keyword to create a /recursive/ dict.
-      --
-      -- > rec {
-      -- >   a = "one";
-      -- >   b = "${a} two";
-      -- > }
-      --
-      -- In either case, the order of the bindings does not matter.
-      --
-      -- The left-hand side of a dict binding may be a quoted string (in the
-      -- traditional @"@...@"@ style, not the indented-string @''@ style),
-      -- which make it possible for them to be strings that otherwise couldn't
-      -- be expressed unquoted, such as strings containing spaces:
-      --
-      -- > { "a b" = "c"; }
-      --
-      -- The left-hand side of a dict may even be an arbitrary expression,
-      -- using the @${@ ... @}@ form:
-      --
-      -- > let x = "a b"; in { ${x} = "c"; }
-      --
-      -- Dicts also support the @inherit@ keyword:
-      --
-      -- > { inherit a; inherit (x) c d; }
-      --
-      -- The previous expression is equivalent to:
-      --
-      -- > { a = a; c = x.c; d = x.d; }
+      -- ^ A dict is an unordered enumerated mapping from strings.
   | Expr'Dot Dot
-      -- ^ A /dot/ expression (named after the @.@ character it contains)
-      -- looks up the value in a dict.
-      --
-      -- The examples in this section all reduce to \"Z\".
-      --
-      -- > { a = "Z"; }.a
-      --
-      -- > let x = { a = "Z"; }; in x.a
-      --
-      -- > { x = { a = "Z"; }; }.x.a
-      --
-      -- The right-hand side of a dot may be a quoted string (in the
-      -- traditional @"@...@"@ style, not the indented-string @''@ style):
-      --
-      -- > { a = "Z"; }."a"
-      --
-      -- The right-hand side of a dot may even be an arbitrary expression,
-      -- using the @${@ ... @}@ form:
-      --
-      -- > { a = "Z"; }.${ let b = "a"; in b }
+      -- ^ A dot expression (named after the @.@ character it contains) looks up
+      --   the value at a particular key in a dict.
   | Expr'Lambda Lambda
-      -- ^ A /lambda/ expression @x: y@ where @x@ is the parameter.
-      --
-      -- This is a function that turns a name into a greeting:
-      --
-      -- > name: "Hello, ${name}!"
-      --
-      -- The function parameter can also be a /dict pattern/, which looks like
-      -- this:
-      --
-      -- > { a, b, c ? "another" }: "Hello, ${a}, ${b}, and ${c}!"
-      --
-      -- That function accepts a dict and looks up the keys @a@, @b@, and @c@
-      -- from it, applying the default value @"another"@ to @c@ if it is not
-      -- present in the dict. Dict patterns therefore give us something that
-      -- resembles functions with named parameters and default arguments.
-      --
-      -- By default, a lambda defined with a dict pattern fails to evaluate if
-      -- the dict argument contains keys that are not listed in the pattern.
-      -- To prevent it from failing, you can end the pattern with @...@:
-      --
-      -- > ({ a, ... }: x) { a = "1"; b = "2"; }
-      --
-      -- Every function has a single parameter. If you need multiple
-      -- parameters, you have to curry:
-      --
-      -- > a: b: [ a b ]
+      -- ^ A lambda expression @x: y@ where @x@ is the parameter.
   | Expr'Apply Apply
-      -- ^ Function /application/:
-      --
-      -- > f x
-      --
-      -- If a function has multiple (curried) parameters, you can chain them
-      -- together like so:
-      --
-      -- > f x y z
+      -- ^ The application of a function to a single argument.
   | Expr'Let Let
-      -- ^ A /let/-/in/ expression:
-      --
-      -- > let
-      -- >   greet = x: "Hello, ${x}!";
-      -- >   name = "Chris";
-      -- > in
-      -- >   greet name
-      --
-      -- /Let/ bindings, like dict bindings, may also use the @inherit@ keyword.
-      --
-      -- > let
-      -- >   d = { greet = x: "Hello, ${x}!"; name = "Chris"; }
-      -- >   inherit (d) greet name;
-      -- > in
-      -- >   greet name
-      --
-      -- The previous example also demonstrates how the bindings in a /let/
-      -- expression may refer to each other (much like a dict with the @rec@
-      -- keyword). As with dicts, the order of the bindings does not matter.
+      -- ^ A /let/-/in/ expression consists of a list of variable bindings
+      --   followed by an expression.
 
 
 --------------------------------------------------------------------------------
@@ -268,7 +113,7 @@ There are three types of strings in the AST:
   - 'Str'Static'
   - 'Str'Dynamic'
 
-= Why variables are strings
+=== The relationship between variables and strings
 
 Perhaps counterintuitively, we include variables under the umbrella of "string".
 This is because the language itself somewhat conflates the two ideas, and indeed
@@ -292,6 +137,15 @@ for these two expressions are (apart from the name change) identical. -}
 --------------------------------------------------------------------------------
 --  Unquoted strings
 --------------------------------------------------------------------------------
+
+{- |
+
+Simple strings that are /required/ to be written without quotes.
+
+Unquoted strings are used for variables ('Expr'Var') and places that bind
+variables ('Param'Name' and 'DictPattern'1').
+
+-}
 
 data Str'Unquoted = Str'Unquoted UnquotedString
 
@@ -342,12 +196,47 @@ instance Show (Str'Static)
 --  Dynamic strings
 --------------------------------------------------------------------------------
 
-{- | A quoted string expression, which may be a simple string like @"hello"@ or
-a more complex string containing antiquotation like @"Hello, my name is
-${name}!"@. See 'Expr'Str'.
+{- | A /dynamic string/ is a quoted string expression, which may be a simple
+string like @"hello"@ or a more complex string containing antiquotation like
+@"Hello, my name is ${name}!"@. See 'Expr'Str'.
 
 We use the description "dynamic" to mean the string may contain antiquotation,
-in contrast with 'Str'Static' which cannot. -}
+in contrast with 'Str'Static' which cannot.
+
+This is the type of string expressions ('Expr'Str').
+
+==== String syntax
+
+A /string/ may be quoted either in the traditional form using a single
+double-quote (@"@ ... @"@):
+
+> "one\ntwo"
+
+or in the \"indented string\" form using two single-quotes (@''@ ... @''@):
+
+> ''
+>   one
+>   two
+> ''
+
+Both of these examples reduce to the same value, because leading whitespace is
+stripped from indented strings.
+
+Either may contain \"antiquotation\" (also known as \"string interpolation\") to
+conveniently concatenate string-valued variables into the string.
+
+> "Hello, my name is ${name}!"
+
+Normal strings may contain the following escape sequences:
+
+  - @\\\\@ → @\\@
+  - @\\"@  → @"@
+  - @\\${@ → @${@
+  - @\\n@  → newline
+  - @\\r@  → carriage return
+  - @\\t@  → tab
+
+The indented string form does not interpret any escape sequences. -}
 
 data Str'Dynamic =
   Str'Dynamic
@@ -474,7 +363,38 @@ str'unquoted'to'dynamic =
 --  Lambda
 --------------------------------------------------------------------------------
 
-{- | A function expression. See 'Expr'Lambda'. -}
+{- | A function expressed as a lambda abstraction.
+
+==== Syntax
+
+A lambda expression ('Expr'Lambda') has the form @x: y@ where @x@ is the
+function parameter to bind in the function body @y@.
+
+This is a function that turns a name into a greeting:
+
+> name: "Hello, ${name}!"
+
+The function parameter can also be a /dict pattern/, which looks like this:
+
+> { a, b, c ? "another" }: "Hello, ${a}, ${b}, and ${c}!"
+
+That function accepts a dict and looks up the keys @a@, @b@, and @c@ from it,
+applying the default value @"another"@ to @c@ if it is not present in the dict.
+Dict patterns therefore give us something that resembles functions with named
+parameters and default arguments.
+
+By default, a lambda defined with a dict pattern fails to evaluate if the dict
+argument contains keys that are not listed in the pattern. To prevent it from
+failing, you can end the pattern with @ ... @:
+
+> ({ a, ... }: x) { a = "1"; b = "2"; }
+
+Every function has a single parameter. If you need multiple parameters, you have
+to curry:
+
+> a: b: [ a b ]
+
+-}
 
 data Lambda =
   Lambda
@@ -489,7 +409,20 @@ data Lambda =
 --  Apply
 --------------------------------------------------------------------------------
 
-{- | A function application expression. See 'Expr'Apply'. -}
+{- | The application of a function to a single argument.
+
+==== Syntax
+
+An function application expression ('Expr'Apply') looks like this:
+
+> f x
+
+If a function has multiple (curried) parameters, you can chain them together
+like so:
+
+> f x y z
+
+-}
 
 data Apply =
   Apply
@@ -555,8 +488,32 @@ data DictPattern'1 =
 --  List
 --------------------------------------------------------------------------------
 
-{- | A list literal expression, starting with @[@ and ending with @]@. See
-'Expr'List'. -}
+{- | A list is an ordered collection.
+
+==== Syntax
+
+A list expression ('Expr'List') starts with @[@, ends with @]@, and contains any
+number of expressions in between.
+
+The empty list:
+
+> [ ]
+
+A list containing three variables:
+
+> [ a b c ]
+
+Lambdas, function applications, @let@-@in@ expressions, and @with@ expressions
+must be parenthesized when in a list.
+
+> [
+>   (x: f x y)
+>   (g y)
+>   (let a = y; in f a a)
+>   (with d; f x a)
+> ]
+
+-}
 
 newtype List = List (Seq Expression)
   deriving (Monoid, Semigroup)
@@ -566,8 +523,55 @@ newtype List = List (Seq Expression)
 --  Dict
 --------------------------------------------------------------------------------
 
-{- | A dict literal expression, starting with @{@ or @rec {@ and ending with
-@}@. See 'Expr'Dict'. -}
+{- | A dict is an unordered enumerated mapping from strings.
+
+==== Syntax
+
+A dict expression ('Expr'Dict') starts with @{@ or @rec {@, ends with @}@, and
+contains any number of 'DictBinding's in between.
+
+The empty dict (with no bindings):
+
+> { }
+
+A dict with two bindings:
+
+> {
+>   a = "one";
+>   b = "one two";
+> }
+
+By default, dict bindings cannot refer to each other. For that, you need the
+@rec@ keyword to create a /recursive/ dict.
+
+> rec {
+>   a = "one";
+>   b = "${a} two";
+> }
+
+In either case, the order of the bindings does not matter.
+
+The left-hand side of a dict binding may be a quoted string (in the traditional
+@"@ ... @"@ style, not the indented-string @''@ style), which make it possible
+for them to be strings that otherwise couldn't be expressed unquoted, such as
+strings containing spaces:
+
+> { "a b" = "c"; }
+
+The left-hand side of a dict may even be an arbitrary expression, using the @${@
+... @}@ form:
+
+> let x = "a b"; in { ${x} = "c"; }
+
+Dicts also support the @inherit@ keyword:
+
+> { inherit a; inherit (x) c d; }
+
+The previous expression is equivalent to:
+
+> { a = a; c = x.c; d = x.d; }
+
+-}
 
 data Dict =
   Dict
@@ -588,8 +592,32 @@ data DictBinding
 --  Dot
 --------------------------------------------------------------------------------
 
-{- | An expression of the form @person.name@ that looks up a key from a dict.
-See 'Expr'Dot'. -}
+{- | The /dot/ function looks up a value (or a list of values) from a dict.
+
+==== Syntax
+
+A dot expression is named after the @.@ character it contains. @a.b@ looks up
+value at key @b@ in the dict @a@.
+
+The examples in this section all reduce to \"Z\".
+
+> { a = "Z"; }.a
+
+> let x = { a = "Z"; }; in x.a
+
+> { x = { a = "Z"; }; }.x.a
+
+The right-hand side of a dot may be a quoted string (in the traditional @"@ ...
+@"@ style, not the indented-string @''@ style):
+
+> { a = "Z"; }."a"
+
+The right-hand side of a dot may even be an arbitrary expression, using the @${@
+... @}@ form:
+
+> { a = "Z"; }.${ let b = "a"; in b }
+
+-}
 
 data Dot =
   Dot
@@ -609,7 +637,30 @@ expression'applyDots =
 --  Let
 --------------------------------------------------------------------------------
 
-{- | A @let@-@in@ expression. See 'Expr'Let'. -}
+{- | A @let@-@in@ expression. See 'Expr'Let'.
+
+
+
+      -- > let
+      -- >   greet = x: "Hello, ${x}!";
+      -- >   name = "Chris";
+      -- > in
+      -- >   greet name
+      --
+      -- /Let/ bindings, like dict bindings, may also use the @inherit@ keyword.
+      --
+      -- > let
+      -- >   d = { greet = x: "Hello, ${x}!"; name = "Chris"; }
+      -- >   inherit (d) greet name;
+      -- > in
+      -- >   greet name
+      --
+      -- The previous example also demonstrates how the bindings in a /let/
+      -- expression may refer to each other (much like a dict with the @rec@
+      -- keyword). As with dicts, the order of the bindings does not matter.
+
+
+-}
 
 data Let =
   Let

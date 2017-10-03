@@ -171,7 +171,7 @@ render'apply (Apply a b) =
   render'expression'applyLeftContext a <> " " <>
   render'expression'applyRightContext b
 
-{- | Render a list literal (@[ ... ]@). -}
+{- | Render a list literal (@[@ ... @]@). -}
 
 render'list :: Render List
 render'list (List xs) =
@@ -179,7 +179,7 @@ render'list (List xs) =
   where
     r = Text.concat . fmap (\x -> render'expression'listContext x <> " ")
 
-{- | Render a dict literal (@{ ... }@). -}
+{- | Render a dict literal (@{@ ... @}@). -}
 
 render'dict :: Render Dict
 render'dict (Dict rec bs) =

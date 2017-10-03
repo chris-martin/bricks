@@ -239,15 +239,15 @@ parse'strStatic'unquoted =
   parse'strUnquoted <&> str'unquoted'to'static
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
-string delimited by one double-quote @"@...@"@ ('parse'strDynamic'normalQ') or
-an "indented" string delimited by two single-quotes @''@...@''@
+string delimited by one double-quote @"@ ... @"@ ('parse'strDynamic'normalQ') or
+an "indented" string delimited by two single-quotes @''@ ... @''@
 ('parse'strDynamic'indentedQ'). -}
 
 parse'strDynamic'quoted :: Parser Str'Dynamic
 parse'strDynamic'quoted =
   parse'strDynamic'normalQ <|> parse'strDynamic'indentedQ
 
-{- | Parser for a dynamic string enclosed in "normal" quotes (@"@...@"@). -}
+{- | Parser for a dynamic string enclosed in "normal" quotes (@"@ ... @"@). -}
 
 parse'strDynamic'normalQ :: Parser Str'Dynamic
 parse'strDynamic'normalQ =
@@ -298,7 +298,7 @@ parse'str'escape'normalQ =
       ]
 
 {- | Parser for a dynamic string enclosed in "indented string" format, delimited
-by two single-quotes @''@...@''@.
+by two single-quotes @''@ ... @''@.
 
 This form of string does not have any escape sequences. Therefore the only way
 to express @''@ or @${@ within an indented string is to antiquote them. -}
@@ -749,7 +749,7 @@ One of:
 
   - an unquoted string
   - a quoted dynamic string
-  - an arbitrary expression wrapped in antiquotes (@${@...@}@) -}
+  - an arbitrary expression wrapped in antiquotes (@${@ ... @}@) -}
 
 parse'expression'dictKey :: Parser Expression
 parse'expression'dictKey =

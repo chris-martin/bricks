@@ -528,7 +528,7 @@ parse'list =
 -- rec'dict []
 --
 -- >>> parseTest parse'dict "{ a = b; inherit (x) y z \"s t\"; }"
--- dict [dict'eq (str ["a"]) (var "b"), inherit'fromDict (var "x") ["y", "z", "s t"]]
+-- dict [dict'eq (str ["a"]) (var "b"), dict'inherit'from (var "x") ["y", "z", "s t"]]
 
 parse'dict :: Parser Dict
 parse'dict =

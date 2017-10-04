@@ -43,7 +43,7 @@ data SourcePosition =
 
 show'sourcePosition :: SourcePosition -> Text
 show'sourcePosition (SourcePosition a b) =
-  (Text.pack . show @Natural) a <> ":" <> (Text.pack . show @Natural) b
+  Text.show @Natural a <> ":" <> Text.show @Natural b
 
 
 --------------------------------------------------------------------------------

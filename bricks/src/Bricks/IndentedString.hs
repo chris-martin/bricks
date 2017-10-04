@@ -29,6 +29,7 @@ import           Bricks.Internal.Prelude
 import           Bricks.Internal.Seq     (Seq)
 import qualified Bricks.Internal.Seq     as Seq
 import qualified Bricks.Internal.Text    as Text
+import  Bricks.Internal.Text    (Text)
 
 {- | An "indented string literal," delimited by two single-quotes @''@.
 
@@ -43,10 +44,6 @@ data InStr =
     { inStr'toSeq :: Seq InStr'1
     -- todo , inStr'source :: Maybe SourceRange
     }
-
-instance Show InStr
-  where
-    show = show . inStr'toList
 
 inStr'toList :: InStr -> [InStr'1]
 inStr'toList =
@@ -68,13 +65,6 @@ data InStr'1 =
         -- ^ The line break at the end, if any; all lines but the last one
         --   should have a line break
     }
-
-instance Show InStr'1
-  where
-    show (InStr'1 n s lbr) =
-      "InStr'1 " <> show @Natural n <> " " <>
-      show @([Str'1]) (Seq.toList s) <> " " <>
-      show @(Maybe Str'Static) lbr
 
 inStr'1'toStrParts :: InStr'1 -> Seq Str'1
 inStr'1'toStrParts x =
@@ -146,3 +136,16 @@ inStr'trim x =
         & Seq.trimWhile (Seq.null . inStr'1'str)
         & Seq.adjustLast (\y -> y { inStr'1'lineBreak = Nothing })
     }
+
+show'inStr :: InStr -> Text
+show'inStr (InStr xs) =
+  "str'indented [" <> Text.intercalateMap ", " show'inStr'1 xs <> "]"
+
+show'inStr'1 :: InStr'1 -> Text
+show'inStr'1 (InStr'1 n s lbr) =
+  "line " <> Text.show @Natural n <> " " <>
+  Text.show @([Str'1]) (Seq.toList s) <> " " <>
+  Text.show @(Maybe Str'Static) lbr
+
+instance Show InStr   where show = Text.unpack . show'inStr
+instance Show InStr'1 where show = Text.unpack . show'inStr'1

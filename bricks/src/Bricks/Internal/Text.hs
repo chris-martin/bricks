@@ -9,10 +9,12 @@ module Bricks.Internal.Text
   , concat
   , concatMap
   , intercalate
+  , intercalateMap
   , null
   , pack
   , replace
   , replicate
+  , show
   , singleton
   , unpack
   , unwords
@@ -27,6 +29,8 @@ import qualified Data.Text as Text
 -- Base
 import Data.Foldable (Foldable, toList, foldr)
 import Data.Function ((.))
+import Data.Functor (Functor, fmap)
+import qualified Text.Show
 
 concat :: Foldable f => f Text -> Text
 concat =
@@ -38,3 +42,10 @@ concatMap f = foldr (append . f) Text.empty
 intercalate :: Foldable f => Text -> f Text -> Text
 intercalate x =
   Text.intercalate x . toList
+
+intercalateMap :: (Foldable f, Functor f) => Text -> (a -> Text) -> f a -> Text
+intercalateMap i f =
+  intercalate i . fmap f
+
+show :: Text.Show.Show a => a -> Text
+show = Text.pack . Text.Show.show

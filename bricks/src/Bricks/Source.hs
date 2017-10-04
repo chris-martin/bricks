@@ -29,23 +29,6 @@ import qualified Bricks.Internal.Text    as Text
 
 
 --------------------------------------------------------------------------------
---  Classes
---------------------------------------------------------------------------------
-
-class JoinSourceInfo a
-  where
-    joinSourceInfo :: a -> a -> a
-
-class FromSourceRange a
-  where
-    fromSourceRange :: SourceRange -> a
-
-class ShowSourceInfo a
-  where
-    showSourceInfo :: a -> Maybe Text
-
-
---------------------------------------------------------------------------------
 --  SourcePosition
 --------------------------------------------------------------------------------
 
@@ -58,11 +41,9 @@ data SourcePosition =
     }
   deriving (Eq, Ord)
 
-instance ShowSourceInfo SourcePosition
-  where
-    showSourceInfo (SourcePosition a b) =
-      Just $ (Text.pack . show @Natural $ a) <> ":" <>
-             (Text.pack . show @Natural $ b)
+show'sourcePosition :: SourcePosition -> Text
+show'sourcePosition (SourcePosition a b) =
+  (Text.pack . show @Natural) a <> ":" <> (Text.pack . show @Natural) b
 
 
 --------------------------------------------------------------------------------
@@ -80,10 +61,32 @@ data SourceRange =
     , sourceRange'end :: SourcePosition
     }
 
-instance JoinSourceInfo SourceRange
+sourceRange'join :: SourceRange -> SourceRange -> SourceRange
+sourceRange'join (SourceRange a1 a2) (SourceRange b1 b2) =
+  SourceRange (min a1 b1) (max a2 b2)
+
+instance Semigroup SourceRange
   where
-    SourceRange a1 a2 `joinSourceInfo` SourceRange b1 b2 =
-      SourceRange (min a1 b1) (max a2 b2)
+    (<>) = sourceRange'join
+
+
+--------------------------------------------------------------------------------
+--  SourceRangeMaybe
+--------------------------------------------------------------------------------
+
+data SourceRangeMaybe
+  = SourceRange'Nothing
+  | SourceRange'Just SourceRange
+
+sourceRangeMaybe'join
+  :: SourceRangeMaybe -> SourceRangeMaybe -> SourceRangeMaybe
+sourceRangeMaybe'join (SourceRange'Just x) (SourceRange'Just y) =
+  SourceRange'Just (sourceRange'join x y)
+sourceRangeMaybe'join _ _ = SourceRange'Nothing
+
+instance Semigroup SourceRangeMaybe
+  where
+    (<>) = sourceRangeMaybe'join
 
 
 --------------------------------------------------------------------------------
@@ -91,20 +94,3 @@ instance JoinSourceInfo SourceRange
 --------------------------------------------------------------------------------
 
 newtype SourceName a = SourceName a
-
-
---------------------------------------------------------------------------------
---  Unit instances
---------------------------------------------------------------------------------
-
-instance JoinSourceInfo ()
-  where
-    joinSourceInfo _ _ = ()
-
-instance FromSourceRange ()
-  where
-    fromSourceRange _ = ()
-
-instance ShowSourceInfo ()
-  where
-    showSourceInfo _ = Nothing

@@ -23,6 +23,9 @@ module Bricks.Parsing
   , parse'expressionList'1
   , parse'expressionList'1'noDot
 
+  -- * Variables
+  , parse'var
+
   -- * Strings
   , parse'strUnquoted
   , parse'strStatic
@@ -65,9 +68,6 @@ module Bricks.Parsing
   , parse'letBinding
   , parse'letBinding'eq
   , parse'letBinding'inherit
-
-  -- * @inherit@
-  , parse'inherit
 
   -- * Comments and whitespace
   , parse'spaces
@@ -160,13 +160,13 @@ conservative set of characters, and they may not be any of the keywords. See
 -- | ==== Examples
 --
 -- >>> parseTest parse'strUnquoted "abc"
--- "abc"
+-- unquoted "abc"
 --
 -- Here the parser consumes letters up to but not including @{@, because that
 -- character does not satisfy 'char'canBeUnquoted':
 --
 -- >>> parseTest parse'strUnquoted "ab{c"
--- "ab"
+-- unquoted "ab"
 --
 -- \"let\" does not parse as an unquoted string because @let@ is a keyword:
 --
@@ -180,7 +180,7 @@ conservative set of characters, and they may not be any of the keywords. See
 -- parse error at (line 1, column 1):
 -- unexpected "\""
 
-parse'strUnquoted :: Parser Str'Unquoted
+parse'strUnquoted :: Parser UnquotedString
 parse'strUnquoted = do
 
   -- Consume at least one character
@@ -191,7 +191,10 @@ parse'strUnquoted = do
     Nothing -> P.parserZero
     Just b  -> do
       _ <- parse'spaces
-      pure $ Str'Unquoted b
+      pure b
+
+parse'var :: Parser Var
+parse'var = parse'strUnquoted <&> Var
 
 {- | Parser for a static string which may be either quoted or unquoted. -}
 
@@ -236,7 +239,7 @@ parse'strStatic'quoted =
 
 parse'strStatic'unquoted :: Parser Str'Static
 parse'strStatic'unquoted =
-  parse'strUnquoted <&> str'unquoted'to'static
+  parse'strUnquoted <&> Str'Static . unquotedString'text
 
 {- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
 string delimited by one double-quote @"@ ... @"@ ('parse'strDynamic'normalQ') or
@@ -389,7 +392,7 @@ parse'param'var = do
   -- know whether the variable name we're reading is a lambda parameter
   -- or just the name by itself (and not part of a lambda).
   (a, b) <- P.try $ do
-    a <- parse'strUnquoted <* parse'spaces
+    a <- parse'var <* parse'spaces
     b <- ((P.char ':' $> False) <|> (P.char '@' $> True)) <* parse'spaces
     pure (a, b)
   if b
@@ -438,7 +441,7 @@ parse'dictPattern =
         more :: Parser DictPattern
         more = item >>= \newItem ->
           let
-            newName = str'unquoted'text (dictPattern'1'name newItem)
+            newName = var'text (dictPattern'1'name newItem)
             newItems = previousItems |> newItem
             newNames = Set.insert newName previousNames
 
@@ -452,7 +455,7 @@ parse'dictPattern =
               ]
 
     item :: Parser DictPattern'1
-    item = DictPattern'1 <$> parse'strUnquoted <*> P.optionMaybe def
+    item = DictPattern'1 <$> parse'var <*> P.optionMaybe def
 
     def :: Parser Expression
     def = P.char '?' *> parse'spaces *> parse'expression
@@ -482,13 +485,13 @@ parse'dictPattern'start =
 -- lambda (param "x") (list [var "x", var "x", str ["a"]])
 --
 -- >>> parseTest parse'lambda "{a,b}:a"
--- lambda (pattern [param "a", param "b"]) (var "a")
+-- lambda (pattern [dict'param "a", dict'param "b"]) (var "a")
 --
 -- >>> parseTest parse'lambda "{ ... }: \"x\""
 -- lambda (pattern [] <> ellipsis) (str ["x"])
 --
 -- >>> parseTest parse'lambda "a@{ f, b ? g x, ... }: f b"
--- lambda (param "a" <> pattern [param "f", param "b" & def (apply (var "g") (var "x"))] <> ellipsis) (apply (var "f") (var "b"))
+-- lambda (param "a" <> pattern [dict'param "f", dict'param "b" & def (apply (var "g") (var "x"))] <> ellipsis) (apply (var "f") (var "b"))
 --
 -- >>> parseTest parse'lambda "a: b: \"x\""
 -- lambda (param "a") (lambda (param "b") (str ["x"]))
@@ -525,7 +528,7 @@ parse'list =
 -- rec'dict []
 --
 -- >>> parseTest parse'dict "{ a = b; inherit (x) y z \"s t\"; }"
--- dict [binding (str ["a"]) (var "b"), inherit'from (var "x") ["y", "z", "s t"]]
+-- dict [dict'eq (str ["a"]) (var "b"), inherit'fromDict (var "x") ["y", "z", "s t"]]
 
 parse'dict :: Parser Dict
 parse'dict =
@@ -542,7 +545,7 @@ parse'dict =
 -- rec'dict []
 --
 -- >>> parseTest parse'dict "rec { a = \"1\"; b = \"${a}2\"; }"
--- rec'dict [binding (str ["a"]) (str ["1"]), binding (str ["b"]) (str [antiquote (var "a"), "2"])]
+-- rec'dict [dict'eq (str ["a"]) (str ["1"]), dict'eq (str ["b"]) (str [antiquote (var "a"), "2"])]
 
 parse'dict'rec :: Parser (Seq DictBinding)
 parse'dict'rec =
@@ -556,7 +559,7 @@ parse'dict'rec =
 -- dict []
 --
 -- >>> parseTest parse'dict "{ a = \"1\"; b = \"${a}2\"; }"
--- dict [binding (str ["a"]) (str ["1"]), binding (str ["b"]) (str [antiquote (var "a"), "2"])]
+-- dict [dict'eq (str ["a"]) (str ["1"]), dict'eq (str ["b"]) (str [antiquote (var "a"), "2"])]
 
 parse'dict'noRec :: Parser (Seq DictBinding)
 parse'dict'noRec =
@@ -607,14 +610,54 @@ parse'dictBinding =
 
 parse'dictBinding'inherit :: Parser DictBinding
 parse'dictBinding'inherit =
-  DictBinding'Inherit <$> parse'inherit
+  do
+    _ <- parse'keyword keyword'inherit
+    asum
+      [ do
+          a <- parse'expression'paren
+          xs <- go'strs Seq.empty
+          pure $ DictBinding'Inherit'Dict a xs
+      , do
+          xs <- go'vars Seq.empty
+          pure $ DictBinding'Inherit'Var xs
+      ]
+  where
+    go'strs :: Seq Str'Static -> Parser (Seq Str'Static)
+    go'strs previousList =
+      asum
+        [ do
+            _ <- P.char ';'
+            _ <- parse'spaces
+            pure previousList
+        , do
+            x <- parse'strStatic
+            go'strs (previousList |> x)
+        ]
+
+    go'vars :: Seq Var -> Parser (Seq Var)
+    go'vars previousList =
+      asum
+        [ do
+            _ <- P.char ';'
+            _ <- parse'spaces
+            pure previousList
+        , do
+            x <- parse'var
+            go'vars (previousList |> x)
+        ]
 
 parse'dictBinding'eq :: Parser DictBinding
 parse'dictBinding'eq =
-  DictBinding'Eq <$> key <*> val
-  where
-    key = parse'expression'dictKey <* parse'spaces <* P.char '=' <* parse'spaces
-    val = parse'expression         <* parse'spaces <* P.char ';' <* parse'spaces
+  do
+    key <- parse'expression'dictKey
+    _ <- parse'spaces
+    _ <- P.char '='
+    _ <- parse'spaces
+    val <- parse'expression
+    _ <- parse'spaces
+    _ <- P.char ';'
+    _ <- parse'spaces
+    pure $ DictBinding'Eq key val
 
 parse'letBinding :: Parser LetBinding
 parse'letBinding =
@@ -622,26 +665,35 @@ parse'letBinding =
 
 parse'letBinding'eq :: Parser LetBinding
 parse'letBinding'eq =
-  LetBinding'Eq <$> key <*> val
-  where
-    key = parse'strStatic  <* parse'spaces <* P.char '=' <* parse'spaces
-    val = parse'expression <* parse'spaces <* P.char ';' <* parse'spaces
+  do
+    key <- parse'var
+    _ <- parse'spaces
+    _ <- P.char '='
+    _ <- parse'spaces
+    val <- parse'expression
+    _ <- parse'spaces
+    _ <- P.char ';'
+    _ <- parse'spaces
+    pure $ LetBinding'Eq key val
 
 parse'letBinding'inherit :: Parser LetBinding
 parse'letBinding'inherit =
-  LetBinding'Inherit <$> parse'inherit
-
-parse'inherit :: Parser Inherit
-parse'inherit =
-  Inherit
-    <$> (parse'keyword keyword'inherit *> P.optionMaybe parse'expression'paren)
-    <*> go Seq.empty
+  do
+    _ <- parse'keyword keyword'inherit
+    a <- parse'expression'paren
+    xs <- go Seq.empty
+    pure $ LetBinding'Inherit a xs
   where
-    go :: Seq Str'Static -> Parser (Seq Str'Static)
+    go :: Seq Var -> Parser (Seq Var)
     go previousList =
       asum
-        [ P.char ';' *> parse'spaces $> previousList
-        , parse'strStatic >>= \x -> go (previousList |> x)
+        [ do
+            _ <- P.char ';'
+            _ <- parse'spaces
+            pure previousList
+        , do
+            x <- parse'var
+            go (previousList |> x)
         ]
 
 {- | The primary, top-level expression parser. This is what you use to parse a
@@ -698,7 +750,7 @@ expression, or a @with@ expression. -}
 -- lambda (param "x") (apply (apply (var "f") (var "x")) (var "x"))
 --
 -- >>> parseTest parse'expressionList'1 "{ a = b; }.a y"
--- dot (dict [binding (str ["a"]) (var "b")]) (str ["a"])
+-- dot (dict [dict'eq (str ["a"]) (var "b")]) (str ["a"])
 
 parse'expressionList'1 :: Parser Expression
 parse'expressionList'1 =
@@ -719,7 +771,7 @@ expression may not be a 'Dot'. -}
 -- lambda (param "x") (apply (apply (var "f") (var "x")) (var "x"))
 --
 -- >>> parseTest parse'expressionList'1'noDot "{ a = b; }.a y"
--- dict [binding (str ["a"]) (var "b")]
+-- dict [dict'eq (str ["a"]) (var "b")]
 
 parse'expressionList'1'noDot :: Parser Expression
 parse'expressionList'1'noDot =
@@ -727,7 +779,7 @@ parse'expressionList'1'noDot =
     [ parse'strDynamic'quoted <&> Expr'Str
     , parse'list              <&> Expr'List
     , parse'dict              <&> Expr'Dict
-    , parse'strUnquoted       <&> Expr'Var
+    , parse'var               <&> Expr'Var
     , parse'expression'paren
     ]
     <?> "expression list item without a dot"
@@ -754,11 +806,21 @@ One of:
 parse'expression'dictKey :: Parser Expression
 parse'expression'dictKey =
   quoted <|> antiquoted <|> unquoted
+
   where
     quoted = parse'strDynamic'quoted <&> Expr'Str
-    antiquoted = P.string "${" *> parse'spaces *> parse'expression
-                   <* P.char '}' <* parse'spaces
-    unquoted = parse'strUnquoted <&> Expr'Str . str'unquoted'to'dynamic
+
+    antiquoted = do
+      _ <- P.string "${"
+      _ <- parse'spaces
+      e <- parse'expression
+      _ <- P.char '}'
+      _ <- parse'spaces
+      pure e
+
+    unquoted =
+      parse'strUnquoted <&>
+      Expr'Str . str'static'to'dynamic . Str'Static . unquotedString'text
 
 parse'count :: Parser a -> Parser Natural
 parse'count p =

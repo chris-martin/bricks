@@ -38,17 +38,17 @@ prop_render_expression = property $ do
   render'expression
     (lambda
       (param "a" <> pattern
-        [ param "f"
-        , param "b" & def (apply (var "g") (var "x"))
+        [ dict'param "f"
+        , dict'param "b" & def (apply (var "g") (var "x"))
         ] <> ellipsis)
       (apply (var "f") (var "b")))
     === [text|a@{ f, b ? g x, ... }: f b|]
 
   render'expression
     (let'in
-      [ binding "d" (dict
-        [ binding (str ["a"]) (str ["b", antiquote (var "c")])
-        , inherit'from (var "x") ["y", "z"]
+      [ let'eq "d" (dict
+        [ dict'eq (str ["a"]) (str ["b", antiquote (var "c")])
+        , dict'inherit'from (var "x") ["y", "z"]
         ])]
       (dot (var "d") (str ["y"])))
     === [text|let d = { a = "b${c}"; inherit (x) y z; }; in d.y|]
@@ -89,9 +89,8 @@ prop_render_dict_pattern = property $ do
   test [] True  === [text|{ ... }|]
 
   let
-    item1 = DictPattern'1 (Str'Unquoted . unquotedString'orThrow $ "x") Nothing
-    item2 = DictPattern'1 (Str'Unquoted . unquotedString'orThrow $ "y") $
-      Just $ Expr'Str (strDynamic'singleton (Str'1'Literal (Str'Static "abc")))
+    item1 = dict'param "x"
+    item2 = dict'param "y" & def (str ["abc"])
 
   test [ item1, item2 ] False === [text|{ x, y ? "abc" }|]
   test [ item1, item2 ] True  === [text|{ x, y ? "abc", ... }|]

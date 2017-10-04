@@ -55,6 +55,16 @@ module Bricks
 
   -------------------------------------------------
 
+  -- * Variables
+  , Var (..)
+  , var'text
+  , render'var
+  , parse'var
+  , var'to'str'static
+  , var'to'str'dynamic
+
+  -------------------------------------------------
+
   -- * Strings
   , str'escape
   , parse'str'within'normalQ
@@ -84,17 +94,12 @@ module Bricks
   , unquotedString'try
   , unquotedString'orThrow
   , unquotedString'text
-  , Str'Unquoted (..)
-  , str'unquoted'text
   , text'canBeUnquoted
   , char'canBeUnquoted
-  , render'strUnquoted
   , parse'strUnquoted
   -- ** String conversions
   , str'dynamic'to'static
   , str'static'to'dynamic
-  , str'unquoted'to'static
-  , str'unquoted'to'dynamic
   -- ** Indented strings
   , InStr (..)
   , InStr'1 (..)
@@ -178,10 +183,7 @@ module Bricks
   -------------------------------------------------
 
   -- * @inherit@
-  , Inherit (..)
   , keyword'inherit
-  , render'inherit
-  , parse'inherit
 
   -------------------------------------------------
 
@@ -258,6 +260,8 @@ Bricks is heavily based on
 but there are a number of significant differences. Most of the differences
 involve the /removal/ of some feature for the sake of simplicity in both
 implementation and use.
+
+This list is not comprehensive.
 
 == Top-level Bricks expressions may contain no free variables
 
@@ -490,6 +494,19 @@ strings within an indented string, you can use antiquotation:
 Or you can interpret escape sequences at runtime by passing your string through
 some function in the standard library that does this sort of thing (__todo:__
 discuss said function, once it exists).
+
+== Bricks does not allow quotes in /let/ bindings
+
+In Nix, the left-hand side of a /let/ binding is allowed to be a quoted string.
+This lets you create variables that aren't valid as variable expressions (when
+you /refer to/ a variable, it may /not/ be quoted), which puts you in a weird
+sitation where there is a variable in scope which can only be referred to by
+inheriting it into a dict.
+
+> nix-repl> let "a b" = "c"; in { inherit "a b"; }
+> { "a b" = "c"; }
+
+This oddity does not seem to serve any real purpose, so we have omitted it.
 
 == The Nix "set" concept is renamed to "dict" in Bricks
 

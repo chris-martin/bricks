@@ -7,6 +7,7 @@ module Bricks.Internal.Text
   , all
   , append
   , concat
+  , concatMap
   , intercalate
   , null
   , pack
@@ -24,12 +25,15 @@ import           Data.Text (Text, all, append, null, pack, replace, replicate,
 import qualified Data.Text as Text
 
 -- Base
-import Data.Foldable (Foldable, toList)
+import Data.Foldable (Foldable, toList, foldr)
 import Data.Function ((.))
 
 concat :: Foldable f => f Text -> Text
 concat =
   Text.concat . toList
+
+concatMap :: Foldable f => (a -> Text) -> f a -> Text
+concatMap f = foldr (append . f) Text.empty
 
 intercalate :: Foldable f => Text -> f Text -> Text
 intercalate x =

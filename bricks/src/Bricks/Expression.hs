@@ -9,18 +9,18 @@ module Bricks.Expression
   -- * Expressions
     Expression (..)
 
-  -- * Strings
-  -- $strings
+  -- * Variables
+  -- $variables
+  , Var (..)
+  , var'text
+  , var'to'str'static
+  , var'to'str'dynamic
 
-  -- ** Unquoted strings
-  , Str'Unquoted (..)
-  , str'unquoted'text
-
-  -- ** Static strings
+  -- * Static strings
   , Str'Static (..)
   , str'static'append
 
-  -- ** Dynamic strings
+  -- * Dynamic strings
   , Str'Dynamic (..)
   , Str'1 (..)
   , strDynamic'toList
@@ -31,8 +31,6 @@ module Bricks.Expression
   -- ** Conversions between types of strings
   , str'dynamic'to'static
   , str'static'to'dynamic
-  , str'unquoted'to'static
-  , str'unquoted'to'dynamic
 
   -- * Lists
   , List (..)
@@ -61,9 +59,6 @@ module Bricks.Expression
   , Let (..)
   , LetBinding (..)
 
-  -- * @inherit@
-  , Inherit (..)
-
   ) where
 
 -- Bricks
@@ -79,7 +74,7 @@ import           Bricks.Internal.Text           (Text)
 import qualified Bricks.Internal.Text           as Text
 
 data Expression
-  = Expr'Var Str'Unquoted
+  = Expr'Var Var
       -- ^ A variable, such as @x@.
   | Expr'Str Str'Dynamic
       -- ^ A string, quoted either in the traditional form using a single
@@ -102,63 +97,42 @@ data Expression
 
 
 --------------------------------------------------------------------------------
---  Strings overview
+--  Variables
 --------------------------------------------------------------------------------
 
-{- $strings
+{- | A /variable/ @x@, as in the lambda calculus sense, is in one of two
+positions:
 
-There are three types of strings in the AST:
+  1. A binding, which may take a number of forms:
+       - @x:@ ... ('Param'Name')
+       - @let x =@ ... @; in@ ... ('LetBinding'Eq')
+       - @let inherit (@ ... @) x; in@ ... ('LetBinding'Inhherit')
+  2. A contextual reference to a lambda head or /let/ binding in which @x@ is
+     bound:
+       - The expression @x@ by itself
+       - An @inherit@ binding in a dict expression ('DictBinding'Inherit'Var')
 
-  - 'Str'Unquoted'
-  - 'Str'Static'
-  - 'Str'Dynamic'
+==== Syntax
 
-=== The relationship between variables and strings
-
-Perhaps counterintuitively, we include variables under the umbrella of "string".
-This is because the language itself somewhat conflates the two ideas, and indeed
-a casual Bricks user may not even always be aware of which is which.
-
-Consider the following (quite contrived) examples:
-
-> let x = { a = 1; }; in
-> let inherit (x) a;  in
-> { inherit a; }
-
-> let x = { "a b" = 1; }; in
-> let inherit (x) "a b";  in
-> { inherit "a b"; }
-
-In the first, @a@ seems quite like a variable; in the second, @"a b"@ feels much
-like a string (because we had to quote it, as it contains a space). But the ASTs
-for these two expressions are (apart from the name change) identical. -}
-
-
---------------------------------------------------------------------------------
---  Unquoted strings
---------------------------------------------------------------------------------
-
-{- |
-
-Simple strings that are /required/ to be written without quotes.
+Variables are always written without quotes.
 
 Unquoted strings are used for variables ('Expr'Var') and places that bind
-variables ('Param'Name' and 'DictPattern'1').
+variables ('Lambda' and 'Let').
 
 -}
 
-data Str'Unquoted = Str'Unquoted UnquotedString
+data Var = Var UnquotedString
 
-str'unquoted'text :: Str'Unquoted -> Text
-str'unquoted'text (Str'Unquoted x) = unquotedString'text x
+var'text :: Var -> Text
+var'text (Var x) = unquotedString'text x
 
-instance ShowExpression Str'Unquoted
-  where
-    showExpression = Text.pack . show @Text . str'unquoted'text
+var'to'str'static :: Var -> Str'Static
+var'to'str'static =
+  Str'Static . var'text
 
-instance Show Str'Unquoted
-  where
-    showsPrec = showsPrec'showExpression
+var'to'str'dynamic :: Var -> Str'Dynamic
+var'to'str'dynamic =
+  str'static'to'dynamic . var'to'str'static
 
 
 --------------------------------------------------------------------------------
@@ -295,7 +269,7 @@ strDynamic'singleton =
 -- | ==== Examples
 --
 -- >>> str = Str'1'Literal . Str'Static
--- >>> var = Str'1'Antiquote . Expr'Var . Str'Unquoted . unquotedString'orThrow
+-- >>> var = Str'1'Antiquote . Expr'Var . Var . unquotedString'orThrow
 --
 -- >>> :{
 -- >>> str'dynamic'normalize $ Str'Dynamic $ Seq.fromList
@@ -332,7 +306,7 @@ str'dynamic'normalize s =
 --
 -- >>> a = Str'1'Literal (Str'Static "hi")
 --
--- >>> b = Str'1'Antiquote $ Expr'Var $ Str'Unquoted $ unquotedString'orThrow "x"
+-- >>> b = Str'1'Antiquote $ Expr'Var $ Var $ unquotedString'orThrow "x"
 --
 -- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ a ]
 -- Just "hi"
@@ -349,14 +323,6 @@ str'dynamic'to'static = strDynamic'toList >>> \case
 str'static'to'dynamic :: Str'Static -> Str'Dynamic
 str'static'to'dynamic =
   strDynamic'singleton . Str'1'Literal
-
-str'unquoted'to'static :: Str'Unquoted -> Str'Static
-str'unquoted'to'static =
-  Str'Static . str'unquoted'text
-
-str'unquoted'to'dynamic :: Str'Unquoted -> Str'Dynamic
-str'unquoted'to'dynamic =
-  str'static'to'dynamic . str'unquoted'to'static
 
 
 --------------------------------------------------------------------------------
@@ -448,12 +414,12 @@ expression'applyArgs =
 more complicated than that because it may also include dict destructuring. -}
 
 data Param
-  = Param'Name Str'Unquoted
+  = Param'Name Var
       -- ^ A simple single-parameter function
   | Param'DictPattern DictPattern
       -- ^ Dict destructuring, which gives you something resembling multiple
       -- named parameters with default values
-  | Param'Both Str'Unquoted DictPattern
+  | Param'Both Var DictPattern
       -- ^ Both a param name /and/ a dict pattern, separated by the @\@@
       -- keyword
 
@@ -477,7 +443,7 @@ data DictPattern =
 {- | One item within a 'DictPattern'. -}
 data DictPattern'1 =
   DictPattern'1
-    { dictPattern'1'name :: Str'Unquoted
+    { dictPattern'1'name :: Var
         -- ^ The name of the key to pull out of the dict
     , dictPattern'1'default :: Maybe Expression
         -- ^ The default value to be used if the key is not present in the dict
@@ -585,7 +551,8 @@ data Dict =
 
 data DictBinding
   = DictBinding'Eq Expression Expression
-  | DictBinding'Inherit Inherit
+  | DictBinding'Inherit'Dict Expression (Seq Str'Static)
+  | DictBinding'Inherit'Var (Seq Var)
 
 
 --------------------------------------------------------------------------------
@@ -637,30 +604,27 @@ expression'applyDots =
 --  Let
 --------------------------------------------------------------------------------
 
-{- | A @let@-@in@ expression. See 'Expr'Let'.
+{- | ==== Syntax
 
+A /let/-/in/ expression ('Expr'Let') looks like this:
 
+> let
+>   greet = x: "Hello, ${x}!";
+>   name = "Chris";
+> in
+>   greet name
 
-      -- > let
-      -- >   greet = x: "Hello, ${x}!";
-      -- >   name = "Chris";
-      -- > in
-      -- >   greet name
-      --
-      -- /Let/ bindings, like dict bindings, may also use the @inherit@ keyword.
-      --
-      -- > let
-      -- >   d = { greet = x: "Hello, ${x}!"; name = "Chris"; }
-      -- >   inherit (d) greet name;
-      -- > in
-      -- >   greet name
-      --
-      -- The previous example also demonstrates how the bindings in a /let/
-      -- expression may refer to each other (much like a dict with the @rec@
-      -- keyword). As with dicts, the order of the bindings does not matter.
+/Let/ bindings, like dict bindings, may also use the @inherit@ keyword.
 
+> let
+>   d = { greet = x: "Hello, ${x}!"; name = "Chris"; }
+>   inherit (d) greet name;
+> in
+>   greet name
 
--}
+The previous example also demonstrates how the bindings in a /let/ expression
+may refer to each other (much like a dict with the @rec@ keyword). As with
+dicts, the order of the bindings does not matter. -}
 
 data Let =
   Let
@@ -674,22 +638,10 @@ data Let =
 expression. -}
 
 data LetBinding
-  = LetBinding'Eq Str'Static Expression
+  = LetBinding'Eq Var Expression
       -- ^ A binding with an equals sign, of the form @x = y;@
-  | LetBinding'Inherit Inherit
-      -- ^ A binding using the @inherit@ keyword, of the form @inherit a b;@
-      -- or @inherit (x) a b;@
-
-
---------------------------------------------------------------------------------
---  Inherit
---------------------------------------------------------------------------------
-
-data Inherit =
-  Inherit
-    { inherit'source :: Maybe Expression
-    , inherit'names :: Seq Str'Static
-    }
+  | LetBinding'Inherit Expression (Seq Var)
+      -- ^ A binding using the @inherit@ keyword, of the form @inherit (x) a b;@
 
 
 --------------------------------------------------------------------------------
@@ -705,6 +657,7 @@ the AST that the 'Show' instances are here to depict). -}
 
 instance Show Expression        where showsPrec = showsPrec'showExpression
 
+instance Show Var               where showsPrec = showsPrec'showExpression
 instance Show List              where showsPrec = showsPrec'showExpression
 instance Show Dict              where showsPrec = showsPrec'showExpression
 instance Show DictBinding       where showsPrec = showsPrec'showExpression
@@ -716,12 +669,11 @@ instance Show DictPattern'1     where showsPrec = showsPrec'showExpression
 instance Show Apply             where showsPrec = showsPrec'showExpression
 instance Show Let               where showsPrec = showsPrec'showExpression
 instance Show LetBinding        where showsPrec = showsPrec'showExpression
-instance Show Inherit           where showsPrec = showsPrec'showExpression
 
 instance ShowExpression Expression
   where
     showExpression = \case
-      Expr'Var x    -> show'var x
+      Expr'Var x    -> showExpression x
       Expr'Str x    -> showExpression x
       Expr'List x   -> showExpression x
       Expr'Dict x   -> showExpression x
@@ -729,6 +681,11 @@ instance ShowExpression Expression
       Expr'Lambda x -> showExpression x
       Expr'Apply x  -> showExpression x
       Expr'Let x    -> showExpression x
+
+instance ShowExpression Var
+  where
+    showExpression (Var x) =
+      "var " <> (Text.pack . show @Text . unquotedString'text) x
 
 instance ShowExpression List
   where
@@ -744,8 +701,13 @@ instance ShowExpression DictBinding
   where
     showExpression = \case
       DictBinding'Eq a b ->
-        Text.unwords ["binding", showExpression'paren a, showExpression'paren b]
-      DictBinding'Inherit x -> showExpression x
+        Text.unwords ["dict'eq", showExpression'paren a, showExpression'paren b]
+      DictBinding'Inherit'Dict from xs ->
+        "inherit'fromDict " <>
+        showExpression'paren from <> " " <>
+        showExpression'list xs
+      DictBinding'Inherit'Var xs ->
+        "dict'inherit' " <> showExpression'list xs
 
 instance ShowExpression Dot
   where
@@ -760,10 +722,10 @@ instance ShowExpression Lambda
 instance ShowExpression Param
   where
     showExpression = \case
-      Param'Name a -> show'param a
+      Param'Name a -> "param " <> Text.pack (show @Text (var'text a))
       Param'DictPattern b -> showExpression b
-      Param'Both a b ->
-        Text.intercalate " <> " [ show'param a, showExpression b ]
+      Param'Both a b -> "param " <> Text.pack (show @Text (var'text a)) <>
+                        " <> " <> showExpression b
 
 instance ShowExpression DictPattern
   where
@@ -776,9 +738,8 @@ instance ShowExpression DictPattern
 instance ShowExpression DictPattern'1
   where
     showExpression (DictPattern'1 a mb) =
-      Text.unwords $
-        show'param a :
-        maybe [] (\b -> [Text.unwords ["& def", showExpression'paren b]]) mb
+      "dict'param " <> (Text.pack $ show @Text $ var'text a) <>
+      maybe "" (\b -> " & def " <> showExpression'paren b) mb
 
 instance ShowExpression Apply
   where
@@ -794,27 +755,6 @@ instance ShowExpression LetBinding
   where
     showExpression = \case
       LetBinding'Eq a b ->
-        Text.unwords ["binding", show'static a, showExpression'paren b]
-      LetBinding'Inherit x -> showExpression x
-
-instance ShowExpression Inherit
-  where
-    showExpression (Inherit mf xs) =
-      Text.unwords $
-        (maybe ("inherit":) (\a -> ("inherit'from" :)
-        . (showExpression'paren a :)) mf) $
-        [showExpression'list'text $ fmap f xs]
-      where
-        f (Str'Static x) = showExpression'quoted'text x
-
-show'static :: Str'Static -> Text
-show'static (Str'Static x) =
-  Text.unwords ["str", showExpression'quoted'text x]
-
-show'param :: Str'Unquoted -> Text
-show'param x =
-  Text.unwords ["param", showExpression x]
-
-show'var :: Str'Unquoted -> Text
-show'var x =
-  Text.unwords ["var", showExpression x]
+        Text.unwords ["binding", showExpression a, showExpression'paren b]
+      LetBinding'Inherit from xs ->
+        "inherit'from " <> showExpression'paren from <> showExpression'list xs

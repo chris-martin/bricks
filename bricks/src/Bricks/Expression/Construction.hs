@@ -9,7 +9,6 @@ Functions for constructing 'Expression's that match the 'Show' implementations.
 This module is only designed for testing and REPL use. It isn't re-exported into
 the main Bricks API because it's a bit messy:
 
-  - It introduces some superfluous typeclasses for the sake of brevity.
   - There are a lot of terse function names here that would clash with other
     things easily.
   - Some functions are partial, such as those that require strings that can be
@@ -61,7 +60,7 @@ apply a b =
 
 var :: Text -> Expression
 var =
-  Expr'Var . Str'Unquoted . unquotedString'orThrow
+  Expr'Var . Var . unquotedString'orThrow
 
 
 --------------------------------------------------------------------------------
@@ -81,6 +80,14 @@ let'in :: [LetBinding] -> Expression -> Expression
 let'in a b =
   Expr'Let $ Let (Seq.fromList a) b
 
+let'eq :: Text -> Expression -> LetBinding
+let'eq a b =
+  LetBinding'Eq (Var $ unquotedString'orThrow a) b
+
+let'inherit'from :: Expression -> [Text] -> LetBinding
+let'inherit'from a b =
+  LetBinding'Inherit a (Seq.fromList $ fmap (Var . unquotedString'orThrow) b)
+
 
 --------------------------------------------------------------------------------
 --  Dicts
@@ -94,47 +101,17 @@ rec'dict :: [DictBinding] -> Expression
 rec'dict =
   Expr'Dict . Dict False . Seq.fromList
 
+dict'eq :: Expression -> Expression -> DictBinding
+dict'eq =
+  DictBinding'Eq
 
---------------------------------------------------------------------------------
---  Overloaded 'binding' function
---------------------------------------------------------------------------------
+dict'inherit'from :: Expression -> [Text] -> DictBinding
+dict'inherit'from a b =
+  DictBinding'Inherit'Dict a (Seq.fromList $ fmap Str'Static b)
 
-class Binding a b | b -> a
-  where
-    binding :: a -> Expression -> b
-
-instance Binding Expression DictBinding
-  where
-    binding = DictBinding'Eq
-
-instance Binding Text LetBinding
-  where
-    binding = LetBinding'Eq . Str'Static
-
-
---------------------------------------------------------------------------------
---  Overloaded 'inherit' functions
---------------------------------------------------------------------------------
-
-class IsInherit a
-  where
-    fromInherit :: Inherit -> a
-
-instance IsInherit DictBinding
-  where
-    fromInherit = DictBinding'Inherit
-
-instance IsInherit LetBinding
-  where
-    fromInherit = LetBinding'Inherit
-
-inherit :: IsInherit a => [Text] -> a
-inherit =
-  fromInherit . Inherit Nothing . Seq.fromList . fmap Str'Static
-
-inherit'from :: IsInherit a => Expression -> [Text] -> a
-inherit'from x y =
-  fromInherit $ Inherit (Just x) (Seq.fromList . fmap Str'Static $ y)
+dict'inherit :: [Text] -> DictBinding
+dict'inherit a =
+  DictBinding'Inherit'Var (Seq.fromList $ fmap (Var . unquotedString'orThrow) a)
 
 
 --------------------------------------------------------------------------------
@@ -160,42 +137,31 @@ instance IsString Str'1'IsString
 
 
 --------------------------------------------------------------------------------
---  Overloaded 'param' function
---------------------------------------------------------------------------------
-
-class IsParam a
-  where
-    param :: Text -> a
-
-instance IsParam Param'Builder
-  where
-    param = paramBuilder . Param'Name
-          . Str'Unquoted . unquotedString'orThrow
-
-instance IsParam DictPattern'1
-  where
-    param = (\x -> DictPattern'1 x Nothing)
-          . Str'Unquoted . unquotedString'orThrow
-
-
---------------------------------------------------------------------------------
 --  Param builder
 --------------------------------------------------------------------------------
 
 newtype Param'Builder = Param'Builder (NonEmpty Param)
   deriving Semigroup
 
-buildParam :: Param'Builder -> Param
-buildParam (Param'Builder xs) =
-  foldr1 mergeParams xs
-
 paramBuilder :: Param -> Param'Builder
 paramBuilder x =
   Param'Builder (x :| [])
 
+param :: Text -> Param'Builder
+param =
+  paramBuilder . Param'Name . Var . unquotedString'orThrow
+
+buildParam :: Param'Builder -> Param
+buildParam (Param'Builder xs) =
+  foldr1 mergeParams xs
+
 pattern :: [DictPattern'1] -> Param'Builder
 pattern xs =
   paramBuilder $ Param'DictPattern $ DictPattern (Seq.fromList xs) False
+
+dict'param :: Text -> DictPattern'1
+dict'param x =
+  Bricks.Expression.DictPattern'1 (Var $ unquotedString'orThrow x) Nothing
 
 def :: Expression -> DictPattern'1 -> DictPattern'1
 def b (DictPattern'1 a _) =

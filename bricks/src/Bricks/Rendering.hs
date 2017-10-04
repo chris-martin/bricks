@@ -16,9 +16,11 @@ module Bricks.Rendering
   , render'expression'inParens
   , render'expression'dictKey
 
+  -- * Variables
+  , render'var
+
   -- * Strings
   , str'escape
-  , render'strUnquoted
   , render'strStatic'unquotedIfPossible
   , render'strStatic'quoted
   , render'strDynamic'unquotedIfPossible
@@ -48,9 +50,6 @@ module Bricks.Rendering
   -- * @let@
   , render'let
   , render'letBinding
-
-  -- * @inherit@
-  , render'inherit
 
   ) where
 
@@ -91,8 +90,8 @@ str'escape =
 
 {- | Render an unquoted string in unquoted form. -}
 
-render'strUnquoted :: Render Str'Unquoted
-render'strUnquoted = str'unquoted'text
+render'var :: Render Var
+render'var = var'text
 
 {- | Render a static string, in unquoted form if possible. -}
 
@@ -132,9 +131,9 @@ but not including the @:@ that separates the head from the body of the lambda.
 render'param :: Render Param
 render'param =
   \case
-    Param'Name a        -> render'strUnquoted a
+    Param'Name a        -> render'var a
     Param'DictPattern b -> render'dictPattern b
-    Param'Both a b      -> render'strUnquoted a <> "@" <>
+    Param'Both a b      -> render'var a <> "@" <>
                            render'dictPattern b
 
 {- | Render a dict pattern (@{ a, b ? c, ... }@). -}
@@ -154,8 +153,8 @@ render'dictPattern (DictPattern bs e) =
 render'dictPattern'1 :: Render DictPattern'1
 render'dictPattern'1 =
   \case
-    DictPattern'1 a Nothing  -> render'strUnquoted a
-    DictPattern'1 a (Just b) -> render'strUnquoted a <> " ? " <>
+    DictPattern'1 a Nothing  -> render'var a
+    DictPattern'1 a (Just b) -> render'var a <> " ? " <>
                                 render'expression b
 
 {- | Render a lambda expression (@x: y@). -}
@@ -186,17 +185,21 @@ render'dict (Dict rec bs) =
   (if rec then keywordText keyword'rec <> " " else "") <>
   "{ " <> r bs <> "}"
   where
-    r = Text.concat . fmap (\b -> render'dictBinding b <> "; ")
+    r = Text.concat . fmap (\b -> render'dictBinding b <> " ")
 
-{- | Render a binding within a 'Dict', without the trailing semicolon. -}
+{- | Render a binding within a 'Dict', including the trailing semicolon. -}
 
 render'dictBinding :: Render DictBinding
 render'dictBinding =
   \case
     DictBinding'Eq a b ->
-      render'expression'dictKey a <> " = " <> render'expression b
-    DictBinding'Inherit x ->
-      render'inherit x
+      render'expression'dictKey a <> " = " <> render'expression b <> ";"
+    DictBinding'Inherit'Dict a b ->
+      "inherit " <> render'expression'inParens a <>
+      Text.concatMap (\x -> " " <> render'strStatic'unquotedIfPossible x) b <>
+      ";"
+    DictBinding'Inherit'Var a ->
+      "inherit" <> Text.concatMap (\x -> " " <> render'var x) a <> ";"
 
 {- | Render a dot expression (@a.b@). -}
 
@@ -211,26 +214,18 @@ render'let (Let bs x) =
   keywordText keyword'let <> " " <> r bs <>
   keywordText keyword'in <> " " <> render'expression x
   where
-    r = Text.concat . fmap (\b -> render'letBinding b <> "; ")
+    r = Text.concat . fmap (\b -> render'letBinding b <> " ")
 
-{- | Render a binding within a 'Let', without the trailing semicolon. -}
+{- | Render a binding within a 'Let', including the trailing semicolon. -}
 
 render'letBinding :: Render LetBinding
 render'letBinding =
   \case
     LetBinding'Eq a b ->
-      render'strStatic'unquotedIfPossible a <> " = " <> render'expression b
-    LetBinding'Inherit x ->
-      render'inherit x
-
-render'inherit :: Render Inherit
-render'inherit =
-  (keywordText keyword'inherit <>) .
-  \case
-    Inherit Nothing xs  -> r xs
-    Inherit (Just a) xs -> " (" <> render'expression a <> ")" <> r xs
-  where
-    r = foldMap (\x -> " " <> render'strStatic'unquotedIfPossible x)
+      render'var a <> " = " <> render'expression b <> ";"
+    LetBinding'Inherit a b ->
+      "inherit " <> render'expression'inParens a <>
+      Text.concatMap (\x -> " " <> render'var x) b <> ";"
 
 {- | Render an expression. -}
 
@@ -240,8 +235,8 @@ render'inherit =
 -- >>> render'expression
 -- >>>   (lambda
 -- >>>     (param "a" <> pattern
--- >>>       [ param "f"
--- >>>       , param "b" & def (apply (var "g") (var "x"))
+-- >>>       [ dict'param "f"
+-- >>>       , dict'param "b" & def (apply (var "g") (var "x"))
 -- >>>       ] <> ellipsis)
 -- >>>     (apply (var "f") (var "b")))
 -- >>> :}
@@ -253,7 +248,7 @@ render'expression =
     Expr'Str    x -> render'strDynamic'quoted x
     Expr'Dict   x -> render'dict x
     Expr'List   x -> render'list x
-    Expr'Var    x -> render'strUnquoted x
+    Expr'Var    x -> render'var x
     Expr'Dot    x -> render'dot x
     Expr'Lambda x -> render'lambda x
     Expr'Apply  x -> render'apply x

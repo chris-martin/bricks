@@ -12,6 +12,7 @@ import Bricks.ExpressionToTerm
 import Bricks.Parsing
 import Bricks.Term
 import Bricks.Type
+import Bricks.Prelude
 
 -- Bricks internal
 import           Bricks.Internal.Monad
@@ -40,16 +41,9 @@ import Text.Show (show)
 main :: IO ()
 main = runTests $$(Hedgehog.discover)
 
-{-
 prop_evaluation :: Property
 prop_evaluation = property $ do
 
-  let (Right expr) = P.parse parse'expression ""
-        [text|{ add, int, ... }:
-             |add (int "1") (int "2")|]
-
-  result <- liftIO $ reduce'to'type'or'throw type'integer $
-              expression'to'term expr /@\ standard'library
-
+  result <- liftIO $ bricks'eval'stdlib type'integer
+    [text|{ add, integer, ... }: add (integer "1") (integer "2")|]
   result === 3
--}

@@ -28,7 +28,7 @@ import qualified Data.Set as Set
 import Data.Dynamic  (Dynamic, fromDynamic, toDyn)
 import Data.IORef
 import Data.Typeable (Typeable)
-import Prelude       (Integer)
+import Prelude       (Integer, Num (..))
 import System.IO     (IO)
 import Text.Read     (readMaybe)
 
@@ -124,7 +124,10 @@ req s (Type n) = reduce'term >=> \case
       bottom . Bottom $ "Expected " <> n <> ", got " <> n'
 
 fn'int'add :: Term
-fn'int'add = undefined
+fn'int'add =
+  Term'Function $ \x -> cast'data type'integer x <&> \x' ->
+  Term'Function $ \y -> cast'data type'integer y <&> \y' ->
+  term'data type'integer (x' + y')
 
 fn'int'constructor :: Term
 fn'int'constructor =

@@ -127,6 +127,8 @@ instance MonadEval Eval
     reduce'dict'keys = reduce'term >=> \case
       t@(Term'Dict d) ->
         undefined
+      Term'Dict'ReducedKeys x ->
+        pure x
       x ->
         termTypeName x >>= \n' ->
           bottom . Bottom $ "Expected dict, got " <> n'

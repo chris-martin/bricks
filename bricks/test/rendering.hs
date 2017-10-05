@@ -10,6 +10,8 @@ import Bricks.Expression.Construction
 
 -- Bricks internal
 import Bricks.Internal.Prelude
+import qualified Bricks.Internal.Seq as Seq
+import Bricks.Internal.Text (Text)
 
 -- Bricks test
 import Bricks.Test.Hedgehog
@@ -56,7 +58,9 @@ prop_render_expression = property $ do
 prop_render_identifier :: Property
 prop_render_identifier = property $ do
 
-  let test = render'strStatic'unquotedIfPossible . Str'Static
+  let
+    test :: Text -> Text
+    test x = render'strStatic'unquotedIfPossible $ Str'Static x Nothing
 
   test "abc"  === [text|abc|]
   test "a\"b" === [text|"a\"b"|]
@@ -66,17 +70,19 @@ prop_render_identifier = property $ do
 prop_render_string_dynamic_quoted :: Property
 prop_render_string_dynamic_quoted = property $ do
 
-  let test = render'strDynamic'quoted . strDynamic'fromList
+  let
+    test :: [Str'1] -> Text
+    test xs = render'strDynamic'quoted $ Str'Dynamic (Seq.fromList xs) Nothing
 
-  test []                                     === [text|""|]
-  test [ Str'1'Literal (Str'Static "hello") ] === [text|"hello"|]
+  test []                                             === [text|""|]
+  test [ Str'1'Literal (Str'Static "hello" Nothing) ] === [text|"hello"|]
 
-  test [ Str'1'Literal (Str'Static "escape ${ this and \" this") ]
+  test [ Str'1'Literal (Str'Static "escape ${ this and \" this" Nothing) ]
     === [text|"escape \${ this and \" this"|]
 
-  test [ Str'1'Literal (Str'Static "Hello, my name is ")
-       , Str'1'Antiquote $ var "name"
-       , Str'1'Literal (Str'Static "!")
+  test [ Str'1'Literal (Str'Static "Hello, my name is " Nothing)
+       , Str'1'Antiquote (var "name")
+       , Str'1'Literal (Str'Static "!" Nothing)
        ]
     === [text|"Hello, my name is ${name}!"|]
 
@@ -98,13 +104,13 @@ prop_render_dict_pattern = property $ do
 prop_render_list :: Property
 prop_render_list = property $ do
 
-  let test = render'list . List
+  let test x = render'list $ List (Seq.fromList x) Nothing
 
   test []                   === [text|[ ]|]
   test [ var "a" ]          === [text|[ a ]|]
   test [ var "a", var "b" ] === [text|[ a b ]|]
 
-  let call = Expr'Apply $ Apply (var "f") (var "x")
+  let a = apply (var "f") (var "x")
 
-  test [ call ]          === [text|[ (f x) ]|]
-  test [ call, var "a" ] === [text|[ (f x) a ]|]
+  test [ a ]          === [text|[ (f x) ]|]
+  test [ a, var "a" ] === [text|[ (f x) a ]|]

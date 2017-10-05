@@ -12,10 +12,12 @@ module Bricks.IndentedString
   , inStr'dedent
   , inStr'trim
   , inStr'toList
+  , inStr'discardSource
 
   -- * Single line of an indented string
   , InStr'1 (..)
   , inStr'1'toStrParts
+  , inStr'1'discardSource
 
   ) where
 
@@ -42,12 +44,19 @@ string. -}
 data InStr =
   InStr
     { inStr'toSeq :: Seq InStr'1
-    -- todo , inStr'source :: Maybe SourceRange
+    , inStr'source :: Maybe SourceRange
     }
 
 inStr'toList :: InStr -> [InStr'1]
 inStr'toList =
   Seq.toList . inStr'toSeq
+
+inStr'discardSource :: InStr -> InStr
+inStr'discardSource x =
+  InStr
+    { inStr'toSeq = fmap inStr'1'discardSource (inStr'toSeq x)
+    , inStr'source = Nothing
+    }
 
 {- | One line of an 'InStr'. -}
 
@@ -56,7 +65,7 @@ data InStr'1 =
     { inStr'1'level :: Natural
         -- ^ The number of leading space characters. We store this separately
         -- for easier implementation of 'inStr'dedent'.
-    -- todo , inStr'1'indentSource :: src
+    , inStr'1'indentSource :: Maybe SourceRange
         -- ^ The source position of the leading space characters
     , inStr'1'str :: Seq Str'1
         -- ^ The meat of the line, after any leading spaces and before the line
@@ -64,6 +73,15 @@ data InStr'1 =
     , inStr'1'lineBreak :: Maybe Str'Static
         -- ^ The line break at the end, if any; all lines but the last one
         --   should have a line break
+    }
+
+inStr'1'discardSource :: InStr'1 -> InStr'1
+inStr'1'discardSource x =
+  InStr'1
+    { inStr'1'level = inStr'1'level x
+    , inStr'1'indentSource = Nothing
+    , inStr'1'str = fmap str'1'discardSource (inStr'1'str x)
+    , inStr'1'lineBreak = fmap str'static'discardSource (inStr'1'lineBreak x)
     }
 
 inStr'1'toStrParts :: InStr'1 -> Seq Str'1
@@ -79,7 +97,7 @@ inStr'1'toStrParts x =
           Seq.singleton . Str'1'Literal $
           Str'Static
             (Text.replicate (fromIntegral level) " ")
-            -- todo (inStr'1'indentSource x)
+            (inStr'1'indentSource x)
 
     end :: Seq Str'1
     end =
@@ -123,7 +141,7 @@ inStr'to'strDynamic =
   (\inStr ->
     Str'Dynamic
       (Seq.concatMap inStr'1'toStrParts (inStr'toSeq inStr))
-      -- todo (inStr'source inStr)
+      (inStr'source inStr)
   ) >>>
   str'dynamic'normalize
 
@@ -138,14 +156,18 @@ inStr'trim x =
     }
 
 show'inStr :: InStr -> Text
-show'inStr (InStr xs) =
-  "str'indented [" <> Text.intercalateMap ", " show'inStr'1 xs <> "]"
+show'inStr x =
+  "InStr [" <>
+  Text.intercalateMap ", " show'inStr'1 (inStr'toSeq x) <> "]" <> " " <>
+  Text.show (fmap show'sourceRange (inStr'source x))
 
 show'inStr'1 :: InStr'1 -> Text
-show'inStr'1 (InStr'1 n s lbr) =
-  "line " <> Text.show @Natural n <> " " <>
-  Text.show @([Str'1]) (Seq.toList s) <> " " <>
-  Text.show @(Maybe Str'Static) lbr
+show'inStr'1 x =
+  "InStr'1 " <>
+  Text.show @Natural (inStr'1'level x) <> " " <>
+  Text.show (fmap show'sourceRange (inStr'1'indentSource x)) <> " " <>
+  Text.show @([Str'1]) (Seq.toList (inStr'1'str x)) <> " " <>
+  Text.show @(Maybe Str'Static) (inStr'1'lineBreak x)
 
 instance Show InStr   where show = Text.unpack . show'inStr
 instance Show InStr'1 where show = Text.unpack . show'inStr'1

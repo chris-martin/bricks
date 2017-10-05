@@ -41,9 +41,12 @@ data SourcePosition =
     }
   deriving (Eq, Ord)
 
+instance Show SourcePosition where show = Text.unpack . show'sourcePosition
+
 show'sourcePosition :: SourcePosition -> Text
 show'sourcePosition (SourcePosition a b) =
   Text.show @Natural a <> ":" <> Text.show @Natural b
+
 
 
 --------------------------------------------------------------------------------
@@ -61,6 +64,12 @@ data SourceRange =
     , sourceRange'end :: SourcePosition
     }
 
+instance Show SourceRange where show = Text.unpack . show'sourceRange
+
+show'sourceRange :: SourceRange -> Text
+show'sourceRange (SourceRange a b) =
+  show'sourcePosition a <> "-" <> show'sourcePosition b
+
 sourceRange'join :: SourceRange -> SourceRange -> SourceRange
 sourceRange'join (SourceRange a1 a2) (SourceRange b1 b2) =
   SourceRange (min a1 b1) (max a2 b2)
@@ -69,24 +78,10 @@ instance Semigroup SourceRange
   where
     (<>) = sourceRange'join
 
-
---------------------------------------------------------------------------------
---  SourceRangeMaybe
---------------------------------------------------------------------------------
-
-data SourceRangeMaybe
-  = SourceRange'Nothing
-  | SourceRange'Just SourceRange
-
 sourceRangeMaybe'join
-  :: SourceRangeMaybe -> SourceRangeMaybe -> SourceRangeMaybe
-sourceRangeMaybe'join (SourceRange'Just x) (SourceRange'Just y) =
-  SourceRange'Just (sourceRange'join x y)
-sourceRangeMaybe'join _ _ = SourceRange'Nothing
-
-instance Semigroup SourceRangeMaybe
-  where
-    (<>) = sourceRangeMaybe'join
+  :: Maybe SourceRange -> Maybe SourceRange -> Maybe SourceRange
+sourceRangeMaybe'join (Just x) (Just y) = Just (sourceRange'join x y)
+sourceRangeMaybe'join _ _ = Nothing
 
 
 --------------------------------------------------------------------------------

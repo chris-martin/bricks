@@ -157,7 +157,7 @@ prop_parse_inStr = property $ do
            $ fmap (
                 Text.pack . show
                 . List.concatMap (Seq.toList . inStr'1'toStrParts)
-                . inStr'toList
+                . inStr'toList . inStr'discardSource
              )
            $ P.spaces *> parse'inStr
 
@@ -189,7 +189,10 @@ prop_parse_inStr_line :: Property
 prop_parse_inStr_line = property $ do
 
   let test = parseTest
-           $ fmap (Text.pack . show . Seq.toList . inStr'1'toStrParts)
+           $ fmap (
+               Text.pack . show . Seq.toList . inStr'1'toStrParts .
+               inStr'1'discardSource
+             )
            $ parse'inStr'1
 
   test "abc" === [text|Parse error at (line 1, column 4):

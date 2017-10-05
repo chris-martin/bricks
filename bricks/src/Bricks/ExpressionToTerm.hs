@@ -1,7 +1,6 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 {- |
 
@@ -45,32 +44,34 @@ var'to'term :: Var -> Term
 var'to'term = Term'Var . var'text
 
 apply'to'term :: Apply -> Term
-apply'to'term (Apply a b) =
-  expression'to'term a /@\ expression'to'term b
+apply'to'term x =
+  expression'to'term (apply'func x) /@\ expression'to'term (apply'arg x)
 
 str'to'term :: Str'Dynamic -> Term
-str'to'term (Str'Dynamic (Seq.toList -> xs)) =
-  case xs of
+str'to'term x =
+  case Seq.toList (strDynamic'toSeq x) of
     [] -> term'data type'string ""
     ys -> foldr1 f $ fmap str'1'to'term ys
   where
-    f x y = fn'string'append /@@\ (x, y)
+    f a b = fn'string'append /@@\ (a, b)
 
 str'1'to'term :: Str'1 -> Term
 str'1'to'term = \case
-  Str'1'Literal (Str'Static x) -> term'data type'string x
+  Str'1'Literal x -> term'data type'string (str'static'text x)
   Str'1'Antiquote x -> expression'to'term x
 
 list'to'term :: List -> Term
-list'to'term (List x) =
-  Term'List $ fmap expression'to'term x
+list'to'term x =
+  Term'List $ fmap expression'to'term (list'expressions x)
 
 dict'to'term :: Dict -> Term
 dict'to'term = undefined
 
 dot'to'term :: Dot -> Term
-dot'to'term (Dot a b) =
-  fn'dict'lookup /@@\ (expression'to'term a, expression'to'term b)
+dot'to'term x =
+  fn'dict'lookup /@@\ ( expression'to'term (dot'dict x)
+                      , expression'to'term (dot'key x)
+                      )
 
 
 --------------------------------------------------------------------------------
@@ -78,11 +79,15 @@ dot'to'term (Dot a b) =
 --------------------------------------------------------------------------------
 
 lambda'to'term :: Lambda -> Term
-lambda'to'term (Lambda head (expression'to'term -> body)) =
-  case head of
-    Param'Name var       -> lambda'to'term'simple var body
-    Param'DictPattern dp -> lambda'to'term'dictPattern dp body
-    Param'Both var dp    -> lambda'to'term'both var dp body
+lambda'to'term x =
+  let
+    head = lambda'head x
+    body = expression'to'term (lambda'body x)
+  in
+    case head of
+      Param'Name var       -> lambda'to'term'simple var body
+      Param'DictPattern dp -> lambda'to'term'dictPattern dp body
+      Param'Both var dp    -> lambda'to'term'both var dp body
 
 lambda'to'term'simple :: Var -> Term -> Term
 lambda'to'term'simple var body =

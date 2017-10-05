@@ -35,6 +35,8 @@ module Bricks
 
   -- * Expressions
     Expression (..)
+  , expression'source
+  , expression'discardSource
   -- ** Rendering expressions
   , render'expression
   , render'expression'listContext
@@ -62,6 +64,7 @@ module Bricks
   , parse'var
   , var'to'str'static
   , var'to'str'dynamic
+  , var'discardSource
 
   -------------------------------------------------
 
@@ -72,6 +75,7 @@ module Bricks
   -- ** Static strings
   , Str'Static (..)
   , str'static'append
+  , str'static'discardSource
   , render'strStatic'unquotedIfPossible
   , render'strStatic'quoted
   , parse'strStatic
@@ -80,10 +84,10 @@ module Bricks
   -- ** Dynamic strings
   , Str'Dynamic (..)
   , Str'1 (..)
-  , strDynamic'toList
-  , strDynamic'fromList
-  , strDynamic'singleton
+  , str'1'discardSource
+  , str'dynamic'append
   , str'dynamic'normalize
+  , str'dynamic'discardSource
   , render'strDynamic'unquotedIfPossible
   , render'strDynamic'quoted
   , parse'strDynamic'quoted
@@ -109,6 +113,8 @@ module Bricks
   , inStr'level
   , inStr'dedent
   , inStr'trim
+  , inStr'discardSource
+  , inStr'1'discardSource
   , parse'inStr
   , parse'inStr'1
 
@@ -116,6 +122,7 @@ module Bricks
 
   -- * Lists
   , List (..)
+  , list'discardSource
   , render'list
   , parse'list
 
@@ -124,18 +131,21 @@ module Bricks
   -- * Dicts
   , Dict (..)
   , keyword'rec
+  , dict'discardSource
   , render'dict
   , parse'dict
   , parse'dict'rec
   , parse'dict'noRec
   -- ** Dict bindings
   , DictBinding (..)
+  , dictBinding'discardSource
   , render'dictBinding
   , parse'dictBinding
   , parse'dictBinding'inherit
   , parse'dictBinding'eq
   -- ** Dict lookup (dot)
   , Dot (..)
+  , dot'discardSource
   , expression'applyDots
   , render'dot
   , parse'dot'rhs'chain
@@ -145,23 +155,28 @@ module Bricks
   -- * Functions
   -- ** Lambdas
   , Lambda (..)
+  , lambda'discardSource
   , render'lambda
   , parse'lambda
   -- ** Function parameters
   , Param (..)
+  , param'discardSource
   , render'param
   , parse'param
   , parse'param'var
   , parse'param'noVar
   -- ** Dict patterns
   , DictPattern (..)
+  , dictPattern'discardSource
   , DictPattern'1 (..)
+  , dictPattern'1'discardSource
   , render'dictPattern
   , render'dictPattern'1
   , parse'dictPattern
   , parse'dictPattern'start
   -- ** Function application
   , Apply (..)
+  , apply'discardSource
   , expression'applyArgs
   , render'apply
 
@@ -169,12 +184,14 @@ module Bricks
 
   -- * @let@
   , Let (..)
+  , let'discardSource
   , keyword'let
   , keyword'in
   , render'let
   , parse'let
   -- ** @let@ bindings
   , LetBinding (..)
+  , letBinding'discardSource
   , render'letBinding
   , parse'letBinding
   , parse'letBinding'eq

@@ -1,13 +1,15 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeApplications           #-}
 
 module Bricks.Expression
   (
   -- * Expressions
     Expression (..)
+  , expression'source
+  , expression'discardSource
 
   -- * Variables
   -- $variables
@@ -15,18 +17,20 @@ module Bricks.Expression
   , var'text
   , var'to'str'static
   , var'to'str'dynamic
+  , var'discardSource
 
   -- * Static strings
   , Str'Static (..)
   , str'static'append
+  , str'static'discardSource
 
   -- * Dynamic strings
   , Str'Dynamic (..)
   , Str'1 (..)
-  , strDynamic'toList
-  , strDynamic'fromList
-  , strDynamic'singleton
+  , str'1'discardSource
+  , str'dynamic'append
   , str'dynamic'normalize
+  , str'dynamic'discardSource
 
   -- ** Conversions between types of strings
   , str'dynamic'to'static
@@ -34,34 +38,46 @@ module Bricks.Expression
 
   -- * Lists
   , List (..)
+  , list'discardSource
 
   -- * Dicts
   , Dict (..)
+  , dict'discardSource
   , DictBinding (..)
+  , dictBinding'discardSource
 
   -- * Dict lookup
   , Dot (..)
   , expression'applyDots
+  , dot'discardSource
 
   -- * Lambdas
   , Lambda (..)
+  , lambda'discardSource
 
   -- * Function parameters
   , Param (..)
+  , param'discardSource
   , DictPattern (..)
+  , dictPattern'discardSource
   , DictPattern'1 (..)
+  , dictPattern'1'discardSource
 
   -- * Function application
   , Apply (..)
   , expression'applyArgs
+  , apply'discardSource
 
   -- * @let@
   , Let (..)
+  , let'discardSource
   , LetBinding (..)
+  , letBinding'discardSource
 
   ) where
 
 -- Bricks
+import Bricks.Source
 import Bricks.UnquotedString
 
 -- Bricks internal
@@ -94,6 +110,30 @@ data Expression
       -- ^ A /let/-/in/ expression consists of a list of variable bindings
       --   followed by an expression.
 
+expression'source :: Expression -> Maybe SourceRange
+expression'source =
+  \case
+    Expr'Var x    -> var'source x
+    Expr'Str x    -> strDynamic'source x
+    Expr'List x   -> list'source x
+    Expr'Dict x   -> dict'source x
+    Expr'Dot x    -> dot'source x
+    Expr'Lambda x -> lambda'source x
+    Expr'Apply x  -> apply'source x
+    Expr'Let x    -> let'source x
+
+expression'discardSource :: Expression -> Expression
+expression'discardSource =
+  \case
+    Expr'Var x    -> Expr'Var $ var'discardSource x
+    Expr'Str x    -> Expr'Str $ str'dynamic'discardSource x
+    Expr'List x   -> Expr'List $ list'discardSource x
+    Expr'Dict x   -> Expr'Dict $ dict'discardSource x
+    Expr'Dot x    -> Expr'Dot $ dot'discardSource x
+    Expr'Lambda x -> Expr'Lambda $ lambda'discardSource x
+    Expr'Apply x  -> Expr'Apply $ apply'discardSource x
+    Expr'Let x    -> Expr'Let $ let'discardSource x
+
 
 --------------------------------------------------------------------------------
 --  Variables
@@ -120,18 +160,29 @@ variables ('Lambda' and 'Let').
 
 -}
 
-data Var = Var UnquotedString
+data Var =
+  Var
+    { var'str :: UnquotedString
+    , var'source :: Maybe SourceRange
+    }
 
 var'text :: Var -> Text
-var'text (Var x) = unquotedString'text x
+var'text (Var x _) = unquotedString'text x
 
 var'to'str'static :: Var -> Str'Static
-var'to'str'static =
-  Str'Static . var'text
+var'to'str'static x =
+  Str'Static (var'text x) (var'source x)
 
 var'to'str'dynamic :: Var -> Str'Dynamic
 var'to'str'dynamic =
   str'static'to'dynamic . var'to'str'static
+
+var'discardSource :: Var -> Var
+var'discardSource x =
+  Var
+    { var'str = var'str x
+    , var'source = Nothing
+    }
 
 
 --------------------------------------------------------------------------------
@@ -141,20 +192,24 @@ var'to'str'dynamic =
 {- | A fixed string value. We use the description "static" to mean the string
 may not contain antiquotation, in contrast with 'Str'Dynamic' which can. -}
 
-data Str'Static = Str'Static Text
+data Str'Static =
+  Str'Static
+    { str'static'text :: Text
+    , str'static'source :: Maybe SourceRange
+    }
 
 str'static'append :: Str'Static -> Str'Static -> Str'Static
-str'static'append (Str'Static t1) (Str'Static t2) =
-  Str'Static (Text.append t1 t2)
+str'static'append (Str'Static t1 s1) (Str'Static t2 s2) =
+  Str'Static (Text.append t1 t2) (sourceRangeMaybe'join s1 s2)
 
-instance Semigroup Str'Static
-  where
-    (<>) = str'static'append
+instance Semigroup Str'Static where (<>) = str'static'append
 
-instance Monoid Str'Static
-  where
-    mempty = Str'Static mempty
-    mappend = (<>)
+str'static'discardSource :: Str'Static -> Str'Static
+str'static'discardSource x =
+  Str'Static
+    { str'static'text = str'static'text x
+    , str'static'source = Nothing
+    }
 
 
 --------------------------------------------------------------------------------
@@ -206,16 +261,21 @@ The indented string form does not interpret any escape sequences. -}
 data Str'Dynamic =
   Str'Dynamic
     { strDynamic'toSeq :: Seq Str'1
+    , strDynamic'source :: Maybe SourceRange
     }
 
-instance Semigroup Str'Dynamic
-  where
-    Str'Dynamic x <> Str'Dynamic y = Str'Dynamic (x <> y)
+str'dynamic'discardSource :: Str'Dynamic -> Str'Dynamic
+str'dynamic'discardSource x =
+  Str'Dynamic
+    { strDynamic'source = Nothing
+    , strDynamic'toSeq = fmap str'1'discardSource (strDynamic'toSeq x)
+    }
 
-instance Monoid Str'Dynamic
-  where
-    mempty = Str'Dynamic mempty
-    mappend = (<>)
+str'dynamic'append :: Str'Dynamic -> Str'Dynamic -> Str'Dynamic
+str'dynamic'append (Str'Dynamic x1 y1) (Str'Dynamic x2 y2) =
+  Str'Dynamic (Seq.append x1 x2) (sourceRangeMaybe'join y1 y2)
+
+instance Semigroup Str'Dynamic where (<>) = str'dynamic'append
 
 {- | One part of a 'Str'Dynamic'. -}
 
@@ -223,29 +283,29 @@ data Str'1
   = Str'1'Literal Str'Static
   | Str'1'Antiquote Expression
 
-strDynamic'toList :: Str'Dynamic -> [Str'1]
-strDynamic'toList =
-  Seq.toList . strDynamic'toSeq
-
-strDynamic'fromList :: [Str'1] -> Str'Dynamic
-strDynamic'fromList =
-  Str'Dynamic . Seq.fromList
-
-strDynamic'singleton :: Str'1 -> Str'Dynamic
-strDynamic'singleton =
-  Str'Dynamic . Seq.singleton
+str'1'discardSource :: Str'1 -> Str'1
+str'1'discardSource =
+  \case
+    Str'1'Literal x -> Str'1'Literal (str'static'discardSource x)
+    Str'1'Antiquote x -> Str'1'Antiquote (expression'discardSource x)
 
 {- | Simplify a dynamic string by combining consecutive pieces of static text.
 -}
 
 -- | ==== Examples
 --
--- >>> str = Str'1'Literal . Str'Static
--- >>> var = Str'1'Antiquote . Expr'Var . Var . unquotedString'orThrow
+-- >>> :{
+-- >>> str :: Text -> Str'1
+-- >>> str x = Str'1'Literal $ Str'Static x Nothing
+-- >>>
+-- >>> var :: Text -> Str'1
+-- >>> var x = Str'1'Antiquote . Expr'Var $
+-- >>>         Var (unquotedString'orThrow x) Nothing
+-- >>> :}
 --
 -- >>> :{
--- >>> str'dynamic'normalize $ Str'Dynamic $ Seq.fromList
--- >>>   [str "a", str "b", var "x", var "y", str "c", str "d"]
+-- >>> str'dynamic'normalize $ Str'Dynamic (Seq.fromList
+-- >>>   [str "a", str "b", var "x", var "y", str "c", str "d"]) Nothing
 -- >>> :}
 -- str ["ab", antiquote (var "x"), antiquote (var "y"), "cd"]
 
@@ -273,28 +333,29 @@ str'dynamic'normalize s =
 
 -- | ==== Examples
 --
--- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList []
+-- >>> str'dynamic'to'static $ Str'Dynamic (Seq.fromList []) Nothing
 -- Just ""
 --
--- >>> a = Str'1'Literal (Str'Static "hi")
+-- >>> a = Str'1'Literal (Str'Static "hi" Nothing)
 --
--- >>> b = Str'1'Antiquote $ Expr'Var $ Var $ unquotedString'orThrow "x"
+-- >>> b = Str'1'Antiquote $ Expr'Var $ Var (unquotedString'orThrow "x") Nothing
 --
--- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ a ]
+-- >>> str'dynamic'to'static $ Str'Dynamic (Seq.fromList [ a ]) Nothing
 -- Just "hi"
 --
--- >>> str'dynamic'to'static $ Str'Dynamic $ Seq.fromList [ a, b ]
+-- >>> str'dynamic'to'static $ Str'Dynamic (Seq.fromList [ a, b ]) Nothing
 -- Nothing
 
 str'dynamic'to'static :: Str'Dynamic -> Maybe Str'Static
-str'dynamic'to'static = strDynamic'toList >>> \case
-  []                -> Just (Str'Static "")
-  [Str'1'Literal x] -> Just x
-  _                 -> Nothing
+str'dynamic'to'static x =
+  case Seq.toList (strDynamic'toSeq x) of
+    []                -> Just (Str'Static "" (strDynamic'source x))
+    [Str'1'Literal a] -> Just (a{ str'static'source = strDynamic'source x })
+    _                 -> Nothing
 
 str'static'to'dynamic :: Str'Static -> Str'Dynamic
-str'static'to'dynamic =
-  strDynamic'singleton . Str'1'Literal
+str'static'to'dynamic x =
+  Str'Dynamic (Seq.singleton (Str'1'Literal x)) (str'static'source x)
 
 
 --------------------------------------------------------------------------------
@@ -340,6 +401,15 @@ data Lambda =
         -- ^ Declaration of the function's parameter
     , lambda'body :: Expression
         -- ^ Body of the function; what it evaluates to
+    , lambda'source :: Maybe SourceRange
+    }
+
+lambda'discardSource :: Lambda -> Lambda
+lambda'discardSource x =
+  Lambda
+    { lambda'head = param'discardSource (lambda'head x)
+    , lambda'body = expression'discardSource (lambda'body x)
+    , lambda'source = Nothing
     }
 
 
@@ -368,6 +438,7 @@ data Apply =
         -- ^ The function being called
     , apply'arg :: Expression
         -- ^ The argument to the function
+    , apply'source :: Maybe SourceRange
     }
 
 expression'applyArgs
@@ -375,7 +446,23 @@ expression'applyArgs
   -> [Expression] -- ^ Args
   -> Expression   -- ^ Function application
 expression'applyArgs =
-  foldl (\acc b -> Expr'Apply (Apply acc b))
+  foldl f
+  where
+    f acc b =
+      Expr'Apply (Apply acc b src)
+      where
+        src =
+          sourceRangeMaybe'join
+            (expression'source acc)
+            (expression'source b)
+
+apply'discardSource :: Apply -> Apply
+apply'discardSource x =
+  Apply
+    { apply'func = expression'discardSource (apply'func x)
+    , apply'arg = expression'discardSource (apply'arg x)
+    , apply'source = Nothing
+    }
 
 
 --------------------------------------------------------------------------------
@@ -395,6 +482,16 @@ data Param
       -- ^ Both a param name /and/ a dict pattern, separated by the @\@@
       -- keyword
 
+param'discardSource :: Param -> Param
+param'discardSource =
+  \case
+    Param'Name x ->
+      Param'Name (var'discardSource x)
+    Param'DictPattern x ->
+      Param'DictPattern (dictPattern'discardSource x)
+    Param'Both x y ->
+      Param'Both (var'discardSource x) (dictPattern'discardSource y)
+
 
 --------------------------------------------------------------------------------
 --  Dict pattern
@@ -412,6 +509,13 @@ data DictPattern =
         -- items, corresponding to the @...@ keyword
     }
 
+dictPattern'discardSource :: DictPattern -> DictPattern
+dictPattern'discardSource x =
+  DictPattern
+    { dictPattern'items = fmap dictPattern'1'discardSource (dictPattern'items x)
+    , dictPattern'ellipsis = dictPattern'ellipsis x
+    }
+
 {- | One item within a 'DictPattern'. -}
 data DictPattern'1 =
   DictPattern'1
@@ -419,6 +523,14 @@ data DictPattern'1 =
         -- ^ The name of the key to pull out of the dict
     , dictPattern'1'default :: Maybe Expression
         -- ^ The default value to be used if the key is not present in the dict
+    }
+
+dictPattern'1'discardSource :: DictPattern'1 -> DictPattern'1
+dictPattern'1'discardSource x =
+  DictPattern'1
+    { dictPattern'1'name = var'discardSource (dictPattern'1'name x)
+    , dictPattern'1'default =
+        fmap expression'discardSource (dictPattern'1'default x)
     }
 
 
@@ -453,8 +565,18 @@ must be parenthesized when in a list.
 
 -}
 
-newtype List = List (Seq Expression)
-  deriving (Monoid, Semigroup)
+data List =
+  List
+    { list'expressions :: Seq Expression
+    , list'source :: Maybe SourceRange
+    }
+
+list'discardSource :: List -> List
+list'discardSource x =
+  List
+    { list'expressions = fmap expression'discardSource (list'expressions x)
+    , list'source = Nothing
+    }
 
 
 --------------------------------------------------------------------------------
@@ -517,6 +639,15 @@ data Dict =
         -- ^ Whether the dict is recursive (denoted by the @rec@ keyword)
     , dict'bindings :: Seq DictBinding
         -- ^ The bindings (everything between @{@ and @}@)
+    , dict'source :: Maybe SourceRange
+    }
+
+dict'discardSource :: Dict -> Dict
+dict'discardSource x =
+  Dict
+    { dict'rec = dict'rec x
+    , dict'bindings = fmap dictBinding'discardSource (dict'bindings x)
+    , dict'source = Nothing
     }
 
 {- | A binding of the form @x = y;@ within a 'DictLiteral' or 'LetExpr'. -}
@@ -525,6 +656,21 @@ data DictBinding
   = DictBinding'Eq Expression Expression
   | DictBinding'Inherit'Dict Expression (Seq Str'Static)
   | DictBinding'Inherit'Var (Seq Var)
+
+dictBinding'discardSource :: DictBinding -> DictBinding
+dictBinding'discardSource =
+  \case
+    DictBinding'Eq a b ->
+      DictBinding'Eq
+        (expression'discardSource a)
+        (expression'discardSource b)
+    DictBinding'Inherit'Dict a xs ->
+      DictBinding'Inherit'Dict
+        (expression'discardSource a)
+        (fmap str'static'discardSource xs)
+    DictBinding'Inherit'Var xs ->
+      DictBinding'Inherit'Var
+        (fmap var'discardSource xs)
 
 
 --------------------------------------------------------------------------------
@@ -561,7 +707,8 @@ The right-hand side of a dot may even be an arbitrary expression, using the @${@
 data Dot =
   Dot
     { dot'dict :: Expression
-    , dot'key  :: Expression
+    , dot'key :: Expression
+    , dot'source :: Maybe SourceRange
     }
 
 expression'applyDots
@@ -569,7 +716,23 @@ expression'applyDots
   -> [Expression] -- ^ Lookups
   -> Expression   -- ^ Dot expression
 expression'applyDots =
-  foldl (\acc b -> Expr'Dot (Dot acc b))
+  foldl f
+  where
+    f acc b =
+      Expr'Dot (Dot acc b src)
+      where
+        src =
+          sourceRangeMaybe'join
+            (expression'source acc)
+            (expression'source b)
+
+dot'discardSource :: Dot -> Dot
+dot'discardSource x =
+  Dot
+    { dot'dict = expression'discardSource (dot'dict x)
+    , dot'key = expression'discardSource (dot'key x)
+    , dot'source = Nothing
+    }
 
 
 --------------------------------------------------------------------------------
@@ -604,6 +767,15 @@ data Let =
         -- ^ The bindings (everything between the @let@ and @in@ keywords)
     , let'value :: Expression
         -- ^ The value (everything after the @in@ keyword)
+    , let'source :: Maybe SourceRange
+    }
+
+let'discardSource :: Let -> Let
+let'discardSource x =
+  Let
+    { let'bindings = fmap letBinding'discardSource (let'bindings x)
+    , let'value = expression'discardSource (let'value x)
+    , let'source = Nothing
     }
 
 {- | A semicolon-terminated binding within the binding list of a 'Let'
@@ -614,6 +786,18 @@ data LetBinding
       -- ^ A binding with an equals sign, of the form @x = y;@
   | LetBinding'Inherit Expression (Seq Var)
       -- ^ A binding using the @inherit@ keyword, of the form @inherit (x) a b;@
+
+letBinding'discardSource :: LetBinding -> LetBinding
+letBinding'discardSource =
+  \case
+    LetBinding'Eq a b ->
+      LetBinding'Eq
+        (var'discardSource a)
+        (expression'discardSource b)
+    LetBinding'Inherit a b ->
+      LetBinding'Inherit
+        (expression'discardSource a)
+        (fmap var'discardSource b)
 
 
 --------------------------------------------------------------------------------
@@ -657,29 +841,41 @@ show'expression =
     Expr'Apply x  -> show'apply x
     Expr'Let x    -> show'let x
 
+source'comment :: Maybe SourceRange -> Maybe Text
+source'comment =
+  fmap $ \x -> "{- " <> show'sourceRange x <> " -}"
+
 show'var :: Var -> Text
-show'var (Var x) =
+show'var (Var x s) =
+  maybe "" (<> " ") (source'comment s) <>
   "var " <> (Text.show @Text . unquotedString'text) x
 
 show'str'static :: Str'Static -> Text
-show'str'static (Str'Static x) = Text.show @Text x
+show'str'static (Str'Static x s) =
+  maybe "" (<> " ") (source'comment s) <>
+  Text.show @Text x
 
 show'str'dynamic :: Str'Dynamic -> Text
-show'str'dynamic (Str'Dynamic xs) =
+show'str'dynamic (Str'Dynamic xs s) =
+  maybe "" (<> " ") (source'comment s) <>
   "str [" <> Text.intercalateMap ", " show'str'1 xs <> "]"
 
 show'str'1 :: Str'1 -> Text
 show'str'1 =
   \case
-    Str'1'Literal (Str'Static x) -> Text.show @Text x
-    Str'1'Antiquote x -> "antiquote (" <> show'expression x <> ")"
+    Str'1'Literal (Str'Static x s) ->
+      maybe "" (<> " ") (source'comment s) <> Text.show @Text x
+    Str'1'Antiquote x ->
+      "antiquote (" <> show'expression x <> ")"
 
 show'list :: List -> Text
-show'list (List xs) =
+show'list (List xs s) =
+  maybe "" (<> " ") (source'comment s) <>
   "list [" <> Text.intercalateMap ", " show'expression xs <> "]"
 
 show'dict :: Dict -> Text
-show'dict (Dict r bs) =
+show'dict (Dict r bs s) =
+  maybe "" (<> " ") (source'comment s) <>
   (if r then "rec'dict [" else "dict [") <>
   Text.intercalateMap ", " show'dictBinding bs <> "]"
 
@@ -696,11 +892,13 @@ show'dictBinding =
       Text.intercalateMap ", " show'str'static xs <> "]"
 
 show'dot :: Dot -> Text
-show'dot (Dot a b) =
+show'dot (Dot a b s) =
+  maybe "" (<> " ") (source'comment s) <>
   "dot (" <> show'expression a <> ") (" <> show'expression b <> ")"
 
 show'lambda :: Lambda -> Text
-show'lambda (Lambda a b) =
+show'lambda (Lambda a b s) =
+  maybe "" (<> " ") (source'comment s) <>
   "lambda (" <> show'param a <> ") (" <> show'expression b <> ")"
 
 show'param :: Param -> Text
@@ -722,11 +920,13 @@ show'dictPattern'1 (DictPattern'1 a mb) =
   maybe "" (\b -> " & def (" <> show'expression b <> ")") mb
 
 show'apply :: Apply -> Text
-show'apply (Apply a b) =
+show'apply (Apply a b s) =
+  maybe "" (<> " ") (source'comment s) <>
   "apply (" <> show'expression a <> ") (" <> show'expression b <> ")"
 
 show'let :: Let -> Text
-show'let (Let xs y) =
+show'let (Let xs y s) =
+  maybe "" (<> " ") (source'comment s) <>
   "let'in [" <> Text.intercalateMap ", " show'letBinding xs <> "] (" <>
   show'expression y <> ")"
 

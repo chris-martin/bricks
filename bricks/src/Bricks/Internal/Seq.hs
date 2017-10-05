@@ -8,6 +8,7 @@ module Bricks.Internal.Seq
 
   , adjust
   , adjustLast
+  , append
   , concat
   , concatMap
   , dropWhileL
@@ -29,7 +30,7 @@ module Bricks.Internal.Seq
 
 -- Containers
 import Data.Sequence (Seq, adjust, dropWhileL, dropWhileR, empty, filter,
-                      fromList, length, null, singleton, (<|), (|>))
+                      fromList, length, null, singleton, (<|), (|>), (><))
 
 -- Base
 import           Data.Bool     (Bool (..))
@@ -40,6 +41,10 @@ import qualified Data.List     as List
 import           Data.Maybe    (Maybe (..))
 import           Data.Ord      (Ord)
 import           Prelude       (Num (..))
+
+-- | Alias for '><'.
+append :: Seq a -> Seq a -> Seq a
+append = (><)
 
 -- | Like 'List.intersperse', but for 'Seq'.
 intersperse :: a -> Seq a -> Seq a

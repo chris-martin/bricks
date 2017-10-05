@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Bricks.UnquotedString
   (
@@ -57,9 +58,7 @@ the Bricks syntax.
 
 newtype UnquotedString = UnquotedString { unquotedString'text :: Text }
 
-instance Show UnquotedString
-  where
-    showsPrec _ x = ("unquoted " <>) . shows (unquotedString'text x)
+instance Show UnquotedString where show = show @Text . unquotedString'text
 
 {- | ==== Properties
 

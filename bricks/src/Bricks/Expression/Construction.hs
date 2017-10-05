@@ -42,7 +42,7 @@ import Data.String        (IsString (fromString))
 
 lambda :: Param'Builder -> Expression -> Expression
 lambda a b =
-  Expr'Lambda $ Lambda (buildParam a) b
+  Expr'Lambda $ Lambda (buildParam a) b Nothing
 
 
 --------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ lambda a b =
 
 apply :: Expression -> Expression -> Expression
 apply a b =
-  Expr'Apply $ Apply a b
+  Expr'Apply $ Apply a b Nothing
 
 
 --------------------------------------------------------------------------------
@@ -59,8 +59,8 @@ apply a b =
 --------------------------------------------------------------------------------
 
 var :: Text -> Expression
-var =
-  Expr'Var . Var . unquotedString'orThrow
+var x =
+  Expr'Var $ Var (unquotedString'orThrow x) Nothing
 
 
 --------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ var =
 
 dot :: Expression -> Expression -> Expression
 dot a b =
-  Expr'Dot $ Dot a b
+  Expr'Dot $ Dot a b Nothing
 
 
 --------------------------------------------------------------------------------
@@ -77,8 +77,8 @@ dot a b =
 --------------------------------------------------------------------------------
 
 list :: [Expression] -> Expression
-list =
-  Expr'List . List . Seq.fromList
+list x =
+  Expr'List $ List (Seq.fromList x) Nothing
 
 
 --------------------------------------------------------------------------------
@@ -87,15 +87,17 @@ list =
 
 let'in :: [LetBinding] -> Expression -> Expression
 let'in a b =
-  Expr'Let $ Let (Seq.fromList a) b
+  Expr'Let $ Let (Seq.fromList a) b Nothing
 
 let'eq :: Text -> Expression -> LetBinding
 let'eq a b =
-  LetBinding'Eq (Var $ unquotedString'orThrow a) b
+  LetBinding'Eq (Var (unquotedString'orThrow a) Nothing) b
 
 let'inherit'from :: Expression -> [Text] -> LetBinding
 let'inherit'from a b =
-  LetBinding'Inherit a (Seq.fromList $ fmap (Var . unquotedString'orThrow) b)
+  LetBinding'Inherit
+    a
+    (Seq.fromList $ fmap (\x -> Var (unquotedString'orThrow x) Nothing) b)
 
 
 --------------------------------------------------------------------------------
@@ -103,12 +105,12 @@ let'inherit'from a b =
 --------------------------------------------------------------------------------
 
 dict :: [DictBinding] -> Expression
-dict =
-  Expr'Dict . Dict False . Seq.fromList
+dict x =
+  Expr'Dict $ Dict False (Seq.fromList x) Nothing
 
 rec'dict :: [DictBinding] -> Expression
-rec'dict =
-  Expr'Dict . Dict False . Seq.fromList
+rec'dict x =
+  Expr'Dict $ Dict False (Seq.fromList x) Nothing
 
 dict'eq :: Expression -> Expression -> DictBinding
 dict'eq =
@@ -116,11 +118,14 @@ dict'eq =
 
 dict'inherit'from :: Expression -> [Text] -> DictBinding
 dict'inherit'from a b =
-  DictBinding'Inherit'Dict a (Seq.fromList $ fmap Str'Static b)
+  DictBinding'Inherit'Dict
+    a
+    (Seq.fromList (fmap (\x -> Str'Static x Nothing) b))
 
 dict'inherit :: [Text] -> DictBinding
 dict'inherit a =
-  DictBinding'Inherit'Var (Seq.fromList $ fmap (Var . unquotedString'orThrow) a)
+  DictBinding'Inherit'Var
+    (Seq.fromList $ fmap (\x -> Var (unquotedString'orThrow x) Nothing) a)
 
 
 --------------------------------------------------------------------------------
@@ -128,8 +133,8 @@ dict'inherit a =
 --------------------------------------------------------------------------------
 
 str :: [Str'1'IsString] -> Expression
-str =
-  Expr'Str . Str'Dynamic . Seq.fromList . fmap unStr'1'IsString
+str xs =
+  Expr'Str $ Str'Dynamic (Seq.fromList (fmap unStr'1'IsString xs)) Nothing
 
 antiquote :: Expression -> Str'1'IsString
 antiquote =
@@ -142,7 +147,8 @@ newtype Str'1'IsString = Str'1'IsString { unStr'1'IsString :: Str'1 }
 
 instance IsString Str'1'IsString
   where
-    fromString = Str'1'IsString . Str'1'Literal . Str'Static . Text.pack
+    fromString x =
+      Str'1'IsString . Str'1'Literal $ Str'Static (Text.pack x) Nothing
 
 
 --------------------------------------------------------------------------------
@@ -157,8 +163,8 @@ paramBuilder x =
   Param'Builder (x :| [])
 
 param :: Text -> Param'Builder
-param =
-  paramBuilder . Param'Name . Var . unquotedString'orThrow
+param x =
+  paramBuilder . Param'Name $ Var (unquotedString'orThrow x) Nothing
 
 buildParam :: Param'Builder -> Param
 buildParam (Param'Builder xs) =
@@ -170,7 +176,9 @@ pattern xs =
 
 dict'param :: Text -> DictPattern'1
 dict'param x =
-  Bricks.Expression.DictPattern'1 (Var $ unquotedString'orThrow x) Nothing
+  Bricks.Expression.DictPattern'1
+    (Var (unquotedString'orThrow x) Nothing)
+    Nothing
 
 def :: Expression -> DictPattern'1 -> DictPattern'1
 def b (DictPattern'1 a _) =

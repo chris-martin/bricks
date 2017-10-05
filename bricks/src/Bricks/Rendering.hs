@@ -96,14 +96,19 @@ render'var = var'text
 {- | Render a static string, in unquoted form if possible. -}
 
 render'strStatic'unquotedIfPossible :: Render Str'Static
-render'strStatic'unquotedIfPossible s@(Str'Static x) =
-  if text'canBeUnquoted x then x else render'strStatic'quoted s
+render'strStatic'unquotedIfPossible s =
+  let
+    x = str'static'text s
+  in
+    if text'canBeUnquoted x
+      then x
+      else render'strStatic'quoted s
 
 {- | Render a static string, in quoted form. -}
 
 render'strStatic'quoted :: Render Str'Static
-render'strStatic'quoted (Str'Static x) =
-  "\"" <> str'escape x <> "\""
+render'strStatic'quoted x =
+  "\"" <> (str'escape . str'static'text) x <> "\""
 
 {- | Render a dynamic string, in unquoted form if possible. -}
 
@@ -121,7 +126,7 @@ render'strDynamic'quoted xs =
   where
     r :: Str'1 -> Text
     r = \case
-      Str'1'Literal (Str'Static x) -> str'escape x
+      Str'1'Literal x -> (str'escape . str'static'text) x
       Str'1'Antiquote x -> "${" <> render'expression x <> "}"
 
 {- | Render a lambda parameter: everything from the beginning of a lambda, up to
@@ -160,30 +165,30 @@ render'dictPattern'1 =
 {- | Render a lambda expression (@x: y@). -}
 
 render'lambda :: Render Lambda
-render'lambda (Lambda a b) =
-  render'param a <> ": " <> render'expression b
+render'lambda x =
+  render'param (lambda'head x) <> ": " <> render'expression (lambda'body x)
 
 {- | Render a function application expression (@f x@). -}
 
 render'apply :: Render Apply
-render'apply (Apply a b) =
-  render'expression'applyLeftContext a <> " " <>
-  render'expression'applyRightContext b
+render'apply x =
+  render'expression'applyLeftContext (apply'func x) <> " " <>
+  render'expression'applyRightContext (apply'arg x)
 
 {- | Render a list literal (@[@ ... @]@). -}
 
 render'list :: Render List
-render'list (List xs) =
-  "[ " <> r xs <> "]"
+render'list x =
+  "[ " <> r (list'expressions x) <> "]"
   where
-    r = Text.concat . fmap (\x -> render'expression'listContext x <> " ")
+    r = Text.concat . fmap (\y -> render'expression'listContext y <> " ")
 
 {- | Render a dict literal (@{@ ... @}@). -}
 
 render'dict :: Render Dict
-render'dict (Dict rec bs) =
-  (if rec then keywordText keyword'rec <> " " else "") <>
-  "{ " <> r bs <> "}"
+render'dict x =
+  (if dict'rec x then keywordText keyword'rec <> " " else "") <>
+  "{ " <> r (dict'bindings x) <> "}"
   where
     r = Text.concat . fmap (\b -> render'dictBinding b <> " ")
 
@@ -204,15 +209,16 @@ render'dictBinding =
 {- | Render a dot expression (@a.b@). -}
 
 render'dot :: Render Dot
-render'dot (Dot a b) =
-  render'expression'dotLeftContext a <> "." <> render'expression'dictKey b
+render'dot x =
+  render'expression'dotLeftContext (dot'dict x) <> "." <>
+  render'expression'dictKey (dot'key x)
 
 {- | Render a @let@-@in@ expression. -}
 
 render'let :: Render Let
-render'let (Let bs x) =
-  keywordText keyword'let <> " " <> r bs <>
-  keywordText keyword'in <> " " <> render'expression x
+render'let x =
+  keywordText keyword'let <> " " <> r (let'bindings x) <>
+  keywordText keyword'in <> " " <> render'expression (let'value x)
   where
     r = Text.concat . fmap (\b -> render'letBinding b <> " ")
 

@@ -67,7 +67,14 @@ fn'flip :: Term
 fn'flip = fn'pure'parametric'arity3 $ \f x y -> f /@@\ (y, x)
 
 fn'dict'lookup :: Term
-fn'dict'lookup = undefined
+fn'dict'lookup =
+  Term'Function $ \x -> do
+    map <- reduce'dict'keys x
+    pure $ Term'Function $ \y -> do
+      key <- cast'data type'string y
+      case Map.lookup key map of
+        Nothing -> bottom . Bottom $ "Key " <> key <> " not found in dict"
+        Just a -> pure a
 
 fn'or :: Term
 fn'or =

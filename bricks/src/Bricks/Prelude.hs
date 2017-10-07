@@ -20,8 +20,9 @@ import qualified Text.Parsec      as P
 -- Base
 import Data.Typeable (Typeable)
 
-bricks'eval'stdlib :: Typeable a => Type a -> Text -> IO a
+bricks'eval'stdlib :: (HasCallStack, Typeable a) => Type a -> Text -> IO a
 bricks'eval'stdlib typ src =
   do
-    expr <- either (error . show) pure $ P.parse parse'expression "" src
-    reduce'to'type'or'throw typ $ expression'to'term expr /@\ standard'library
+    expr <- either (error . show) pure (P.parse parse'expression "" src)
+    term <- expression'to'term expr
+    reduce'to'type'or'throw typ (term /@\ standard'library)

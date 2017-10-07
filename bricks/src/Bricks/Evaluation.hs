@@ -49,6 +49,9 @@ of some important connections to the book:
     we avoid it by only reducing the top-level redex, which has no free
     variables.
 
+  - On page 233 starts the discussion of how letrec expressions are instantiated
+    as cyclic graphcs.
+
 -}
 module Bricks.Evaluation where
 
@@ -62,10 +65,10 @@ import           Bricks.Internal.Monad
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
+import           Bricks.Internal.Map (Map)
+import qualified Bricks.Internal.Map as Map
 
 -- Containers
-import           Data.Map (Map)
-import qualified Data.Map as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -94,10 +97,16 @@ instance MonadEval Eval
         t@(Term'List _) -> pure t
         t@(Term'Dict _) -> pure t
         t@(Term'Dict'ReducedKeys _) -> pure t
-        t@(Term'Var _) -> pure t
+        Term'Var x ->
+          bottom . Bottom $ "Free variable: " <> x
 
-        Term'LetRec a b ->
-          undefined
+        Term'LetRec map body -> do
+          -- Create a pointer for each of the let bindings
+          map' <- traverse create'pointer map :: Eval (Map Text Term)
+          -- Substitute each of the bindings into each of the others
+          traverse_ (instantiate'many map') map'
+          -- Substitute all of the bindings into the body
+          instantiate'many map' body >>= reduce'term
 
         Term'Apply f value ->
           reduce'term f >>= \case
@@ -117,7 +126,11 @@ instance MonadEval Eval
                 -- A dict pattern
                 TermPattern'Dict vars ->
                   reduce'dict'keys value >>= \values ->
-                    instantiate'many vars values body
+                    case Map.exactKeys values vars of
+                      Left missingKeys -> bottom . Bottom $
+                        "Dict lookup failed: " <>
+                        Text.show (Set.toList missingKeys)
+                      Right values' -> instantiate'many values' body
 
             t ->
               termTypeName t >>= \n ->
@@ -147,7 +160,7 @@ instantiate'one
   -> Term  -- ^ @value@ - The argument being substituted. We assume that this
            --             term has no free variables; or else we will suffer
            --             the /name capture problem/.
-  -> Term  -- ^ @body@  - The term being copied
+  -> Term  -- ^ @body@  - The term being copied ("instantiated")
   -> m Term
 
 -- The numbered comments within this definition are nearly verbatim from
@@ -188,26 +201,32 @@ instantiate'one var value =
         --    any free occurrences of /var/ inside it.
         else Term'Lambda a <$> go b
 
+      Term'LetRec a b ->
+        -- The same reasoning as (5) and (6) - If the let expression binds
+        -- /var/, then we do nothing. Otherwise we substitute everywhere.
+        if Map.member var a then pure body
+        else Term'LetRec <$> traverse go a <*> go b
+
       Term'List xs -> Term'List <$> traverse go xs
 
-      Term'Dict _ -> undefined
+      Term'Dict x -> Term'Dict <$> undefined
 
-      -- todo - Is this right?
-      Term'Pointer _ -> bottom . Bottom $ "Cannot substitute through a pointer"
+      Term'Dict'ReducedKeys x -> Term'Dict'ReducedKeys <$> traverse go x
+
+      Term'Pointer p -> go =<< readTermPtr p
+        -- todo - let this function return whether it made any substitutions.
+        -- If it didn't, then just return the pointer.
 
 instantiate'many
   :: forall m. MonadEval m
-  => Set Text      -- ^ @vars@
-  -> Map Text Term -- ^ @values@
+  => Map Text Term -- ^ @values@
   -> Term          -- ^ @body@
   -> m Term
-instantiate'many vars values body =
-  foldr f (pure body) vars
+instantiate'many values body =
+  foldr f (pure body) (Map.toList values)
   where
-    f :: Text -> m Term -> m Term
-    f var bod = case Map.lookup var values of
-      Just value -> instantiate'one var value =<< bod
-      Nothing -> bottom . Bottom $ "Dict lookup failed: " <> var
+    f :: (Text, Term) -> m Term -> m Term
+    f (var, value) bod = instantiate'one var value =<< bod
 
 reduce'to'type :: Typeable a => Type a -> Term -> IO (Either Bottom a)
 reduce'to'type typ =

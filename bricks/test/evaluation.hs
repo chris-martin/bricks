@@ -44,6 +44,15 @@ main = runTests $$(Hedgehog.discover)
 prop_evaluation :: Property
 prop_evaluation = property $ do
 
-  result <- liftIO $ bricks'eval'stdlib type'integer
-    [text|{ add, integer, ... }: add (integer "1") (integer "2")|]
-  result === 3
+  x <- liftIO $ bricks'eval'stdlib type'integer
+    [text|{ add, integer, ... }:
+         |add (integer "1") (integer "2")|]
+  x === 3
+
+  x <- liftIO $ bricks'eval'stdlib type'integer
+    [text|lib:
+         |let
+         |  inherit (lib) add integer;
+         |in
+         |  add (integer "1") (integer "2")|]
+  x === 3

@@ -43,6 +43,7 @@ library:
     - Bricks.UnquotedString
 
     - Bricks.Internal.List
+    - Bricks.Internal.Map
     - Bricks.Internal.Monad
     - Bricks.Internal.Prelude
     - Bricks.Internal.Seq

@@ -114,7 +114,9 @@ readTermPtr :: MonadIO m => TermPtr -> m Term
 readTermPtr = liftIO . readIORef
 
 writeTermPtr :: MonadIO m => TermPtr -> Term -> m ()
-writeTermPtr ptr = liftIO . writeIORef ptr
+writeTermPtr ptr val = do
+  x <- dereference val
+  liftIO $ writeIORef ptr x
 
 bottom :: MonadError Bottom m => Bottom -> m a
 bottom = throwError

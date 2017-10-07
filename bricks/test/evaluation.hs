@@ -41,8 +41,17 @@ import Text.Show (show)
 main :: IO ()
 main = runTests $$(Hedgehog.discover)
 
-prop_evaluation :: Property
-prop_evaluation = property $ do
+prop_str :: Property
+prop_str = property $ do
+
+  x <- liftIO $ bricks'eval type'string [text|"abc"|]
+  x === "abc"
+
+  x <- liftIO $ bricks'eval type'string [text|''a${"b"}c''|]
+  x === "abc"
+
+prop_add :: Property
+prop_add = property $ do
 
   x <- liftIO $ bricks'eval'stdlib type'integer
     [text|{ add, integer, ... }:

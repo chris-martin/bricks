@@ -22,7 +22,7 @@ import qualified Text.Parsec      as P
 import           Text.Parsec.Text (Parser)
 
 -- Hedgehog
-import           Hedgehog (Property, property, (===))
+import           Hedgehog (Property, property, (===), withTests)
 import qualified Hedgehog
 
 -- Base
@@ -65,7 +65,7 @@ parseTest p input =
     ]
 
 prop_parse_str_unquoted :: Property
-prop_parse_str_unquoted = property $ do
+prop_parse_str_unquoted = withTests 1 $ property $ do
 
   let test = parseTest $ fmap var'text $ parse'var
 
@@ -87,7 +87,7 @@ prop_parse_str_unquoted = property $ do
                           |Parser failed and consumed input|]
 
 prop_parse_expression_dictKey :: Property
-prop_parse_expression_dictKey = property $ do
+prop_parse_expression_dictKey = withTests 1 $ property $ do
 
   let test = parseTest $ fmap render'expression $ parse'expression'dictKey
 
@@ -101,7 +101,7 @@ prop_parse_expression_dictKey = property $ do
   test "${a.b}" === [text|a.b|]
 
 prop_parse_strDynamic_normalQ :: Property
-prop_parse_strDynamic_normalQ = property $ do
+prop_parse_strDynamic_normalQ = withTests 1 $ property $ do
 
   let test = parseTest
            $ fmap render'strDynamic'quoted
@@ -125,7 +125,7 @@ prop_parse_strDynamic_normalQ = property $ do
   test "\"a\\${\""    === [text|"a\${"|]
 
 prop_parse_strDynamic_indentedQ :: Property
-prop_parse_strDynamic_indentedQ = property $ do
+prop_parse_strDynamic_indentedQ = withTests 1 $ property $ do
 
   let test = parseTest
            $ fmap render'strDynamic'quoted
@@ -151,7 +151,7 @@ prop_parse_strDynamic_indentedQ = property $ do
                               |Remaining input: "x"|]
 
 prop_parse_inStr :: Property
-prop_parse_inStr = property $ do
+prop_parse_inStr = withTests 1 $ property $ do
 
   let test = parseTest
            $ fmap (
@@ -186,7 +186,7 @@ prop_parse_inStr = property $ do
   test "''   abc\ndef''" === [text|["   ","abc","\n","def"]|]
 
 prop_parse_inStr_line :: Property
-prop_parse_inStr_line = property $ do
+prop_parse_inStr_line = withTests 1 $ property $ do
 
   let test = parseTest
            $ fmap (
@@ -211,7 +211,7 @@ prop_parse_inStr_line = property $ do
                               |Remaining input: "''x"|]
 
 prop_parse_dict_pattern_start :: Property
-prop_parse_dict_pattern_start = property $ do
+prop_parse_dict_pattern_start = withTests 1 $ property $ do
 
   let test = parseTest $ (P.try parse'dictPattern'start $> "yes") <|> pure "no"
 
@@ -233,7 +233,7 @@ prop_parse_dict_pattern_start = property $ do
                               |Remaining input: " }:"|]
 
 prop_parse_dict_pattern :: Property
-prop_parse_dict_pattern = property $ do
+prop_parse_dict_pattern = withTests 1 $ property $ do
 
   let test = parseTest $ fmap render'dictPattern $ parse'dictPattern
 
@@ -244,7 +244,7 @@ prop_parse_dict_pattern = property $ do
   test "{a , b ? c, ...}" === [text|{ a, b ? c, ... }|]
 
 prop_parse_dot_rhs_chain :: Property
-prop_parse_dot_rhs_chain = property $ do
+prop_parse_dot_rhs_chain = withTests 1 $ property $ do
 
   let test = parseTest
            $ fmap (Text.intercalate "\n" . fmap render'expression)
@@ -297,7 +297,7 @@ prop_parse_dot_rhs_chain = property $ do
                                |b|]
 
 prop_parse_expression :: Property
-prop_parse_expression = property $ do
+prop_parse_expression = withTests 1 $ property $ do
 
   let test = parseTest $ fmap render'expression $ parse'expression
 
@@ -456,7 +456,7 @@ prop_parse_expression = property $ do
             |  -}x|] === "f x"
 
 prop_parse_expression_list :: Property
-prop_parse_expression_list = property $ do
+prop_parse_expression_list = withTests 1 $ property $ do
 
   let test = parseTest
            $ fmap (Text.intercalate "\n" . fmap render'expression)
@@ -497,7 +497,7 @@ prop_parse_expression_list = property $ do
                                          |inherits|]
 
 prop_parse_expression_list_item :: Property
-prop_parse_expression_list_item = property $ do
+prop_parse_expression_list_item = withTests 1 $ property $ do
 
   let test = parseTest $ fmap render'expression $ parse'expressionList'1
 
@@ -519,7 +519,7 @@ prop_parse_expression_list_item = property $ do
                            |Remaining input: "b"|]
 
 prop_parse_expression_list_item_no_dot :: Property
-prop_parse_expression_list_item_no_dot = property $ do
+prop_parse_expression_list_item_no_dot = withTests 1 $ property $ do
 
   let test = parseTest $ fmap render'expression $ parse'expressionList'1'noDot
 

@@ -29,7 +29,7 @@ import qualified Text.Parsec      as P
 import           Text.Parsec.Text (Parser)
 
 -- Hedgehog
-import           Hedgehog (Property, property, (===))
+import           Hedgehog (Property, property, (===), withTests)
 import qualified Hedgehog
 
 -- Base
@@ -42,7 +42,7 @@ main :: IO ()
 main = runTests $$(Hedgehog.discover)
 
 prop_str :: Property
-prop_str = property $ do
+prop_str = withTests 1 $ property $ do
 
   x <- liftIO $ bricks'eval type'string [text|"abc"|]
   x === "abc"
@@ -51,7 +51,7 @@ prop_str = property $ do
   x === "abc"
 
 prop_add :: Property
-prop_add = property $ do
+prop_add = withTests 1 $ property $ do
 
   x <- liftIO $ bricks'eval'stdlib type'integer
     [text|{ add, integer, ... }:

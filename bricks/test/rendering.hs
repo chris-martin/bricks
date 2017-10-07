@@ -18,7 +18,7 @@ import Bricks.Test.Hedgehog
 import Bricks.Test.QQ
 
 -- Hedgehog
-import           Hedgehog (Property, property, (===))
+import           Hedgehog (Property, property, (===), withTests)
 import qualified Hedgehog
 
 -- Base
@@ -28,7 +28,7 @@ main :: IO ()
 main = runTests $$(Hedgehog.discover)
 
 prop_render_expression :: Property
-prop_render_expression = property $ do
+prop_render_expression = withTests 1 $ property $ do
 
   render'expression (dot (var "a") (str ["b"])) === [text|a.b|]
 
@@ -56,7 +56,7 @@ prop_render_expression = property $ do
     === [text|let d = { a = "b${c}"; inherit (x) y z; }; in d.y|]
 
 prop_render_identifier :: Property
-prop_render_identifier = property $ do
+prop_render_identifier = withTests 1 $ property $ do
 
   let
     test :: Text -> Text
@@ -68,7 +68,7 @@ prop_render_identifier = property $ do
   test ""     === [text|""|]
 
 prop_render_string_dynamic_quoted :: Property
-prop_render_string_dynamic_quoted = property $ do
+prop_render_string_dynamic_quoted = withTests 1 $ property $ do
 
   let
     test :: [Str'1] -> Text
@@ -87,7 +87,7 @@ prop_render_string_dynamic_quoted = property $ do
     === [text|"Hello, my name is ${name}!"|]
 
 prop_render_dict_pattern :: Property
-prop_render_dict_pattern = property $ do
+prop_render_dict_pattern = withTests 1 $ property $ do
 
   let test a b = render'dictPattern $ DictPattern a b
 
@@ -102,7 +102,7 @@ prop_render_dict_pattern = property $ do
   test [ item1, item2 ] True  === [text|{ x, y ? "abc", ... }|]
 
 prop_render_list :: Property
-prop_render_list = property $ do
+prop_render_list = withTests 1 $ property $ do
 
   let test x = render'list $ List (Seq.fromList x) Nothing
 

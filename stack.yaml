@@ -2,6 +2,8 @@ resolver: lts-9.6
 
 packages:
   - bricks
+  - bricks-internal
+  - bricks-syntax
 
 extra-deps:
   - either-list-functions-0.0.0.1

@@ -29,27 +29,20 @@ library:
 
     - Bricks.BuiltinFunctions
     - Bricks.Evaluation
-    - Bricks.Expression
-    - Bricks.Expression.Construction
     - Bricks.ExpressionToTerm
-    - Bricks.IndentedString
-    - Bricks.Keyword
     - Bricks.Parsing
     - Bricks.Prelude
     - Bricks.Rendering
-    - Bricks.Source
     - Bricks.Term
     - Bricks.Type
-    - Bricks.UnquotedString
 
-    - Bricks.Internal.List
-    - Bricks.Internal.Map
     - Bricks.Internal.Monad
-    - Bricks.Internal.Prelude
-    - Bricks.Internal.Seq
-    - Bricks.Internal.Text
 
 dependencies:
+
+  - bricks-internal
+  - bricks-syntax
+
   - base       >= 4.9   && < 4.10
   - containers >= 0.5.7 && < 0.6
   - either-list-functions == 0.0.0.1

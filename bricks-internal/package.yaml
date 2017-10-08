@@ -1,0 +1,47 @@
+name: bricks-internal
+version: 0.0.0.3
+github: chris-martin/bricks
+
+synopsis: |
+  ...
+
+description: |
+  ...
+
+category: Language
+
+author:     Chris Martin <ch.martin@gmail.com>
+maintainer: Chris Martin <ch.martin@gmail.com>
+
+license: Apache-2.0
+license-file: license.txt
+
+ghc-options:
+  - -Wall
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Bricks.Internal.List
+    - Bricks.Internal.Map
+    - Bricks.Internal.Prelude
+    - Bricks.Internal.Seq
+    - Bricks.Internal.Text
+
+dependencies:
+  - base       >= 4.9   && < 4.10
+  - containers >= 0.5.7 && < 0.6
+  - either-list-functions == 0.0.0.1
+  - text       >= 1.2.2 && < 1.3
+
+tests:
+
+  doctest:
+    source-dirs: test
+    main: doctest.hs
+    ghc-options:
+      - -threaded
+    dependencies:
+      - bricks
+      - base    >= 4.9  && < 4.10
+      - doctest >= 0.11 && < 0.14

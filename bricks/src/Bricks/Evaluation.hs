@@ -61,12 +61,12 @@ import Bricks.Term
 import Bricks.Type
 
 -- Bricks internal
+import           Bricks.Internal.Map     (Map)
+import qualified Bricks.Internal.Map     as Map
 import           Bricks.Internal.Monad
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
-import           Bricks.Internal.Map (Map)
-import qualified Bricks.Internal.Map as Map
 
 -- Containers
 import           Data.Set (Set)

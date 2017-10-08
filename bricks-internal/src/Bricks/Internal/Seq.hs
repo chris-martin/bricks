@@ -30,7 +30,7 @@ module Bricks.Internal.Seq
 
 -- Containers
 import Data.Sequence (Seq, adjust, dropWhileL, dropWhileR, empty, filter,
-                      fromList, length, null, singleton, (<|), (|>), (><))
+                      fromList, length, null, singleton, (<|), (><), (|>))
 
 -- Base
 import           Data.Bool     (Bool (..))

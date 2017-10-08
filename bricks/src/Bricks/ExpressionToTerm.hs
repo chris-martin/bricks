@@ -17,10 +17,10 @@ import Bricks.Term
 import Bricks.Type
 
 -- Bricks internal
+import qualified Bricks.Internal.List    as List
 import           Bricks.Internal.Prelude
 import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)
-import qualified Bricks.Internal.List     as List
 
 -- Containers
 import           Data.Map (Map)
@@ -29,8 +29,8 @@ import           Data.Set (Set)
 import qualified Data.Set as Set
 
 -- Base
-import System.IO (IO)
 import Control.Applicative (liftA2)
+import System.IO           (IO)
 
 expression'to'term :: Expression -> IO Term
 expression'to'term =

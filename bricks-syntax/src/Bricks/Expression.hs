@@ -1,8 +1,7 @@
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TypeApplications           #-}
-{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Bricks.Expression
   (
@@ -81,12 +80,12 @@ import Bricks.Source
 import Bricks.UnquotedString
 
 -- Bricks internal
-import           Bricks.Internal.List           as List
+import           Bricks.Internal.List    as List
 import           Bricks.Internal.Prelude
-import           Bricks.Internal.Seq            (Seq)
-import qualified Bricks.Internal.Seq            as Seq
-import           Bricks.Internal.Text           (Text)
-import qualified Bricks.Internal.Text           as Text
+import           Bricks.Internal.Seq     (Seq)
+import qualified Bricks.Internal.Seq     as Seq
+import           Bricks.Internal.Text    (Text)
+import qualified Bricks.Internal.Text    as Text
 
 data Expression
   = Expr'Var Var

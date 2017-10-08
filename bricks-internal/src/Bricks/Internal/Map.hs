@@ -7,8 +7,8 @@ module Bricks.Internal.Map
   ) where
 
 -- Containers
-import Data.Map
-import Data.Set (Set)
+import           Data.Map
+import           Data.Set (Set)
 import qualified Data.Set as Set
 
 {- | This function was added in containers version 0.5.8 which we're not using

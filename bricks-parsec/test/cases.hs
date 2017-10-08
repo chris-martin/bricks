@@ -25,7 +25,7 @@ import qualified Text.Parsec      as P
 import           Text.Parsec.Text (Parser)
 
 -- Hedgehog
-import           Hedgehog (Property, property, (===), withTests)
+import           Hedgehog (Property, property, withTests, (===))
 import qualified Hedgehog
 
 -- Base

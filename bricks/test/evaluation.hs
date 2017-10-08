@@ -10,9 +10,9 @@ import Bricks.BuiltinFunctions
 import Bricks.Evaluation
 import Bricks.ExpressionToTerm
 import Bricks.Parsec
+import Bricks.Prelude
 import Bricks.Term
 import Bricks.Type
-import Bricks.Prelude
 
 -- Bricks internal
 import           Bricks.Internal.Monad
@@ -29,7 +29,7 @@ import qualified Text.Parsec      as P
 import           Text.Parsec.Text (Parser)
 
 -- Hedgehog
-import           Hedgehog (Property, property, (===), withTests)
+import           Hedgehog (Property, property, withTests, (===))
 import qualified Hedgehog
 
 -- Base

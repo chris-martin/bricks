@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Bricks.Prelude
   ( bricks'eval
   , bricks'eval'stdlib
@@ -5,18 +7,18 @@ module Bricks.Prelude
 
 -- Bricks
 import Bricks
+import Bricks.BuiltinFunctions
 import Bricks.Evaluation
 import Bricks.ExpressionToTerm
-import Bricks.Type
-import Bricks.BuiltinFunctions
 import Bricks.Term
+import Bricks.Type
 
 -- Bricks internal
-import Bricks.Internal.Text (Text)
 import Bricks.Internal.Prelude
+import Bricks.Internal.Text    (Text)
 
 -- Parsec
-import qualified Text.Parsec      as P
+import qualified Text.Parsec as P
 
 -- Base
 import Data.Typeable (Typeable)

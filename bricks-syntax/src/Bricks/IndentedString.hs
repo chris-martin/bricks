@@ -30,8 +30,8 @@ import qualified Bricks.Internal.List    as List
 import           Bricks.Internal.Prelude
 import           Bricks.Internal.Seq     (Seq)
 import qualified Bricks.Internal.Seq     as Seq
+import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
-import  Bricks.Internal.Text    (Text)
 
 {- | An "indented string literal," delimited by two single-quotes @''@.
 

@@ -10,16 +10,16 @@ import Bricks.Expression.Construction
 import Bricks.Rendering
 
 -- Bricks internal
-import Bricks.Internal.Prelude
-import qualified Bricks.Internal.Seq as Seq
-import Bricks.Internal.Text (Text)
+import           Bricks.Internal.Prelude
+import qualified Bricks.Internal.Seq     as Seq
+import           Bricks.Internal.Text    (Text)
 
 -- Bricks test
 import Bricks.Test.Hedgehog
 import Bricks.Test.QQ
 
 -- Hedgehog
-import           Hedgehog (Property, property, (===), withTests)
+import           Hedgehog (Property, property, withTests, (===))
 import qualified Hedgehog
 
 -- Base

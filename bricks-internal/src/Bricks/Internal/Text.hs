@@ -27,9 +27,9 @@ import           Data.Text (Text, all, append, null, pack, replace, replicate,
 import qualified Data.Text as Text
 
 -- Base
-import Data.Foldable (Foldable, toList, foldr)
-import Data.Function ((.))
-import Data.Functor (Functor, fmap)
+import           Data.Foldable (Foldable, foldr, toList)
+import           Data.Function ((.))
+import           Data.Functor  (Functor, fmap)
 import qualified Text.Show
 
 concat :: Foldable f => f Text -> Text

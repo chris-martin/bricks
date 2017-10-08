@@ -6,7 +6,7 @@
 -- Bricks
 import Bricks.Expression
 import Bricks.IndentedString
-import Bricks.Parsing
+import Bricks.Parsec
 import Bricks.Rendering
 
 -- Bricks internal

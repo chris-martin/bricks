@@ -232,7 +232,7 @@ module Bricks
 import Bricks.Expression
 import Bricks.IndentedString
 import Bricks.Keyword
-import Bricks.Parsing
+import Bricks.Parsec
 import Bricks.Rendering
 import Bricks.UnquotedString
 
@@ -252,7 +252,7 @@ Modules related to syntax:
     appear unquoted in Bricks code
   - "Bricks.Expression" - Defines most of the types related to the AST, notably
     'Expression'
-  - "Bricks.Parsing" - Defines all of the Parsec parsers for parsing Bricks code
+  - "Bricks.Parsec" - Defines all of the Parsec parsers for parsing Bricks code
     into 'Expression's
   - "Bricks.Rendering" - Defines all of the renderers for turning 'Expression's
     into Bricks code

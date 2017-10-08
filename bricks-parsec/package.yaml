@@ -22,7 +22,7 @@ ghc-options:
 library:
   source-dirs: src
   exposed-modules:
-    - Bricks.Parsing
+    - Bricks.Parsec
 
 dependencies:
 

@@ -10,7 +10,7 @@ Most parsers consume trailing whitespace, except ones that operate within quoted
 string environments where whitespace is significant.
 
 -}
-module Bricks.Parsing
+module Bricks.Parsec
   (
   -- * Expressions
     parse'expression

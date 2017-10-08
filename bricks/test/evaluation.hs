@@ -9,7 +9,7 @@
 import Bricks.BuiltinFunctions
 import Bricks.Evaluation
 import Bricks.ExpressionToTerm
-import Bricks.Parsing
+import Bricks.Parsec
 import Bricks.Term
 import Bricks.Type
 import Bricks.Prelude

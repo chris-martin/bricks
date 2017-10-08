@@ -4,7 +4,10 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 -- Bricks
-import Bricks
+import Bricks.Expression
+import Bricks.IndentedString
+import Bricks.Parsing
+import Bricks.Rendering
 
 -- Bricks internal
 import qualified Bricks.Internal.List    as List

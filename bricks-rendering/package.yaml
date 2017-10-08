@@ -1,14 +1,12 @@
-name: bricks
+name: bricks-rendering
 version: 0.0.0.3
 github: chris-martin/bricks
 
 synopsis: |
-  Bricks is a lazy functional language based on Nix.
+  ...
 
 description: |
-  Bricks is a lazy functional language based on Nix.
-  This package provides parsing, rendering, and
-  evaluation for the Bricks language.
+  ...
 
 category: Language
 
@@ -24,31 +22,16 @@ ghc-options:
 library:
   source-dirs: src
   exposed-modules:
-
-    - Bricks
-
-    - Bricks.BuiltinFunctions
-    - Bricks.Evaluation
-    - Bricks.ExpressionToTerm
-    - Bricks.Prelude
-    - Bricks.Term
-    - Bricks.Type
-
-    - Bricks.Internal.Monad
+    - Bricks.Rendering
 
 dependencies:
 
   - bricks-internal
-  - bricks-parsec
-  - bricks-rendering
   - bricks-syntax
 
   - base       >= 4.9   && < 4.10
   - containers >= 0.5.7 && < 0.6
-  - mtl
-  - parsec     >= 3.1.6 && < 3.2
   - text       >= 1.2.2 && < 1.3
-  - transformers
 
 tests:
 
@@ -61,14 +44,16 @@ tests:
       - base    >= 4.9  && < 4.10
       - doctest >= 0.11 && < 0.14
 
-  evaluation:
+  cases:
     source-dirs: test
-    main: evaluation.hs
+    main: cases.hs
     ghc-options:
       - -threaded
     dependencies:
-      - bricks
+
       - bricks-internal-test
+      - bricks-rendering
+
       - base             >= 4.9 && < 4.10
       - hedgehog         >= 0.5 && < 0.6
       - template-haskell >= 2.2 && < 2.12

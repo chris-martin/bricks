@@ -3,6 +3,9 @@ resolver: lts-9.6
 packages:
   - bricks
   - bricks-internal
+  - bricks-internal-test
+  - bricks-parsec
+  - bricks-rendering
   - bricks-syntax
 
 extra-deps:

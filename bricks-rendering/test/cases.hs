@@ -5,8 +5,9 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 -- Bricks
-import Bricks
+import Bricks.Expression
 import Bricks.Expression.Construction
+import Bricks.Rendering
 
 -- Bricks internal
 import Bricks.Internal.Prelude

@@ -649,10 +649,11 @@ dict'discardSource x =
     , dict'source = Nothing
     }
 
-{- | A binding of the form @x = y;@ within a 'DictLiteral' or 'LetExpr'. -}
+{- | A binding within a 'Dict'. -}
 
 data DictBinding
   = DictBinding'Eq Expression Expression
+      -- ^ A binding of the form @x = y;@
   | DictBinding'Inherit'Dict Expression (Seq Str'Static)
   | DictBinding'Inherit'Var (Seq Var)
 

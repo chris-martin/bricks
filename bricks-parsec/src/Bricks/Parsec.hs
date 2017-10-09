@@ -31,9 +31,7 @@ module Bricks.Parsec
   , parse'strStatic
   , parse'strStatic'quoted
   , parse'strStatic'unquoted
-  , parse'strDynamic'quoted
-  , parse'strDynamic'normalQ
-  , parse'strDynamic'indentedQ
+  , parse'str'dynamic
   , parse'str'within'normalQ
   , parse'str'escape'normalQ
   , parse'inStr
@@ -82,7 +80,6 @@ module Bricks.Parsec
 
 -- Bricks
 import Bricks.Expression
-import Bricks.IndentedString
 import Bricks.Keyword
 import Bricks.Source
 import Bricks.UnquotedString
@@ -259,19 +256,10 @@ parse'strStatic'unquoted = do
   (a, b) <- parse'strUnquoted
   pure $ Str'Static (unquotedString'text a) (Just b)
 
-{- | Parser for a dynamic string that is quoted. It may be a "normal" quoted
-string delimited by one double-quote @"@ ... @"@ ('parse'strDynamic'normalQ') or
-an "indented" string delimited by two single-quotes @''@ ... @''@
-('parse'strDynamic'indentedQ'). -}
+{- | Parser for a dynamic string enclosed in quotes (@"@ ... @"@). -}
 
-parse'strDynamic'quoted :: Parser Str'Dynamic
-parse'strDynamic'quoted =
-  parse'strDynamic'normalQ <|> parse'strDynamic'indentedQ
-
-{- | Parser for a dynamic string enclosed in "normal" quotes (@"@ ... @"@). -}
-
-parse'strDynamic'normalQ :: Parser Str'Dynamic
-parse'strDynamic'normalQ =
+parse'str'dynamic :: Parser Str'Dynamic
+parse'str'dynamic =
   do
     pos'1 <- parse'position
     _ <- P.char '"'
@@ -345,18 +333,11 @@ to express @''@ or @${@ within an indented string is to antiquote them. -}
 -- >>> putStrLn x
 -- ''${"''"} and ${"\${"}''
 --
--- >>> parseTest (str'dynamic'discardSource <$> parse'strDynamic'indentedQ) x
--- str [antiquote (str ["''"]), " and ", antiquote (str ["${"])]
+-- >>> parseTest (inStr'discardSource <$> parse'inStr) x
+-- str'indented [indent 0 [antiquote (str ["''"]), " and ", antiquote (str ["${"])] Nothing]
 --
--- >>> parseTest parse'strDynamic'indentedQ x
--- {- 1:1-1:25 -} str [antiquote ({- 1:5-1:9 -} str [{- 1:6-1:8 -} "''"]), {- 1:10-1:15 -} " and ", antiquote ({- 1:17-1:22 -} str [{- 1:18-1:21 -} "${"])]
-
-parse'strDynamic'indentedQ :: Parser Str'Dynamic
-parse'strDynamic'indentedQ =
-  parse'inStr <&> inStr'to'strDynamic
-
-{- | Parser for an indented string. This parser produces a representation of the
-lines from the source as-is, before the whitespace is cleaned up. -}
+-- >>> parseTest parse'inStr x
+-- {- 1:1-1:25 -} str'indented [indent {- 1:3-1:3 -} 0 [antiquote ({- 1:5-1:9 -} str [{- 1:6-1:8 -} "''"]), {- 1:10-1:15 -} " and ", antiquote ({- 1:17-1:22 -} str [{- 1:18-1:21 -} "${"])] Nothing]
 
 parse'inStr :: Parser InStr
 parse'inStr =
@@ -912,10 +893,11 @@ expression may not be a 'Dot'. -}
 parse'expressionList'1'noDot :: Parser Expression
 parse'expressionList'1'noDot =
   asum
-    [ parse'strDynamic'quoted <&> Expr'Str
-    , parse'list              <&> Expr'List
-    , parse'dict              <&> Expr'Dict
-    , parse'var               <&> Expr'Var
+    [ parse'str'dynamic <&> Expr'Str
+    , parse'inStr       <&> Expr'Str'Indented
+    , parse'list        <&> Expr'List
+    , parse'dict        <&> Expr'Dict
+    , parse'var         <&> Expr'Var
     , parse'expression'paren
     ]
     <?> "expression list item without a dot"
@@ -945,7 +927,7 @@ parse'expression'dictKey =
 
   where
     quoted :: Parser Expression
-    quoted = parse'strDynamic'quoted <&> Expr'Str
+    quoted = parse'str'dynamic <&> Expr'Str
 
     antiquoted :: Parser Expression
     antiquoted = do

@@ -22,6 +22,7 @@ module Bricks.Expression
   , Str'Static (..)
   , str'static'append
   , str'static'discardSource
+  , str'static'to'dynamic
 
   -- * Dynamic strings
   , Str'Dynamic (..)
@@ -30,10 +31,21 @@ module Bricks.Expression
   , str'dynamic'append
   , str'dynamic'normalize
   , str'dynamic'discardSource
-
-  -- ** Conversions between types of strings
   , str'dynamic'to'static
-  , str'static'to'dynamic
+
+  -- * Indented string
+  , InStr (..)
+  , inStr'to'strDynamic
+  , inStr'level
+  , inStr'dedent
+  , inStr'trim
+  , inStr'toList
+  , inStr'discardSource
+
+  -- * Single line of an indented string
+  , InStr'1 (..)
+  , inStr'1'toStrParts
+  , inStr'1'discardSource
 
   -- * Lists
   , List (..)
@@ -87,13 +99,18 @@ import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
 
+-- base
+import Prelude (Num (..), fromIntegral)
+
 data Expression
   = Expr'Var Var
-      -- ^ A variable, such as @x@.
+      -- ^ A variable, such as @x@
   | Expr'Str Str'Dynamic
-      -- ^ A string, quoted either in the traditional form using a single
-      --   double-quote (@"@ ... @"@) or in the \"indented string\" form using
-      --   two single-quotes (@''@ ... @''@).
+      -- ^ A string, quoted in the traditional form using a single
+      --   double-quote (@"@ ... @"@)
+  | Expr'Str'Indented InStr
+      -- ^ A string in \"indented string\" form, using two single-quotes
+      --   (@''@ ... @''@)
   | Expr'List List
       -- ^ A list is an ordered collection of expressions.
   | Expr'Dict Dict
@@ -112,26 +129,28 @@ data Expression
 expression'source :: Expression -> Maybe SourceRange
 expression'source =
   \case
-    Expr'Var x    -> var'source x
-    Expr'Str x    -> strDynamic'source x
-    Expr'List x   -> list'source x
-    Expr'Dict x   -> dict'source x
-    Expr'Dot x    -> dot'source x
+    Expr'Var x -> var'source x
+    Expr'Str x -> strDynamic'source x
+    Expr'Str'Indented x -> inStr'source x
+    Expr'List x -> list'source x
+    Expr'Dict x -> dict'source x
+    Expr'Dot x -> dot'source x
     Expr'Lambda x -> lambda'source x
-    Expr'Apply x  -> apply'source x
-    Expr'Let x    -> let'source x
+    Expr'Apply x -> apply'source x
+    Expr'Let x -> let'source x
 
 expression'discardSource :: Expression -> Expression
 expression'discardSource =
   \case
-    Expr'Var x    -> Expr'Var $ var'discardSource x
-    Expr'Str x    -> Expr'Str $ str'dynamic'discardSource x
-    Expr'List x   -> Expr'List $ list'discardSource x
-    Expr'Dict x   -> Expr'Dict $ dict'discardSource x
-    Expr'Dot x    -> Expr'Dot $ dot'discardSource x
+    Expr'Var x -> Expr'Var $ var'discardSource x
+    Expr'Str x -> Expr'Str $ str'dynamic'discardSource x
+    Expr'Str'Indented x -> Expr'Str'Indented $ inStr'discardSource x
+    Expr'List x -> Expr'List $ list'discardSource x
+    Expr'Dict x -> Expr'Dict $ dict'discardSource x
+    Expr'Dot x -> Expr'Dot $ dot'discardSource x
     Expr'Lambda x -> Expr'Lambda $ lambda'discardSource x
-    Expr'Apply x  -> Expr'Apply $ apply'discardSource x
-    Expr'Let x    -> Expr'Let $ let'discardSource x
+    Expr'Apply x -> Expr'Apply $ apply'discardSource x
+    Expr'Let x -> Expr'Let $ let'discardSource x
 
 
 --------------------------------------------------------------------------------
@@ -324,6 +343,134 @@ str'dynamic'normalize s =
           x -> Left x
         )
       . Seq.toList
+
+
+--------------------------------------------------------------------------------
+--  Indented strings
+--------------------------------------------------------------------------------
+
+
+{- | An "indented string literal," delimited by two single-quotes @''@.
+
+This type of literal is called "indented" because the parser automatically
+removes leading whitespace from the string ('inStr'dedent'), which makes it
+convenient to use these literals for multi-line strings within an indented
+expression without the whitespace from indentation ending up as part of the
+string. -}
+
+data InStr =
+  InStr
+    { inStr'toSeq :: Seq InStr'1
+    , inStr'source :: Maybe SourceRange
+    }
+
+inStr'toList :: InStr -> [InStr'1]
+inStr'toList =
+  Seq.toList . inStr'toSeq
+
+inStr'discardSource :: InStr -> InStr
+inStr'discardSource x =
+  InStr
+    { inStr'toSeq = fmap inStr'1'discardSource (inStr'toSeq x)
+    , inStr'source = Nothing
+    }
+
+{- | One line of an 'InStr'. -}
+
+data InStr'1 =
+  InStr'1
+    { inStr'1'level :: Natural
+        -- ^ The number of leading space characters. We store this separately
+        -- for easier implementation of 'inStr'dedent'.
+    , inStr'1'indentSource :: Maybe SourceRange
+        -- ^ The source position of the leading space characters
+    , inStr'1'str :: Seq Str'1
+        -- ^ The meat of the line, after any leading spaces and before the line
+        --   break.
+    , inStr'1'lineBreak :: Maybe Str'Static
+        -- ^ The line break at the end, if any; all lines but the last one
+        --   should have a line break
+    }
+
+inStr'1'discardSource :: InStr'1 -> InStr'1
+inStr'1'discardSource x =
+  InStr'1
+    { inStr'1'level = inStr'1'level x
+    , inStr'1'indentSource = Nothing
+    , inStr'1'str = fmap str'1'discardSource (inStr'1'str x)
+    , inStr'1'lineBreak = fmap str'static'discardSource (inStr'1'lineBreak x)
+    }
+
+inStr'1'toStrParts :: InStr'1 -> Seq Str'1
+inStr'1'toStrParts x =
+  indent <> inStr'1'str x <> end
+
+  where
+    indent :: Seq Str'1
+    indent =
+      case inStr'1'level x of
+        0 -> Seq.empty
+        level ->
+          Seq.singleton . Str'1'Literal $
+          Str'Static
+            (Text.replicate (fromIntegral level) " ")
+            (inStr'1'indentSource x)
+
+    end :: Seq Str'1
+    end =
+      maybe Seq.empty (Seq.singleton . Str'1'Literal) $
+      inStr'1'lineBreak x
+
+{- | Determine how many characters of whitespace to strip from an indented
+string. -}
+
+inStr'level :: InStr -> Natural
+inStr'level =
+  maybe 0 id
+  . List.minimum
+  . catMaybes
+  . List.map (\x ->
+      if Seq.null (inStr'1'str x)
+      then Nothing
+      else Just (inStr'1'level x)
+    )
+  . inStr'toList
+
+{- | Determine the minimum indentation of any nonempty line, and remove that
+many space characters from the front of every line. -}
+
+inStr'dedent :: InStr -> InStr
+inStr'dedent x =
+  let
+    b = inStr'level x
+  in
+    x { inStr'toSeq = inStr'toSeq x <&>
+        (\l ->
+          l { inStr'1'level = let a = inStr'1'level l
+                              in  if a >= b then a - b else 0
+            })
+      }
+
+inStr'to'strDynamic :: InStr -> Str'Dynamic
+inStr'to'strDynamic =
+  inStr'trim >>>
+  inStr'dedent >>>
+  (\inStr ->
+    Str'Dynamic
+      (Seq.concatMap inStr'1'toStrParts (inStr'toSeq inStr))
+      (inStr'source inStr)
+  ) >>>
+  str'dynamic'normalize
+
+{- | Remove any empty lines from the beginning or end of an indented string,
+and remove the newline from the final nonempty line. -}
+
+inStr'trim :: InStr -> InStr
+inStr'trim x =
+  x { inStr'toSeq = inStr'toSeq x
+        & Seq.trimWhile (Seq.null . inStr'1'str)
+        & Seq.adjustLast (\y -> y { inStr'1'lineBreak = Nothing })
+    }
 
 
 --------------------------------------------------------------------------------
@@ -817,6 +964,8 @@ instance Show Var               where show = Text.unpack . show'var
 instance Show Str'Static        where show = Text.unpack . show'str'static
 instance Show Str'Dynamic       where show = Text.unpack . show'str'dynamic
 instance Show Str'1             where show = Text.unpack . show'str'1
+instance Show InStr             where show = Text.unpack . show'str'indented
+instance Show InStr'1           where show = Text.unpack . show'str'indented'1
 instance Show List              where show = Text.unpack . show'list
 instance Show Dict              where show = Text.unpack . show'dict
 instance Show DictBinding       where show = Text.unpack . show'dictBinding
@@ -832,14 +981,15 @@ instance Show LetBinding        where show = Text.unpack . show'letBinding
 show'expression :: Expression -> Text
 show'expression =
   \case
-    Expr'Var x    -> show'var x
-    Expr'Str x    -> show'str'dynamic x
-    Expr'List x   -> show'list x
-    Expr'Dict x   -> show'dict x
-    Expr'Dot x    -> show'dot x
+    Expr'Var x -> show'var x
+    Expr'Str x -> show'str'dynamic x
+    Expr'Str'Indented x -> show'str'indented x
+    Expr'List x -> show'list x
+    Expr'Dict x -> show'dict x
+    Expr'Dot x -> show'dot x
     Expr'Lambda x -> show'lambda x
-    Expr'Apply x  -> show'apply x
-    Expr'Let x    -> show'let x
+    Expr'Apply x -> show'apply x
+    Expr'Let x -> show'let x
 
 source'comment :: Maybe SourceRange -> Maybe Text
 source'comment =
@@ -867,6 +1017,25 @@ show'str'1 =
       maybe "" (<> " ") (source'comment s) <> Text.show @Text x
     Str'1'Antiquote x ->
       "antiquote (" <> show'expression x <> ")"
+
+show'str'indented :: InStr -> Text
+show'str'indented x =
+  maybe "" (<> " ") (source'comment (inStr'source x)) <>
+  "str'indented [" <>
+  Text.intercalateMap ", " show'str'indented'1 (inStr'toSeq x) <>
+  "]"
+
+show'str'indented'1 :: InStr'1 -> Text
+show'str'indented'1 x =
+  "indent " <>
+  maybe "" (<> " ") (source'comment (inStr'1'indentSource x)) <>
+  Text.show @Natural (inStr'1'level x) <>
+  " [" <>
+  Text.intercalateMap ", " (Text.show @Str'1) (Seq.toList (inStr'1'str x)) <>
+  "] " <>
+  case inStr'1'lineBreak x of
+    Nothing -> "Nothing"
+    Just a -> "(Just " <> Text.show @Str'Static a <> ")"
 
 show'list :: List -> Text
 show'list (List xs s) =

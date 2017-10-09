@@ -37,6 +37,7 @@ expression'to'term =
   \case
     Expr'Var x -> var'to'term x
     Expr'Str x -> str'to'term x
+    Expr'Str'Indented x -> str'to'term (inStr'to'strDynamic x)
     Expr'List x -> list'to'term x
     Expr'Dict x -> dict'to'term x
     Expr'Dot x -> dot'to'term x

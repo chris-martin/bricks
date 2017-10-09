@@ -76,6 +76,7 @@ module Bricks
   , Str'Static (..)
   , str'static'append
   , str'static'discardSource
+  , str'static'to'dynamic
   , render'strStatic'unquotedIfPossible
   , render'strStatic'quoted
   , parse'strStatic
@@ -88,11 +89,11 @@ module Bricks
   , str'dynamic'append
   , str'dynamic'normalize
   , str'dynamic'discardSource
+  , str'dynamic'to'static
   , render'strDynamic'unquotedIfPossible
   , render'strDynamic'quoted
-  , parse'strDynamic'quoted
-  , parse'strDynamic'normalQ
-  , parse'strDynamic'indentedQ
+  , render'str'1
+  , parse'str'dynamic
   -- ** Unquoted strings
   , UnquotedString
   , unquotedString'try
@@ -101,9 +102,6 @@ module Bricks
   , text'canBeUnquoted
   , char'canBeUnquoted
   , parse'strUnquoted
-  -- ** String conversions
-  , str'dynamic'to'static
-  , str'static'to'dynamic
   -- ** Indented strings
   , InStr (..)
   , InStr'1 (..)
@@ -115,6 +113,8 @@ module Bricks
   , inStr'trim
   , inStr'discardSource
   , inStr'1'discardSource
+  , render'str'indented
+  , render'str'indented'1
   , parse'inStr
   , parse'inStr'1
 
@@ -222,15 +222,17 @@ module Bricks
 
   -------------------------------------------------
 
-  -- * Miscellanea
+  -- * Rendering
   , Render
+  , RenderContext (..)
+  , renderContext'default
+  , renderContext'terse
 
   -------------------------------------------------
 
   ) where
 
 import Bricks.Expression
-import Bricks.IndentedString
 import Bricks.Keyword
 import Bricks.Parsec
 import Bricks.Rendering
@@ -246,8 +248,6 @@ their entireties.
 Modules related to syntax:
 
   - "Bricks.Keyword" - Enumerates the language's keywords
-  - "Bricks.IndentedString" - Deals with the whitespace cleanup performed when
-    parsing indented strings (@''@ ... @''@)
   - "Bricks.UnquotedString" - Defines the rules for what strings are allowed to
     appear unquoted in Bricks code
   - "Bricks.Expression" - Defines most of the types related to the AST, notably

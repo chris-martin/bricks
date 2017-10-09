@@ -1,5 +1,4 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -31,37 +30,56 @@ main = runTests $$(Hedgehog.discover)
 prop_render_expression :: Property
 prop_render_expression = withTests 1 $ property $ do
 
-  render'expression (dot (var "a") (str ["b"])) === [text|a.b|]
-
-  render'expression (dot (var "a") (var "b"))   === [text|a.${b}|]
-
-  render'expression (dot (str ["a"])
-    (str ["b", antiquote (var "c")]))           === [text|"a"."b${c}"|]
+  render'expression
+    renderContext'default
+    (dot (var "a") (str ["b"]))
+    === [text|a.b|]
 
   render'expression
+    renderContext'default
+    (dot (var "a") (var "b"))
+    === [text|a.${b}|]
+
+  render'expression
+    renderContext'default
+    (dot (str ["a"]) (str ["b", antiquote (var "c")]))
+    === [text|"a"."b${c}"|]
+
+  render'expression
+    renderContext'default
     (lambda
       (param "a" <> pattern
         [ dict'param "f"
         , dict'param "b" & def (apply (var "g") (var "x"))
         ] <> ellipsis)
       (apply (var "f") (var "b")))
-    === [text|a@{ f, b ? g x, ... }: f b|]
+    === [text|┃a@{ f, b ? g x, ... }:
+              ┃f b|]
 
   render'expression
+    renderContext'default
     (let'in
       [ let'eq "d" (dict
         [ dict'eq (str ["a"]) (str ["b", antiquote (var "c")])
         , dict'inherit'from (var "x") ["y", "z"]
         ])]
       (dot (var "d") (str ["y"])))
-    === [text|let d = { a = "b${c}"; inherit (x) y z; }; in d.y|]
+    === [text|┃let
+              ┃  d = {
+              ┃      a = "b${c}";
+              ┃      inherit (x) y z;
+              ┃    };
+              ┃in
+              ┃  d.y|]
 
 prop_render_identifier :: Property
 prop_render_identifier = withTests 1 $ property $ do
 
   let
     test :: Text -> Text
-    test x = render'strStatic'unquotedIfPossible $ Str'Static x Nothing
+    test x =
+      render'strStatic'unquotedIfPossible renderContext'default $
+      Str'Static x Nothing
 
   test "abc"  === [text|abc|]
   test "a\"b" === [text|"a\"b"|]
@@ -73,7 +91,9 @@ prop_render_string_dynamic_quoted = withTests 1 $ property $ do
 
   let
     test :: [Str'1] -> Text
-    test xs = render'strDynamic'quoted $ Str'Dynamic (Seq.fromList xs) Nothing
+    test xs =
+      render'strDynamic'quoted renderContext'default $
+      Str'Dynamic (Seq.fromList xs) Nothing
 
   test []                                             === [text|""|]
   test [ Str'1'Literal (Str'Static "hello" Nothing) ] === [text|"hello"|]
@@ -90,7 +110,11 @@ prop_render_string_dynamic_quoted = withTests 1 $ property $ do
 prop_render_dict_pattern :: Property
 prop_render_dict_pattern = withTests 1 $ property $ do
 
-  let test a b = render'dictPattern $ DictPattern a b
+  let
+    test :: [DictPattern'1] -> Bool -> Text
+    test a b =
+      render'dictPattern renderContext'default $
+      DictPattern (Seq.fromList a) b
 
   test [] False === [text|{ }|]
   test [] True  === [text|{ ... }|]
@@ -105,13 +129,27 @@ prop_render_dict_pattern = withTests 1 $ property $ do
 prop_render_list :: Property
 prop_render_list = withTests 1 $ property $ do
 
-  let test x = render'list $ List (Seq.fromList x) Nothing
+  let
+    test :: [Expression] -> Text
+    test x =
+      render'list renderContext'default $
+      List (Seq.fromList x) Nothing
 
   test []                   === [text|[ ]|]
-  test [ var "a" ]          === [text|[ a ]|]
-  test [ var "a", var "b" ] === [text|[ a b ]|]
+  test [ var "a" ]          === [text|┃[
+                                      ┃  a
+                                      ┃]|]
+  test [ var "a", var "b" ] === [text|┃[
+                                      ┃  a
+                                      ┃  b
+                                      ┃]|]
 
   let a = apply (var "f") (var "x")
 
-  test [ a ]          === [text|[ (f x) ]|]
-  test [ a, var "a" ] === [text|[ (f x) a ]|]
+  test [ a ]          === [text|┃[
+                                ┃  (f x)
+                                ┃]|]
+  test [ a, var "a" ] === [text|┃[
+                                ┃  (f x)
+                                ┃  a
+                                ┃]|]

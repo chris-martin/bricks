@@ -69,12 +69,9 @@ import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
 
 -- Containers
-import           Data.Set (Set)
 import qualified Data.Set as Set
 
 -- Base
-import Data.Dynamic  (fromDynamic, toDyn)
-import Data.IORef
 import Data.Typeable (Typeable)
 import Prelude       (error)
 import System.IO     (IO)
@@ -138,7 +135,7 @@ instance MonadEval Eval
 
     reduce'dict'keys :: Term -> Eval (Map Text Term)
     reduce'dict'keys = reduce'term >=> \case
-      t@(Term'Dict d) ->
+      Term'Dict _ ->
         undefined
       Term'Dict'ReducedKeys x ->
         pure x
@@ -209,7 +206,7 @@ instantiate'one var value =
 
       Term'List xs -> Term'List <$> traverse go xs
 
-      Term'Dict x -> Term'Dict <$> undefined
+      Term'Dict _ -> Term'Dict <$> undefined
 
       Term'Dict'ReducedKeys x -> Term'Dict'ReducedKeys <$> traverse go x
 

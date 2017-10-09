@@ -31,7 +31,7 @@ stripMargin =
   Text.pack
   >>> Text.splitOn "\n"
   >>> fmap (\x ->
-        let (a, b) = Text.breakOn "|" x
+        let (a, b) = Text.breakOn "┃" x
         in  if Text.all (== ' ') a && not (Text.null b)
             then Text.drop 1 b
             else x)

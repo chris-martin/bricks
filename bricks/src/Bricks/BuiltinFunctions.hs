@@ -12,24 +12,18 @@ import Bricks.Term
 import Bricks.Type
 
 -- Bricks internal
-import           Bricks.Internal.Monad
 import           Bricks.Internal.Prelude
-import           Bricks.Internal.Seq     (Seq)
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
 
 -- Containers
-import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Set (Set)
-import qualified Data.Set as Set
 
 -- Base
-import Data.Dynamic  (Dynamic, fromDynamic, toDyn)
-import Data.IORef
+import Data.Dynamic  (fromDynamic, toDyn)
 import Data.Typeable (Typeable)
 import Prelude       (Integer, Num (..))
-import System.IO     (IO)
 import Text.Read     (readMaybe)
 
 term'data :: forall a. Typeable a => Type a -> a -> Term
@@ -97,7 +91,7 @@ fn'string'append =
   term'data type'string (Text.append x' y')
 
 fn'dict'disallowExtraKeys :: Set Text -> Term
-fn'dict'disallowExtraKeys allowedKeys =
+fn'dict'disallowExtraKeys _allowedKeys =
   Term'Function $ undefined
 
 fn'dict'merge'preferLeft :: Term

@@ -152,6 +152,19 @@ instance IsString Str'1'IsString
 
 
 --------------------------------------------------------------------------------
+--  Indented strings
+--------------------------------------------------------------------------------
+
+str'indented :: [InStr'1] -> Expression
+str'indented xs =
+  Expr'Str'Indented $ InStr (Seq.fromList xs) Nothing
+
+indent :: Natural -> [Str'1] -> Maybe Text -> InStr'1
+indent n xs lbr =
+  InStr'1 n Nothing (Seq.fromList xs) (fmap (\x -> Str'Static x Nothing) lbr)
+
+
+--------------------------------------------------------------------------------
 --  Param builder
 --------------------------------------------------------------------------------
 

@@ -10,23 +10,18 @@
 module Bricks.Term where
 
 -- Bricks internal
-import           Bricks.Internal.Monad
-import           Bricks.Internal.Prelude
-import           Bricks.Internal.Seq     (Seq)
-import           Bricks.Internal.Text    (Text)
-import qualified Bricks.Internal.Text    as Text
+import Bricks.Internal.Monad
+import Bricks.Internal.Prelude
+import Bricks.Internal.Seq     (Seq)
+import Bricks.Internal.Text    (Text)
 
 -- Containers
 import Data.Map (Map)
 import Data.Set (Set)
 
 -- Base
-import           Data.Dynamic  (Dynamic, toDyn)
-import           Data.IORef
-import           Data.Set      (Set)
-import qualified Data.Set      as Set
-import           Data.Typeable (Typeable)
-import           System.IO     (IO)
+import Data.Dynamic (Dynamic)
+import Data.IORef
 
 data Bottom = Bottom Text
 

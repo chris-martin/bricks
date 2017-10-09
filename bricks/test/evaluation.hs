@@ -10,8 +10,8 @@ import Bricks.Prelude
 import Bricks.Type
 
 -- Bricks internal
-import           Bricks.Internal.Monad
-import           Bricks.Internal.Prelude
+import Bricks.Internal.Monad
+import Bricks.Internal.Prelude
 
 -- Bricks test
 import Bricks.Test.Hedgehog

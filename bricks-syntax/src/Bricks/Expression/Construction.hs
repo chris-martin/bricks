@@ -19,7 +19,60 @@ the main Bricks API because it's a bit messy:
     them insufficient for some use cases.
 
 -}
-module Bricks.Expression.Construction where
+module Bricks.Expression.Construction
+  (
+
+  -- * Lambdas
+    lambda
+
+  -- * Function application
+  , apply
+
+  -- * Variables
+  , var
+
+  -- * Dot
+  , dot
+
+  -- * List
+  , list
+
+  -- * Let
+  , let'in
+  , let'eq
+  , let'inherit'from
+
+  -- * Dict
+  , dict
+  , rec'dict
+  , dict'eq
+  , dict'inherit'from
+  , dict'inherit
+
+  -- * Dynamic strings
+  , str
+  , antiquote
+  , Str'1'IsString (..)
+
+  -- * Indented strings
+  , str'indented
+  , indent
+
+  -- * Param builder
+  , Param'Builder (..)
+  , param
+  , pattern
+  , dict'param
+  , def
+  , ellipsis
+
+  -- * Re-exports
+  , Expression
+  , (<>)
+  , (&)
+  , Maybe (Just, Nothing)
+
+  ) where
 
 -- Bricks
 import Bricks.Expression
@@ -159,9 +212,13 @@ str'indented :: [InStr'1] -> Expression
 str'indented xs =
   Expr'Str'Indented $ InStr (Seq.fromList xs) Nothing
 
-indent :: Natural -> [Str'1] -> Maybe Text -> InStr'1
+indent :: Natural -> [Str'1'IsString] -> Maybe Text -> InStr'1
 indent n xs lbr =
-  InStr'1 n Nothing (Seq.fromList xs) (fmap (\x -> Str'Static x Nothing) lbr)
+  InStr'1
+    n
+    Nothing
+    (Seq.fromList (fmap unStr'1'IsString xs))
+    (fmap (\x -> Str'Static x Nothing) lbr)
 
 
 --------------------------------------------------------------------------------

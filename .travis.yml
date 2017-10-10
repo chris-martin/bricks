@@ -14,7 +14,7 @@ before_install:
   - nix-env -i stack
 
 script:
-  - echo "Stack version: $(stack --version | head -n 1)"
+  - stack --version | head -n 1
   - stack --nix --no-nix-pure --no-terminal test
 
 notifications:

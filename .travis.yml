@@ -1,8 +1,9 @@
 language: nix
 
 env:
-  - LANG=en_US.UTF-8
-  - LC_ALL=en_US.UTF-8
+  global:
+    - LANG=en_US.UTF-8
+    - LC_ALL=en_US.UTF-8
 
 cache:
   directories:

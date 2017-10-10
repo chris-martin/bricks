@@ -10,7 +10,3 @@ packages:
 
 extra-deps:
   - either-list-functions-0.0.0.1
-
-nix:
-  packages:
-    - glibcLocales

@@ -15,7 +15,7 @@ do the following:
 
   1. Use GHC to evaluate the Haskell expression to get a Bricks 'Expression'.
   2. Call 'show' on the 'Expression', and verify that the result is equal to the
-     original input (ignoring any differences in whitespace).
+     original input.
 
 -}
 

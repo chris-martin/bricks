@@ -32,7 +32,6 @@ import qualified Bricks.Internal.Text    as Text
 
 -- text
 import qualified Data.Text    as Text (lines)
-import qualified Data.Text
 import qualified Data.Text.IO as Text (hPutStr, readFile)
 
 -- exceptions
@@ -43,8 +42,6 @@ import qualified Language.Haskell.Interpreter as H
 
 -- base
 import           Control.Monad (unless)
-import qualified Data.Char     as Char
-import           Data.Function (on)
 import           Prelude       (Int, Num (..))
 import qualified System.Exit   as Exit
 import           System.IO     (IO)
@@ -105,7 +102,12 @@ parseExamples =
   catMaybes .
   List.map (either (const Nothing) Just) .
   List.groupEither .
-  List.map (\(a, b) -> if b == "" then Left () else Right (a, b)) .
+  List.map
+    (\(a, b) ->
+      if Text.null b || "--" `Text.isPrefixOf` b
+      then Left ()
+      else Right (a, b)
+    ) .
   List.zip [1..] .
   Text.lines
 
@@ -152,21 +154,12 @@ testExample x =
         let
           s = Text.show expr
         in
-          if s ~= example'text x
+          if s == example'text x
             then Nothing
             else Just $ Failure
               { failure'example = x
               , failure'outcome = s
               }
-
--- | Equality, ignoring whitespace.
-(~=) :: Text -> Text -> Bool
-(~=) =
-  (==) `on` f
-  where
-    f :: Text -> Text
-    f = Data.Text.concatMap $ \c ->
-          if Char.isSpace c then "" else Text.singleton c
 
 showInterpreterError :: H.InterpreterError -> Text
 showInterpreterError =

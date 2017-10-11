@@ -10,6 +10,8 @@ module Bricks.Internal.Text
   , concatMap
   , intercalate
   , intercalateMap
+  , isPrefixOf
+  , isSuffixOf
   , null
   , pack
   , replace
@@ -22,8 +24,9 @@ module Bricks.Internal.Text
   ) where
 
 -- Text
-import           Data.Text (Text, all, append, null, pack, replace, replicate,
-                            singleton, unpack, unwords)
+import           Data.Text (Text, all, append, isPrefixOf, isSuffixOf, null,
+                            pack, replace, replicate, singleton, unpack,
+                            unwords)
 import qualified Data.Text as Text
 
 -- Base

@@ -23,16 +23,19 @@ import Paths_bricks_syntax (getDataFileName)
 
 -- Bricks
 import Bricks.Expression
+import Bricks.Prelude
+import Bricks.Source
 
 -- Bricks internal
 import qualified Bricks.Internal.List    as List
 import           Bricks.Internal.Prelude
+import           Bricks.Internal.Seq     (Seq)
+import qualified Bricks.Internal.Seq     as Seq
 import           Bricks.Internal.Text    (Text)
 import qualified Bricks.Internal.Text    as Text
 
 -- text
-import qualified Data.Text    as Text (lines)
-import qualified Data.Text.IO as Text (hPutStr, readFile)
+import qualified Data.Text.IO as Text (hPutStr)
 
 -- exceptions
 import Control.Monad.Catch (try)
@@ -40,8 +43,16 @@ import Control.Monad.Catch (try)
 -- hint
 import qualified Language.Haskell.Interpreter as H
 
+-- path
+import           Path (Path)
+import qualified Path
+
+-- directory
+import qualified System.Directory as Directory
+
 -- base
 import           Control.Monad (unless)
+import           Data.Maybe    (fromJust)
 import           Prelude       (Int, Num (..))
 import qualified System.Exit   as Exit
 import           System.IO     (IO)
@@ -80,36 +91,30 @@ main =
 
         unless (List.null failures) Exit.exitFailure
 
-getExamples :: IO [Example]
-getExamples =
-  do
-    path <- getDataFileName "../test-data/expression-show-examples.txt"
-    text <- Text.readFile path
-    pure (parseExamples text)
-
 data Example =
   Example
     { example'lineNumber :: Natural
     , example'text :: Text
     }
 
-parseExamples :: Text -> [Example]
-parseExamples =
-  List.map (\xs -> Example
-    { example'lineNumber = fst (List.head xs)
-    , example'text = Text.intercalateMap "\n" snd xs
-    }) .
-  catMaybes .
-  List.map (either (const Nothing) Just) .
-  List.groupEither .
-  List.map
-    (\(a, b) ->
-      if Text.null b || "--" `Text.isPrefixOf` b
-      then Left ()
-      else Right (a, b)
-    ) .
-  List.zip [1..] .
-  Text.lines
+examplesPath :: IO (Path Path.Abs Path.File)
+examplesPath =
+  getDataFileName "../test-data/expression-show-examples.bricks"
+  >>= Directory.canonicalizePath
+  >>= Path.parseAbsFile
+
+getExamples :: IO (Seq Example)
+getExamples =
+  do
+    path <- examplesPath
+    examples <- bricks'parse'file'string'list path
+    pure $ examples <&> \x ->
+      Example
+        { example'lineNumber =
+            sourcePosition'line . sourceRange'start . fromJust $
+            str'static'source x
+        , example'text = str'static'text x
+        }
 
 data Failure =
   Failure
@@ -130,7 +135,7 @@ printFailure Failure{ failure'example = Example { example'lineNumber }
     , "\n"
     ]
 
-interpreter'main :: [Example] -> H.Interpreter [Failure]
+interpreter'main :: Seq Example -> H.Interpreter (Seq Failure)
 interpreter'main examples =
   do
     H.set [ H.languageExtensions H.:= [ H.OverloadedStrings ] ]
@@ -139,7 +144,7 @@ interpreter'main examples =
       , "Bricks.Expression.Construction"
       ]
 
-    catMaybes <$> traverse testExample examples
+    Seq.catMaybes <$> traverse testExample examples
 
 testExample :: Example -> H.Interpreter (Maybe Failure)
 testExample x =

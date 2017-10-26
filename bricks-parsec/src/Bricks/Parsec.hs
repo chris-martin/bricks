@@ -11,9 +11,10 @@ string environments where whitespace is significant.
 
 -}
 module Bricks.Parsec
-  (
+  ( parse'file
+
   -- * Expressions
-    parse'expression
+  , parse'expression
   , parse'expression'paren
   , parse'expression'antiquote
   , parse'expression'dictKey
@@ -803,6 +804,10 @@ parse'letBinding'inherit =
 
 {- | The primary, top-level expression parser. This is what you use to parse a
 @.nix@ file. -}
+
+parse'file :: Parser Expression
+parse'file =
+  parse'spaces *> parse'expression
 
 -- | ==== Examples
 --

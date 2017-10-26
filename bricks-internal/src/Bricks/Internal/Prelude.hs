@@ -35,8 +35,8 @@ import Data.Bool           (Bool (False, True), not, (&&), (||))
 import Data.Char           (Char)
 import Data.Either         (Either (..), either)
 import Data.Eq             (Eq ((/=), (==)))
-import Data.Foldable       (asum, fold, foldMap, foldl, foldl1, foldr, foldr1,
-                            for_, traverse_)
+import Data.Foldable       (Foldable, asum, fold, foldMap, foldl, foldl1, foldr,
+                            foldr1, for_, traverse_)
 import Data.Function       (const, flip, id, ($), (&), (.))
 import Data.Functor        (Functor, fmap, void, ($>), (<$), (<$>))
 import Data.Maybe          (Maybe (Just, Nothing), catMaybes, isJust, isNothing,

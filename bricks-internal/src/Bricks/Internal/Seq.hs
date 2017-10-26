@@ -9,6 +9,7 @@ module Bricks.Internal.Seq
   , adjust
   , adjustLast
   , append
+  , catMaybes
   , concat
   , concatMap
   , dropWhileL
@@ -39,12 +40,17 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor  (fmap)
 import qualified Data.List     as List
 import           Data.Maybe    (Maybe (..))
+import qualified Data.Maybe    as Maybe
 import           Data.Ord      (Ord)
 import           Prelude       (Num (..))
 
 -- | Alias for '><'.
 append :: Seq a -> Seq a -> Seq a
 append = (><)
+
+-- | Like 'List.catMaybes', but for 'Seq'.
+catMaybes :: Seq (Maybe a) -> Seq a
+catMaybes xs = fromList (Maybe.catMaybes (toList xs))
 
 -- | Like 'List.intersperse', but for 'Seq'.
 intersperse :: a -> Seq a -> Seq a

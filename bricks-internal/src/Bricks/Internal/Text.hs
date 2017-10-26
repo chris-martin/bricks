@@ -18,6 +18,7 @@ module Bricks.Internal.Text
   , replicate
   , show
   , singleton
+  , uncons
   , unpack
   , unwords
 
@@ -25,7 +26,7 @@ module Bricks.Internal.Text
 
 -- Text
 import           Data.Text (Text, all, append, isPrefixOf, isSuffixOf, null,
-                            pack, replace, replicate, singleton, unpack,
+                            pack, replace, replicate, singleton, uncons, unpack,
                             unwords)
 import qualified Data.Text as Text
 

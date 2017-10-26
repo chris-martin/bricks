@@ -2,7 +2,6 @@ module Bricks.Internal.Map
   ( module Data.Map
 
   , exactKeys
-  , restrictKeys
 
   ) where
 
@@ -10,12 +9,6 @@ module Bricks.Internal.Map
 import           Data.Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
-
-{- | This function was added in containers version 0.5.8 which we're not using
-yet. -}
-
-restrictKeys :: Ord k => Map k a -> Set k -> Map k a
-m `restrictKeys` s = filterWithKey (\k _ -> k `Set.member` s) m
 
 {- | If @s@ is a subset of the keys in @m@ then
 

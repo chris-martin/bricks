@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bricks.Keyword
+module Bricks.Syntax.Concrete.Keyword
   (
   -- * Type
     Keyword
@@ -10,27 +10,22 @@ module Bricks.Keyword
   , keywords
 
   -- * The keywords
-  , keyword'rec
-  , keyword'let
-  , keyword'in
-  , keyword'inherit
-  , keyword'inlineComment
+  , keyword'rec, keyword'let, keyword'in, keyword'inherit, keyword'inlineComment
 
   -- * Type conversion
-  , keywordString
-  , keywordText
+  , keyword'text
 
   ) where
 
 -- Bricks internal
-import           Bricks.Internal.Prelude
-import           Bricks.Internal.Text    (Text)
-import qualified Bricks.Internal.Text    as Text
+import Bricks.Internal.Prelude
+import Bricks.Internal.Text    (Text)
 
-newtype Keyword =
-  Keyword
-    { keywordText :: Text
-    }
+newtype Keyword = Keyword Text
+  deriving Show
+
+keyword'text :: Keyword -> Text
+keyword'text (Keyword x) = x
 
 {- | All of the keywords. This list is used when parsing and rendering because
 an unquoted string cannot have a name that is exactly the same as a keyword. -}
@@ -43,9 +38,6 @@ keywords =
   , keyword'inherit
   , keyword'inlineComment
   ]
-
-keywordString :: Keyword -> String
-keywordString = Text.unpack . keywordText
 
 keyword'rec :: Keyword
 keyword'rec = Keyword "rec"

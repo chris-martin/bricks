@@ -4,14 +4,10 @@
 module Bricks.Internal.List
 
   ( module Data.List
-  , module Data.List.EitherFunctions
 
   , minimum, maximum
 
   ) where
-
--- either-list-functions
-import Data.List.EitherFunctions
 
 -- base
 import           Data.List  hiding (maximum, minimum)

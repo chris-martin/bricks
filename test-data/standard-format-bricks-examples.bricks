@@ -1,0 +1,222 @@
+{- This file contains a list of Bricks expressions formatted in the standard
+  style. -}
+
+[
+
+  {- A variable -}
+  ┌
+  │a
+  └
+
+  {- A function call -}
+  ┌
+  │f x
+  └
+
+  {- A function call where the operand is a list -}
+  ┌
+  │f [ x y ]
+  └
+
+  {- A dot expression -}
+  ┌
+  │a.b
+  └
+
+  {- A function call where the operation is a dot expression and the operand is
+    a string. -}
+  ┌
+  │a.b "c"
+  └
+
+  {- A list of two variables -}
+  ┌
+  │[ a b ]
+  └
+
+  {- A list as the operator in a function call. This will fail at runtime if the
+    call is evaluated, because a list is not a function, but technically it is
+    syntactically valid. -}
+  ┌
+  │[ a b ] x
+  └
+
+  {- A dict as the operator in a function call. This will fail at runtime if the
+    call is evaluated, because a list is not a function, but technically it is
+    syntactically valid. -}
+  ┌
+  │{
+  │  a = b;
+  │} x
+  └
+
+  {- Another example of a dict as the operator in a function call; this time
+    it's an empty dict. -}
+  ┌
+  │{ } x
+  └
+
+  {- Note that an empty dict pattern looks very similar to the previous example;
+    the only difference is the colon. -}
+  ┌
+  │{ }: x
+  └
+
+  {- A list with a function call inside. Note the parentheses around the call
+    because it is within a list. -}
+  ┌
+  │[ (f x) ]
+  └
+
+  {- Simple expressions like variables do not need to be parenthesized. -}
+  ┌
+  │[ a (f x) ]
+  └
+
+  {- An empty dict -}
+  ┌
+  │{ }
+  └
+
+  {- A dict with one binding -}
+  ┌
+  │{
+  │  x = y;
+  │}
+  └
+
+  {- The left-hand side of a dict binding may be a quoted string. -}
+  ┌
+  │{
+  │  "a b" = y;
+  │}
+  └
+
+  {- It may even be the empty string. -}
+  ┌
+  │{
+  │  "" = y;
+  │}
+  └
+
+  {- The left-hand side of a dict binding may be an antiquoted expression. -}
+  ┌
+  │{
+  │  ${x} = y;
+  │}
+  └
+
+  {- A dict literal with two bindings -}
+  ┌
+  │{
+  │  x = y;
+  │  a = b;
+  │}
+  └
+
+  {- Dict with an 'inherit' binding -}
+  ┌
+  │inherit a;
+  └
+
+  {- Inheriting two things -}
+  ┌
+  │inherit a b;
+  └
+
+  {- Inheriting from another dict -}
+  ┌
+  │inherit (x) a "b c";
+  └
+
+  {- A simple function -}
+  ┌
+  │x:
+  │y
+  └
+
+  {- A slightly bigger example where we're starting to nest more things -}
+  ┌
+  │[
+  │  "abc"
+  │  f
+  │  {
+  │    x = y;
+  │  }
+  │]
+  └
+  ┌
+  │[
+  │  "abc"
+  │  (f {
+  │    x = y;
+  │  })
+  │]
+  └
+
+  {- Some functions that use dict deconstruction -}
+  ┌
+  │{ a, b, c ? x, ... }:
+  │g b (f a c)
+  └
+  ┌
+  │{ x, ... }:
+  │f x
+  └
+
+  {- ... -}
+  ┌
+  │{ x ? "abc" }:
+  │x
+  └
+
+  {- ... -}
+  ┌
+  │{ ... }:
+  │x
+  └
+
+  {- ... -}
+  ┌
+  │a@{ x, ... }:
+  │f x
+  └
+
+  {- ... -}
+  ┌
+  │a@{ x ? "abc" }:
+  │x
+  └
+
+  {- ... -}
+  ┌
+  │a@{ ... }:
+  │x
+  └
+
+  {- A let expression -}
+  ┌
+  │let
+  │  f = x:
+  │    plus one x;
+  │in
+  │  f seven
+  └
+
+  {- Indented strings do not support any escape sequences. -}
+  ┌
+  │''
+  │  There \ is \n no \$ escape.
+  │''
+  └
+
+  {- Therefore if you want to include something like '' in an indented string,
+     you have to put it inside an antiquote. -}
+  ┌
+  │''
+  │  Isn't it
+  │  ${"''"}interesting
+  │''
+  └
+
+]

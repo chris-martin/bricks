@@ -1,0 +1,21 @@
+{- This file contains example outputs from the Show instance for Expressions
+  that have no source information. -}
+
+[
+
+  ''dot (var "a") (str ["b"])''
+
+  ''dot (var "a") (var "b")''
+
+  ''dot (str ["a"]) (str ["b", antiquote (var "c")])''
+
+  ''lambda (param "a" <> pattern [dict'param "f", dict'param "b" & def (apply
+  (var "g") (var "x"))] <> ellipsis) (apply (var "f") (var "b"))''
+
+  ''let'in [let'eq "d" (dict [dict'eq (str ["a"]) (str ["b", antiquote (var
+  "c")]), dict'inherit'from (var "x") ["y", "z"]])] (dot (var "d") (str
+  ["y"]))''
+
+  ''str'indented [indent 0 ["abc"] (Just "\n"), indent 2 ["def"] Nothing]''
+
+]

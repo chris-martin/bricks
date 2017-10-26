@@ -20,7 +20,8 @@ imported unqualified.
 -}
 module Bricks
 
-  (
+  ( parse'file
+
   -------------------------------------------------
 
   -- * Module overview
@@ -34,7 +35,7 @@ module Bricks
   -------------------------------------------------
 
   -- * Expressions
-    Expression (..)
+  , Expression (..)
   , expression'source
   , expression'discardSource
   -- ** Rendering expressions
@@ -108,6 +109,7 @@ module Bricks
   , inStr'1'toStrParts
   , inStr'toList
   , inStr'to'strDynamic
+  , inStr'to'strStatic
   , inStr'level
   , inStr'dedent
   , inStr'trim

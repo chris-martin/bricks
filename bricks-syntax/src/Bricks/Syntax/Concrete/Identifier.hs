@@ -29,6 +29,12 @@ import qualified Data.Char as Char
 import qualified Data.List as List
 import           Prelude   (error)
 
+{- $setup
+
+>>> :set -XOverloadedStrings
+
+-}
+
 {- |
 
 ==== Construction
@@ -118,5 +124,5 @@ isValidIdentifier x =
     Nothing -> False
     Just (y, zs) ->
       (Char.isAlpha y || y == '_')
-      && Text.all (\c -> Char.isAlphaNum c || List.elem c ("+-*/_'")) zs
+      && Text.all (\c -> Char.isAlphaNum c || List.elem c ("+-*/_")) zs
       && List.all ((/= x) . keyword'text) keywords

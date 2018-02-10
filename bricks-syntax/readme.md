@@ -111,3 +111,12 @@ opening line of the string.
     │mkdir -p <cfg.outputDirectory>
     │chown <cfg.user>:<cfg.group> <cfg.outputDirectory> -R
     └───
+
+## Inline comments
+
+`--` or `──`
+
+## Horizontal rules
+
+A line which contains only whitespace and a sequence of three or more `-` or `─`
+characters is  interpreted as a *horizontal rule*.

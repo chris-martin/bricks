@@ -12,11 +12,8 @@ module Bricks.Syntax.Abstract
   -- * Expression
     Expr (..)
 
-  -- * Variable
-  , Var (..)
-
-  -- * String
-  , Str (..)
+  -- * Atom (strings and variables)
+  , AtomType (..), Atom (..)
 
   -- * Lambda
   , Lambda (..)
@@ -34,7 +31,7 @@ module Bricks.Syntax.Abstract
   , BinaryCombinator (..), Binary (..), binary'chain
 
   -- * Lists of expressions
-  , ListCombinator (..)
+  , ListCombinator (..), List (..)
 
   -- * Optionally-attached source information
   , Src, SrcUnwrap (..), SrcJoin (..), NoSource, WithSource, At (..)
@@ -43,7 +40,7 @@ module Bricks.Syntax.Abstract
   -- * Discarding source information
   , expr'noSource, lambda'noSource, binary'noSource, pattern'noSource
   , dictPattern'noSource, dictPatternItem'noSource, dict'noSource
-  , dictItem'noSource, let'noSource, letItem'noSource
+  , dictItem'noSource, let'noSource, letItem'noSource, list'noSource
 
   ) where
 
@@ -55,60 +52,49 @@ import Bricks.Internal.Prelude
 import Bricks.Internal.Seq     (Seq)
 import Bricks.Internal.Text    (Text)
 
--- base
-import Data.String (IsString)
-
 
 --------------------------------------------------------------------------------
 --  Expr
 --------------------------------------------------------------------------------
 
 data Expr s
-  = Expr'Var Var
-  | Expr'Str Str
-  | Expr'Binary BinaryCombinator (Binary s)
-  | Expr'List ListCombinator (Seq (Src s (Expr s)))
+  = Expr'Atom    Atom
+  | Expr'Binary (Binary s)
+  | Expr'List   (List   s)
   | Expr'Lambda (Lambda s)
-  | Expr'Let (Let s)
-  | Expr'Dict (Dict s)
+  | Expr'Let    (Let    s)
+  | Expr'Dict   (Dict   s)
 
-deriving instance Eq (Expr NoSource)
-deriving instance Eq src => Eq (Expr (WithSource src))
+deriving instance Eq   (Expr NoSource)
 deriving instance Show (Expr NoSource)
+
+deriving instance Eq   src => Eq   (Expr (WithSource src))
 deriving instance Show src => Show (Expr (WithSource src))
 
 expr'noSource :: forall s. SrcUnwrap s => Expr s -> Expr NoSource
 expr'noSource =
   \case
-    Expr'Var      x -> Expr'Var x
-    Expr'Str      x -> Expr'Str x
-    Expr'Binary c x -> Expr'Binary c $ binary'noSource x
-    Expr'List   c x -> Expr'List c $ fmap (expr'noSource @s . src'unwrap @s) x
-    Expr'Lambda   x -> Expr'Lambda $ lambda'noSource x
-    Expr'Let      x -> Expr'Let $ let'noSource x
-    Expr'Dict     x -> Expr'Dict $ dict'noSource x
+    Expr'Atom   x -> Expr'Atom   $                 x
+    Expr'Binary x -> Expr'Binary $ binary'noSource x
+    Expr'List   x -> Expr'List   $   list'noSource x
+    Expr'Lambda x -> Expr'Lambda $ lambda'noSource x
+    Expr'Let    x -> Expr'Let    $    let'noSource x
+    Expr'Dict   x -> Expr'Dict   $   dict'noSource x
 
 
 --------------------------------------------------------------------------------
---  Var
+--  Atom
 --------------------------------------------------------------------------------
 
-newtype Var = Var Text
-  deriving (Eq, IsString)
+data AtomType = Atom'Var | Atom'Str
+  deriving (Eq, Show)
 
-instance Show Var where
-  showsPrec i (Var x) = showsPrec i x
-
-
---------------------------------------------------------------------------------
---  Str
---------------------------------------------------------------------------------
-
-newtype Str = Str Text
-  deriving (Eq, Semigroup, Monoid, IsString)
-
-instance Show Str where
-  showsPrec i (Str x) = showsPrec i x
+data Atom =
+  Atom
+    { atom'type :: AtomType
+    , atom'text :: Text
+    }
+  deriving (Eq, Show)
 
 
 --------------------------------------------------------------------------------
@@ -121,18 +107,21 @@ data Lambda s =
     , lambda'body :: Src s (Expr s)
     }
 
-deriving instance Eq (Lambda NoSource)
-deriving instance Eq src => Eq (Lambda (WithSource src))
+deriving instance Eq   (Lambda NoSource)
 deriving instance Show (Lambda NoSource)
+
+deriving instance Eq   src => Eq   (Lambda (WithSource src))
 deriving instance Show src => Show (Lambda (WithSource src))
 
 lambda'noSource :: forall s. SrcUnwrap s => Lambda s -> Lambda NoSource
 lambda'noSource x =
   Lambda
-    { lambda'head = pattern'noSource @s . src'unwrap @s $ lambda'head x
-    , lambda'body = expr'noSource @s . src'unwrap @s $ lambda'body x
+    { lambda'head = f (lambda'head x)
+    , lambda'body = g (lambda'body x)
     }
-
+  where
+    f = pattern'noSource @s . src'unwrap @s
+    g = expr'noSource @s    . src'unwrap @s
 
 --------------------------------------------------------------------------------
 --  Binary
@@ -143,26 +132,37 @@ data BinaryCombinator = Apply | Lookup
 
 data Binary s =
   Binary
-    { binary'1 :: Src s (Expr s)
+    { binary'combinator :: BinaryCombinator
+    , binary'1 :: Src s (Expr s)
     , binary'2 :: Src s (Expr s)
     }
 
-deriving instance Eq (Binary NoSource)
-deriving instance Eq src => Eq (Binary (WithSource src))
+deriving instance Eq   (Binary NoSource)
 deriving instance Show (Binary NoSource)
+
+deriving instance Eq   src => Eq   (Binary (WithSource src))
 deriving instance Show src => Show (Binary (WithSource src))
 
 binary'noSource :: forall s. SrcUnwrap s => Binary s -> Binary NoSource
 binary'noSource x =
   Binary
-    { binary'1 = expr'noSource @s . src'unwrap @s $ binary'1 x
-    , binary'2 = expr'noSource @s . src'unwrap @s $ binary'2 x
+    { binary'combinator = binary'combinator x
+    , binary'1 = f (binary'1 x)
+    , binary'2 = f (binary'2 x)
     }
-
-binary'chain :: forall s. SrcJoin s => BinaryCombinator -> Src s (Expr s) -> Seq (Src s (Expr s)) -> Src s (Expr s)
-binary'chain c = foldl $ src'join @s @(Expr s) @(Expr s) @(Expr s) f
   where
-    f x y = Expr'Binary c (Binary x y)
+    f = expr'noSource @s . src'unwrap @s
+
+binary'chain
+  :: forall s. SrcJoin s
+  => BinaryCombinator
+  -> Src s (Expr s)
+  -> Seq (Src s (Expr s))
+  -> Src s (Expr s)
+binary'chain c =
+  foldl $ src'join @s @(Expr s) @(Expr s) @(Expr s) f
+  where
+    f x y = Expr'Binary (Binary c x y)
 
 
 --------------------------------------------------------------------------------
@@ -170,20 +170,25 @@ binary'chain c = foldl $ src'join @s @(Expr s) @(Expr s) @(Expr s) f
 --------------------------------------------------------------------------------
 
 data Pattern s
-  = Pattern'Var (Src s Var)
-  | Pattern'Dict (Src s (DictPattern s))
-  | Pattern'Both (Src s Var) (Src s (DictPattern s))
+  = Pattern'Var Text
+  | Pattern'Dict (DictPattern s)
+  | Pattern'Both (Src s Text) (Src s (DictPattern s))
 
 pattern'noSource :: forall s. SrcUnwrap s => Pattern s -> Pattern NoSource
 pattern'noSource =
   \case
-    Pattern'Var x -> Pattern'Var (src'unwrap @s x)
-    Pattern'Dict y -> Pattern'Dict (dictPattern'noSource (src'unwrap @s @(DictPattern s) y))
-    Pattern'Both x y -> Pattern'Both (src'unwrap @s x) (dictPattern'noSource (src'unwrap @s @(DictPattern s) y))
+    Pattern'Var x    -> Pattern'Var x
+    Pattern'Dict y   -> Pattern'Dict (g y)
+    Pattern'Both x y -> Pattern'Both (f x) (h y)
+  where
+    f = src'unwrap @s
+    g = dictPattern'noSource
+    h = dictPattern'noSource . src'unwrap @s @(DictPattern s)
 
-deriving instance Eq (Pattern NoSource)
-deriving instance Eq src => Eq (Pattern (WithSource src))
+deriving instance Eq   (Pattern NoSource)
 deriving instance Show (Pattern NoSource)
+
+deriving instance Eq   src => Eq   (Pattern (WithSource src))
 deriving instance Show src => Show (Pattern (WithSource src))
 
 
@@ -201,20 +206,24 @@ newtype Ellipsis = Ellipsis Bool
 
 data DictPattern s =
   DictPattern
-    { dictPattern'items :: Src s (Seq (Src s (DictPatternItem s)))
+    { dictPattern'items    :: Seq (Src s (DictPatternItem s))
     , dictPattern'ellipsis :: Ellipsis
     }
 
-dictPattern'noSource :: forall s. SrcUnwrap s => DictPattern s -> DictPattern NoSource
+dictPattern'noSource
+  :: forall s. SrcUnwrap s => DictPattern s -> DictPattern NoSource
 dictPattern'noSource x =
   DictPattern
-    { dictPattern'items = fmap (dictPatternItem'noSource @s . src'unwrap @s) . src'unwrap @s $ dictPattern'items x
+    { dictPattern'items    = f (dictPattern'items x)
     , dictPattern'ellipsis = dictPattern'ellipsis x
     }
+  where
+    f = fmap (dictPatternItem'noSource @s . src'unwrap @s)
 
-deriving instance Eq (DictPattern NoSource)
-deriving instance Eq src => Eq (DictPattern (WithSource src))
+deriving instance Eq   (DictPattern NoSource)
 deriving instance Show (DictPattern NoSource)
+
+deriving instance Eq   src => Eq   (DictPattern (WithSource src))
 deriving instance Show src => Show (DictPattern (WithSource src))
 
 
@@ -222,22 +231,24 @@ deriving instance Show src => Show (DictPattern (WithSource src))
 --  DictPatternItem
 --------------------------------------------------------------------------------
 
-data DictPatternItem s =
-  DictPatternItem
-    { dictPatternItem'var :: Src s Var
-    , dictPatternItem'default :: Maybe (Src s (Expr s))
-    }
+data DictPatternItem s
+  = DictPatternItem'Var Text
+  | DictPatternItem'Default (Src s Text) (Src s (Expr s))
 
-dictPatternItem'noSource :: forall s. SrcUnwrap s => DictPatternItem s -> DictPatternItem NoSource
-dictPatternItem'noSource x =
-  DictPatternItem
-    { dictPatternItem'var = src'unwrap @s $ dictPatternItem'var x
-    , dictPatternItem'default = fmap (expr'noSource @s . src'unwrap @s) $ dictPatternItem'default x
-    }
+dictPatternItem'noSource
+  :: forall s. SrcUnwrap s => DictPatternItem s -> DictPatternItem NoSource
+dictPatternItem'noSource =
+  \case
+    DictPatternItem'Var x -> DictPatternItem'Var x
+    DictPatternItem'Default x y -> DictPatternItem'Default (f x) (g y)
+  where
+    f = src'unwrap @s
+    g = expr'noSource @s . src'unwrap @s
 
-deriving instance Eq (DictPatternItem NoSource)
-deriving instance Eq src => Eq (DictPatternItem (WithSource src))
+deriving instance Eq   (DictPatternItem NoSource)
 deriving instance Show (DictPatternItem NoSource)
+
+deriving instance Eq   src => Eq   (DictPatternItem (WithSource src))
 deriving instance Show src => Show (DictPatternItem (WithSource src))
 
 
@@ -255,21 +266,24 @@ newtype Rec = Rec Bool
 
 data Dict s =
   Dict
-    { dict'rec :: Rec
-    , dict'items :: Src s (Seq (Src s (DictItem s)))
+    { dict'rec   :: Rec
+    , dict'items :: Seq (Src s (DictItem s))
     }
 
-deriving instance Eq (Dict NoSource)
-deriving instance Eq src => Eq (Dict (WithSource src))
+deriving instance Eq   (Dict NoSource)
 deriving instance Show (Dict NoSource)
+
+deriving instance Eq   src => Eq   (Dict (WithSource src))
 deriving instance Show src => Show (Dict (WithSource src))
 
 dict'noSource :: forall s. SrcUnwrap s => Dict s -> Dict NoSource
 dict'noSource x =
   Dict
-    { dict'rec = dict'rec x
-    , dict'items = fmap (dictItem'noSource @s . src'unwrap @s) $ src'unwrap @s $ dict'items x
+    { dict'rec   = dict'rec x
+    , dict'items = f (dict'items x)
     }
+  where
+    f = fmap (dictItem'noSource @s . src'unwrap @s)
 
 
 --------------------------------------------------------------------------------
@@ -277,21 +291,25 @@ dict'noSource x =
 --------------------------------------------------------------------------------
 
 data DictItem s
-  = DictItem'Eq (Src s (Expr s)) (Src s (Expr s))
-  | DictItem'Inherit'Dict (Src s (Expr s)) (Seq (Src s Str))
-  | DictItem'Inherit'Var (Seq (Src s Var))
+  = DictItem'Eq           (Src s (Expr s)) (Src s (Expr s))
+  | DictItem'Inherit'Dict (Src s (Expr s)) (Seq (Src s Text))
+  | DictItem'Inherit'Var                   (Seq (Src s Text))
 
-deriving instance Eq (DictItem NoSource)
-deriving instance Eq src => Eq (DictItem (WithSource src))
+deriving instance Eq   (DictItem NoSource)
 deriving instance Show (DictItem NoSource)
+
+deriving instance Eq   src => Eq   (DictItem (WithSource src))
 deriving instance Show src => Show (DictItem (WithSource src))
 
 dictItem'noSource :: forall s. SrcUnwrap s => DictItem s -> DictItem NoSource
 dictItem'noSource =
   \case
-    DictItem'Eq a b -> DictItem'Eq (expr'noSource @s . src'unwrap @s $ a) (expr'noSource @s . src'unwrap @s $ b)
-    DictItem'Inherit'Dict a xs -> DictItem'Inherit'Dict (expr'noSource @s . src'unwrap @s $ a) (fmap (src'unwrap @s @Str) xs)
-    DictItem'Inherit'Var xs -> DictItem'Inherit'Var (fmap (src'unwrap @s @Var) xs)
+    DictItem'Eq a b            -> DictItem'Eq           (f a) (f b)
+    DictItem'Inherit'Dict a xs -> DictItem'Inherit'Dict (f a) (g xs)
+    DictItem'Inherit'Var    xs -> DictItem'Inherit'Var        (g xs)
+  where
+    f = expr'noSource @s . src'unwrap @s
+    g = fmap (src'unwrap @s @Text)
 
 
 --------------------------------------------------------------------------------
@@ -304,17 +322,21 @@ data Let s =
     , let'body :: Src s (Expr s)
     }
 
-deriving instance Eq (Let NoSource)
-deriving instance Eq src => Eq (Let (WithSource src))
+deriving instance Eq   (Let NoSource)
 deriving instance Show (Let NoSource)
+
+deriving instance Eq   src => Eq   (Let (WithSource src))
 deriving instance Show src => Show (Let (WithSource src))
 
 let'noSource :: forall s. SrcUnwrap s => Let s -> Let NoSource
 let'noSource x =
   Let
-    { let'items = fmap (letItem'noSource @s . src'unwrap @s) $ let'items x
-    , let'body = expr'noSource @s $ src'unwrap @s $ let'body x
+    { let'items = f (let'items x)
+    , let'body  = g (let'body x)
     }
+  where
+    f = fmap (letItem'noSource @s . src'unwrap @s)
+    g = expr'noSource @s . src'unwrap @s
 
 
 --------------------------------------------------------------------------------
@@ -322,24 +344,50 @@ let'noSource x =
 --------------------------------------------------------------------------------
 
 data LetItem s
-  = LetItem'Eq (Src s Var) (Expr s)
-  | LetItem'Inherit (Src s (Expr s)) (Seq (Src s Var))
+  = LetItem'Eq      (Src s Text)     (Src s (Expr s))
+  | LetItem'Inherit (Src s (Expr s)) (Seq (Src s Text))
 
-deriving instance Eq (LetItem NoSource)
-deriving instance Eq src => Eq (LetItem (WithSource src))
+deriving instance Eq   (LetItem NoSource)
 deriving instance Show (LetItem NoSource)
+
+deriving instance Eq   src => Eq   (LetItem (WithSource src))
 deriving instance Show src => Show (LetItem (WithSource src))
 
 letItem'noSource :: forall s. SrcUnwrap s => LetItem s -> LetItem NoSource
 letItem'noSource =
   \case
-    LetItem'Eq a b -> LetItem'Eq (src'unwrap @s a) (expr'noSource @s b)
-    LetItem'Inherit a b -> LetItem'Inherit (expr'noSource @s $ src'unwrap @s a) (fmap (src'unwrap @s) b)
+    LetItem'Eq      a b -> LetItem'Eq      (f a) (g b)
+    LetItem'Inherit a b -> LetItem'Inherit (g a) (h b)
+  where
+    f = src'unwrap @s
+    g = expr'noSource @s . src'unwrap @s
+    h = fmap (src'unwrap @s)
 
 
 --------------------------------------------------------------------------------
 --  List
 --------------------------------------------------------------------------------
 
-data ListCombinator = List | Concat
+data ListCombinator = List'Id | List'Concat
   deriving (Eq, Show)
+
+data List s =
+  List
+    { list'combinator :: ListCombinator
+    , list'items      :: Seq (Src s (Expr s))
+    }
+
+deriving instance Eq   (List NoSource)
+deriving instance Show (List NoSource)
+
+deriving instance Eq   src => Eq   (List (WithSource src))
+deriving instance Show src => Show (List (WithSource src))
+
+list'noSource :: forall s. SrcUnwrap s => List s -> List NoSource
+list'noSource x =
+  List
+    { list'combinator = list'combinator x
+    , list'items      = f (list'items x)
+    }
+  where
+    f = fmap (expr'noSource @s . src'unwrap @s)

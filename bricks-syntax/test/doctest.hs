@@ -1,4 +1,4 @@
 import Test.DocTest (doctest)
 
 main :: IO ()
-main = doctest ["src", "-XOverloadedStrings"]
+main = doctest ["src"]

@@ -38,7 +38,7 @@ dependencies:
   - text       >= 1.2.2 && < 1.3
 
 data-files:
-  - ../test-data/expression-show-examples.txt
+  - test-data/expression-show-examples.txt
 
 tests:
 

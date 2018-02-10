@@ -83,7 +83,7 @@ main =
 getExamples :: IO [Example]
 getExamples =
   do
-    path <- getDataFileName "../test-data/expression-show-examples.txt"
+    path <- getDataFileName "test-data/expression-show-examples.txt"
     text <- Text.readFile path
     pure (parseExamples text)
 

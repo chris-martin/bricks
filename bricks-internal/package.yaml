@@ -1,5 +1,5 @@
 name: bricks-internal
-version: 0.0.0.3
+version: 0.0.0.4
 github: chris-martin/bricks
 
 synopsis: |
@@ -29,9 +29,9 @@ library:
     - Bricks.Internal.Text
 
 dependencies:
-  - base       >= 4.9   && < 4.10
+  - base       >= 4.9   && < 4.11
   - containers >= 0.5.7 && < 0.6
-  - either-list-functions == 0.0.0.1
+  - either-list-functions == 0.0.0.2
   - text       >= 1.2.2 && < 1.3
 
 tests:
@@ -42,5 +42,5 @@ tests:
     ghc-options:
       - -threaded
     dependencies:
-      - base    >= 4.9  && < 4.10
+      - base    >= 4.9  && < 4.11
       - doctest >= 0.11 && < 0.14

@@ -1,5 +1,5 @@
 name: bricks-parsec
-version: 0.0.0.3
+version: 0.0.0.4
 github: chris-martin/bricks
 
 synopsis: |
@@ -29,7 +29,7 @@ dependencies:
   - bricks-internal
   - bricks-syntax
 
-  - base       >= 4.9   && < 4.10
+  - base       >= 4.9   && < 4.11
   - containers >= 0.5.7 && < 0.6
   - parsec     >= 3.1.6 && < 3.2
   - text       >= 1.2.2 && < 1.3
@@ -42,7 +42,7 @@ tests:
     ghc-options:
       - -threaded
     dependencies:
-      - base    >= 4.9  && < 4.10
+      - base    >= 4.9  && < 4.11
       - doctest >= 0.11 && < 0.14
 
   cases:
@@ -56,5 +56,5 @@ tests:
       - bricks-parsec
       - bricks-rendering
 
-      - base     >= 4.9 && < 4.10
+      - base     >= 4.9 && < 4.11
       - hedgehog >= 0.5 && < 0.6

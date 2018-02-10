@@ -7,7 +7,7 @@ module Bricks.Internal.Map
   ) where
 
 -- Containers
-import           Data.Map
+import           Data.Map hiding (restrictKeys)
 import           Data.Set (Set)
 import qualified Data.Set as Set
 

@@ -1,4 +1,4 @@
-resolver: lts-9.6
+resolver: lts-10.4
 
 packages:
   - bricks
@@ -9,4 +9,4 @@ packages:
   - bricks-syntax
 
 extra-deps:
-  - either-list-functions-0.0.0.1
+  - either-list-functions-0.0.0.2

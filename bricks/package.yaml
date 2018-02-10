@@ -1,5 +1,5 @@
 name: bricks
-version: 0.0.0.3
+version: 0.0.0.4
 github: chris-martin/bricks
 
 synopsis: |
@@ -43,7 +43,7 @@ dependencies:
   - bricks-rendering
   - bricks-syntax
 
-  - base       >= 4.9   && < 4.10
+  - base       >= 4.9   && < 4.11
   - containers >= 0.5.7 && < 0.6
   - mtl
   - parsec     >= 3.1.6 && < 3.2
@@ -58,7 +58,7 @@ tests:
     ghc-options:
       - -threaded
     dependencies:
-      - base    >= 4.9  && < 4.10
+      - base    >= 4.9  && < 4.11
       - doctest >= 0.11 && < 0.14
 
   evaluation:
@@ -69,6 +69,6 @@ tests:
     dependencies:
       - bricks
       - bricks-internal-test
-      - base             >= 4.9 && < 4.10
+      - base             >= 4.9 && < 4.11
       - hedgehog         >= 0.5 && < 0.6
-      - template-haskell >= 2.2 && < 2.12
+      - template-haskell >= 2.2 && < 2.13
